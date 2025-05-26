@@ -22,17 +22,25 @@ class Message:
     type: str
     sender_id: int
     display_recipient: dict[str, dict]
+    stream_id: int
     topic: str
     timestamp: str
     flags: list[str]
     content: str
 
     @staticmethod
-    def from_raw(raw_message):
+    def from_raw(raw_message, stream_name_to_id_dict):
+        display_recipient = raw_message["display_recipient"]
+        if raw_message["type"] == "stream":
+            stream_id = stream_name_to_id_dict[display_recipient]
+        else:
+            stream_id = 0
+
         return Message(
             id=raw_message["id"],
             type=raw_message["type"],
             sender_id=raw_message["sender_id"],
+            stream_id=stream_id,
             display_recipient=raw_message["display_recipient"],
             topic=raw_message["subject"],
             timestamp=raw_message["timestamp"],
@@ -50,15 +58,18 @@ class Database:
         self.message_dict = dict()
         self.user_dict = dict()
 
-    def populate_messages(self, messages):
-        for message in messages:
+    def populate_messages(self, raw_messages, raw_streams):
+        stream_name_to_id_dict = {
+            s["name"]: s["stream_id"] for s in raw_streams
+        }
+        for message in raw_messages:
             id = message["id"]
-            self.message_dict[id] = Message.from_raw(message)
+            self.message_dict[id] = Message.from_raw(message, stream_name_to_id_dict)
 
-    def populate_users(self, register_info):
+    def populate_users(self, raw_realm_users):
         realm_user_dict = {
             user["user_id"]: user
-            for user in register_info.realm_users
+            for user in raw_realm_users
         }
 
         user_ids = set()

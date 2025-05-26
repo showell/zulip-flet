@@ -24,6 +24,7 @@ class RegisterInfo:
     queue_id: str
     last_event_id: int
     realm_users: list[dict]
+    streams: list[dict]
 
 
 @dataclass
@@ -32,7 +33,7 @@ class EventInfo:
     last_event_id: int
 
 
-async def get_data(zulip_api, database):
+async def fetch_and_populate_messages(zulip_api, database, streams):
     print("\n\n---------\n\n")
     print("FETCH MESSAGES (recent)")
     params = dict(
@@ -41,8 +42,7 @@ async def get_data(zulip_api, database):
         client_gravatar=json.dumps(False),
     )
     async with zulip_api.GET_json("messages", params) as data:
-        messages = data["messages"]
-        database.populate_messages(messages)
+        database.populate_messages(data["messages"], streams)
 
 
 async def process_events(zulip_api, event_info):
@@ -58,8 +58,8 @@ async def process_events(zulip_api, event_info):
 async def populate_database(zulip_api, register_info):
     database = Database()
 
-    await get_data(zulip_api, database)
-    database.populate_users(register_info)
+    await fetch_and_populate_messages(zulip_api, database, register_info.streams)
+    database.populate_users(register_info.realm_users)
 
 
 async def register(zulip_api):
@@ -69,6 +69,7 @@ async def register(zulip_api):
             queue_id=data["queue_id"],
             last_event_id=data["last_event_id"],
             realm_users=data["realm_users"],
+            streams=data["streams"],
         )
         print("queue_id:", register_info.queue_id)
         return register_info
