@@ -85,20 +85,23 @@ async def process_events(zulip_api, event_info):
         callback=handle_event,
     )
 
-
-async def main():
-    zulip_api = ZulipApi(HOST, USER_NAME, API_KEY)
+async def populate_database(zulip_api, register_info):
     database = Database()
-
-    register_info = await zulip_api.register()
 
     await get_data(zulip_api, database)
     extract_user_ids(register_info, database)
+
+async def main():
+    zulip_api = ZulipApi(HOST, USER_NAME, API_KEY)
+    register_info = await zulip_api.register()
+
+    await populate_database(zulip_api, register_info)
 
     event_info = EventInfo(
         queue_id=register_info.queue_id,
         last_event_id=register_info.last_event_id,
     )
+
     await process_events(zulip_api, event_info)
 
 
