@@ -1,8 +1,7 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 
-@dataclass
-class User:
+class User(BaseModel):
     id: int
     name: str
     avatar_url: str
@@ -16,8 +15,7 @@ class User:
         )
 
 
-@dataclass
-class Stream:
+class Stream(BaseModel):
     id: int
     name: str
 
@@ -28,15 +26,15 @@ class Stream:
             name=raw_stream["name"],
         )
 
-@dataclass
-class Message:
+
+class Message(BaseModel):
     id: int
     type: str
     sender_id: int
     stream_id: int
     user_ids: set
     topic: str
-    timestamp: str
+    timestamp: int
     flags: list[str]
     content: str
 
@@ -64,16 +62,18 @@ class Message:
         )
 
 
-@dataclass
-class Database:
-    message_dict: dict
-    user_dict: dict
-    stream_dict: dict
+class Database(BaseModel):
+    message_dict: dict[int, Message]
+    user_dict: dict[int, User]
+    stream_dict: dict[int, Stream]
 
-    def __init__(self):
-        self.message_dict = dict()
-        self.user_dict = dict()
-        self.stream_dict = dict()
+    @staticmethod
+    def create_empty_database():
+        return Database(
+            message_dict={},
+            user_dict={},
+            stream_dict={},
+        )
 
     def populate_messages(self, raw_messages, raw_streams):
         for message in raw_messages:
@@ -81,7 +81,7 @@ class Database:
             self.message_dict[id] = Message.from_raw(message)
 
     def populate_streams(self, raw_streams):
-        assert(len(self.message_dict) >= 10) # sanity check
+        assert (len(self.message_dict) >= 10)  # sanity check
         used_stream_ids = {
             message.stream_id for message in self.message_dict.values()
         }
