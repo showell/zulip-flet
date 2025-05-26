@@ -29,10 +29,10 @@ class Message:
     content: str
 
     @staticmethod
-    def from_raw(raw_message, stream_name_to_id_dict):
+    def from_raw(raw_message):
         display_recipient = raw_message["display_recipient"]
         if raw_message["type"] == "stream":
-            stream_id = stream_name_to_id_dict[display_recipient]
+            stream_id = raw_message["stream_id"]
             user_ids = set()
         else:
             stream_id = 0
@@ -62,12 +62,9 @@ class Database:
         self.user_dict = dict()
 
     def populate_messages(self, raw_messages, raw_streams):
-        stream_name_to_id_dict = {
-            s["name"]: s["stream_id"] for s in raw_streams
-        }
         for message in raw_messages:
             id = message["id"]
-            self.message_dict[id] = Message.from_raw(message, stream_name_to_id_dict)
+            self.message_dict[id] = Message.from_raw(message)
 
     def populate_users(self, raw_realm_users):
         realm_user_dict = {
