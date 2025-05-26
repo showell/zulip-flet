@@ -17,6 +17,18 @@ class User:
 
 
 @dataclass
+class Stream:
+    id: int
+    name: str
+
+    @staticmethod
+    def from_raw(raw_stream):
+        return Stream(
+            id=raw_stream["stream_id"],
+            name=raw_stream["name"],
+        )
+
+@dataclass
 class Message:
     id: int
     type: str
@@ -56,15 +68,30 @@ class Message:
 class Database:
     message_dict: dict
     user_dict: dict
+    stream_dict: dict
 
     def __init__(self):
         self.message_dict = dict()
         self.user_dict = dict()
+        self.stream_dict = dict()
 
     def populate_messages(self, raw_messages, raw_streams):
         for message in raw_messages:
             id = message["id"]
             self.message_dict[id] = Message.from_raw(message)
+
+    def populate_streams(self, raw_streams):
+        assert(len(self.message_dict) >= 10) # sanity check
+        used_stream_ids = {
+            message.stream_id for message in self.message_dict.values()
+        }
+
+        for stream in raw_streams:
+            id = stream["stream_id"]
+            if id in used_stream_ids:
+                self.stream_dict[id] = Stream.from_raw(stream)
+
+        print(self.stream_dict)
 
     def populate_users(self, raw_realm_users):
         realm_user_dict = {
