@@ -1,29 +1,8 @@
-import json
 from contextlib import asynccontextmanager
-from dataclasses import dataclass, asdict
+from dataclasses import asdict
 
 import aiohttp
 
-
-@dataclass
-class RegisterInfo:
-    queue_id: str
-    last_event_id: int
-    realm_users: list[dict]
-
-
-@dataclass
-class EventInfo:
-    queue_id: str
-    last_event_id: int
-
-
-SLIM_CONFIG = dict(
-    include_subscribers=json.dumps(False),
-    client_gravatar=json.dumps(False),
-    include_streams=json.dumps(False),
-    user_list_incomplete=json.dumps(True),
-)
 
 
 class ZulipApi:
@@ -58,17 +37,6 @@ class ZulipApi:
             data = await response.json()
             assert data["result"] == "success"
             yield data
-
-    async def register(self):
-        print("REGISTER")
-        async with self.POST_json("register", SLIM_CONFIG) as data:
-            register_info = RegisterInfo(
-                queue_id=data["queue_id"],
-                last_event_id=data["last_event_id"],
-                realm_users=data["realm_users"],
-            )
-            print("queue_id:", register_info.queue_id)
-            return register_info
 
     async def process_events(self, *, event_info, callback):
         async with aiohttp.ClientSession() as session:
