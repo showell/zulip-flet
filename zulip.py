@@ -4,7 +4,6 @@ from dataclasses import asdict
 import aiohttp
 
 
-
 class ZulipApi:
     def __init__(self, host, user_name, api_key):
         self.auth = aiohttp.BasicAuth(user_name, api_key)

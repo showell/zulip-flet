@@ -1,12 +1,11 @@
 import asyncio
 import json
+from dataclasses import dataclass
 
 # CREATE a one-line file called api_key.py
 from api_key import API_KEY
 from database import Database
-from dataclasses import dataclass
 from zulip import ZulipApi
-
 
 # MODIFY THESE!!!
 HOST = "https://chat.zulip.org"
@@ -18,6 +17,7 @@ REGISTER_OPTIONS = dict(
     include_streams=json.dumps(False),
     user_list_incomplete=json.dumps(True),
 )
+
 
 @dataclass
 class RegisterInfo:
@@ -60,6 +60,7 @@ async def populate_database(zulip_api, register_info):
 
     await get_data(zulip_api, database)
     database.populate_users(register_info)
+
 
 async def register(zulip_api):
     print("REGISTER")
