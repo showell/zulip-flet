@@ -21,8 +21,8 @@ class Message:
     id: int
     type: str
     sender_id: int
-    display_recipient: dict[str, dict]
     stream_id: int
+    user_ids: set
     topic: str
     timestamp: str
     flags: list[str]
@@ -33,15 +33,18 @@ class Message:
         display_recipient = raw_message["display_recipient"]
         if raw_message["type"] == "stream":
             stream_id = stream_name_to_id_dict[display_recipient]
+            user_ids = set()
         else:
             stream_id = 0
+            print(display_recipient)
+            user_ids = {recip["id"] for recip in display_recipient}
 
         return Message(
             id=raw_message["id"],
             type=raw_message["type"],
             sender_id=raw_message["sender_id"],
             stream_id=stream_id,
-            display_recipient=raw_message["display_recipient"],
+            user_ids=user_ids,
             topic=raw_message["subject"],
             timestamp=raw_message["timestamp"],
             flags=raw_message["flags"],
@@ -79,9 +82,7 @@ class Database:
             user_ids.add(message.sender_id)
 
             if message.type == "private":
-                for recipient in message.display_recipient:
-                    user_id = recipient["id"]
-                    user_ids.add(user_id)
+                user_ids |= message.user_ids
 
         for user_id in user_ids:
             if user_id in realm_user_dict:
@@ -90,3 +91,5 @@ class Database:
             else:
                 print("\n\nUNKNOWN USER:", user_id)
                 # TODO: grab system bots and mentioned users
+
+        print(sorted(user.name for user in self.user_dict.values()))
