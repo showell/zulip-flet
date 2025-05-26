@@ -64,6 +64,12 @@ async def populate_database(zulip_api, register_info):
     database.populate_users(register_info.realm_users)
     database.populate_streams(register_info.streams)
 
+    db_json = database.model_dump_json()
+    database = Database.model_validate_json(db_json)
+    print("\n\n---------\n\n")
+    print(database)
+    print(database.user_dict)
+
 
 async def register(zulip_api):
     print("REGISTER")
