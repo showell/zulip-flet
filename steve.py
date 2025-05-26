@@ -1,13 +1,12 @@
 import asyncio
 import json
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
-from multiprocessing.resource_tracker import register
+from dataclasses import dataclass, asdict
+
+import aiohttp
 
 # CREATE a one-line file called api_key.py
 from api_key import API_KEY
-
-import aiohttp
 
 # MODIFY THESE!!!
 HOST = "https://chat.zulip.org"
@@ -25,8 +24,18 @@ SLIM_CONFIG = dict(
 class RegisterInfo:
     queue_id: str
     last_event_id: int
-    realm_users: list
+    realm_users: list[dict]
 
+@dataclass
+class EventInfo:
+    queue_id: str
+    last_event_id: int
+
+@dataclass
+class User:
+    id: int
+    name: str
+    avatar_url: str
 
 @dataclass
 class Database:
@@ -82,23 +91,18 @@ class ZulipApi:
             print("queue_id:", register_info.queue_id)
             return register_info
 
-    async def process_events(self, *, register_info, callback):
+    async def process_events(self, *, event_info, callback):
         async with aiohttp.ClientSession() as session:
             url = self.url_prefix + "events"
-            params = dict(
-                queue_id=register_info.queue_id,
-                last_event_id=register_info.last_event_id,
-            )
             print("WAITING FOR EVENTS (infinite loop)")
             while True:
                 print("---> start new get")
-                async with session.get(url, auth=self.auth, params=params) as response:
+                async with session.get(url, auth=self.auth, params=asdict(event_info)) as response:
                     assert response.status == 200
                     data = await response.json()
                     for event in data["events"]:
                         callback(event)
-                        register_info.last_event_id = max(register_info.last_event_id, event["id"])
-                    params["last_event_id"] = register_info.last_event_id
+                        event_info.last_event_id = max(event_info.last_event_id, event["id"])
 
 
 async def get_data(zulip_api, database):
@@ -106,7 +110,7 @@ async def get_data(zulip_api, database):
     print("FETCH MESSAGES (recent)")
     params = dict(
         anchor="newest",
-        num_before=500,
+        num_before=50,
         client_gravatar=json.dumps(False),
     )
     async with zulip_api.GET_json("messages", params) as data:
@@ -114,6 +118,7 @@ async def get_data(zulip_api, database):
         for message in messages:
             id = message["id"]
             database.message_dict[id] = message
+
 
 def extract_user_ids(register_info, database):
     realm_user_dict = {
@@ -124,26 +129,36 @@ def extract_user_ids(register_info, database):
     user_ids = set()
 
     for id, message in database.message_dict.items():
-        print(message["id"], message["content"])
-
+        print(json.dumps(message, indent=2))
         user_ids.add(message["sender_id"])
+
+        if message["type"] == "private":
+            for recipient in message["display_recipient"]:
+                user_id = recipient["id"]
+                user_ids.add(user_id)
 
     for user_id in user_ids:
         if user_id in realm_user_dict:
-            database.user_dict[user_id] = realm_user_dict[user_id]
+            realm_user = realm_user_dict[user_id]
+            print(realm_user)
+            database.user_dict[user_id] = User(
+                id=realm_user["user_id"],
+                name=realm_user["full_name"],
+                avatar_url=realm_user["avatar_url"]
+            )
         else:
             print("\n\nUNKNOWN USER:", user_id)
 
     print("\n\n---------\n\n")
-    print(", ".join(sorted(user["full_name"] for user in database.user_dict.values())))
+    print(", ".join(sorted(user.name for user in database.user_dict.values())))
 
 
-async def process_events(zulip_api, register_info):
+async def process_events(zulip_api, event_info):
     def handle_event(event):
         print(event)
 
     await zulip_api.process_events(
-        register_info=register_info,
+        event_info=event_info,
         callback=handle_event,
     )
 
@@ -156,7 +171,12 @@ async def main():
 
     await get_data(zulip_api, database)
     extract_user_ids(register_info, database)
-    await process_events(zulip_api, register_info)
+
+    event_info = EventInfo(
+        queue_id=register_info.queue_id,
+        last_event_id=register_info.last_event_id,
+    )
+    await process_events(zulip_api, event_info)
 
 
 asyncio.run(main())
