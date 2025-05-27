@@ -5,13 +5,12 @@ def message_row(message):
     item = ft.Row(
         controls=[
             ft.Text(
-                message.content[:50],
+                message.content,
                 color=ft.Colors.BLACK, size=13,
                 overflow=ft.TextOverflow.ELLIPSIS,
                 selectable=True,
             ),
         ],
-        width=300,
     )
 
     return item
@@ -26,7 +25,7 @@ def make_message_pane(database):
     list_container = ft.Container(
         list,
         bgcolor=ft.Colors.GREY_50,
-        width=300,
+        width=700,
         padding=10,
     )
     return list_container
