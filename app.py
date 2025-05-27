@@ -1,10 +1,13 @@
 import flet as ft
 from data_layer import get_database
+from buddy_list import make_buddy_list_container
 
 async def main(page: ft.Page):
     page.title = "Flet counter example"
     page.vertical_alignment = "center"
     page.horizontal_alignment = "center"
+    page.window.height = 500
+    page.window.top = 50
 
     text = ft.Text(
         value="Loading",
@@ -16,26 +19,9 @@ async def main(page: ft.Page):
 
     database = await get_database()
 
-    buddy_list_container = await get_buddy_list_container(database)
+    buddy_list_container = await make_buddy_list_container(database)
     page.controls = [buddy_list_container]
     page.update()
-
-
-async def get_buddy_list_container(database):
-    items = []
-    for user in sorted(database.user_dict.values(), key=lambda u: u.name):
-        items.append(ft.Text(user.name, color=ft.Colors.BLACK, size=17))
-
-    buddy_list = ft.ListView(items)
-    buddy_list_container = ft.Container(
-        buddy_list,
-        border=ft.border.all(1, color=ft.Colors.BLUE),
-        bgcolor=ft.Colors.LIGHT_BLUE_50,
-        width=200,
-        alignment=ft.alignment.top_right,
-        expand=True
-    )
-    return buddy_list_container
 
 
 ft.app(main)
