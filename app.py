@@ -32,7 +32,7 @@ async def main(page: ft.Page):
                 buddy_list_container,
             ],
             vertical_alignment=ft.CrossAxisAlignment.START,
-            alignment=ft.MainAxisAlignment.SPACE_AROUND,
+            alignment=ft.MainAxisAlignment.CENTER,
             expand=True,
         ),
     ]
