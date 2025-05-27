@@ -7,11 +7,14 @@ class User(BaseModel):
     avatar_url: str
 
     @staticmethod
-    def from_raw(realm_user):
+    def from_raw(host, realm_user):
+        avatar_url = realm_user["avatar_url"]
+        if avatar_url.startswith("/"):
+            avatar_url = host + avatar_url
         return User(
             id=realm_user["user_id"],
             name=realm_user["full_name"],
-            avatar_url=realm_user["avatar_url"]
+            avatar_url=avatar_url,
         )
 
 
@@ -75,7 +78,7 @@ class Database(BaseModel):
             stream_dict={},
         )
 
-    def populate_messages(self, raw_messages, raw_streams):
+    def populate_messages(self, raw_messages):
         for message in raw_messages:
             id = message["id"]
             self.message_dict[id] = Message.from_raw(message)
@@ -93,7 +96,7 @@ class Database(BaseModel):
 
         print(self.stream_dict)
 
-    def populate_users(self, raw_realm_users):
+    def populate_users(self, host, raw_realm_users):
         realm_user_dict = {
             user["user_id"]: user
             for user in raw_realm_users
@@ -111,7 +114,7 @@ class Database(BaseModel):
         for user_id in user_ids:
             if user_id in realm_user_dict:
                 realm_user = realm_user_dict[user_id]
-                self.user_dict[user_id] = User.from_raw(realm_user)
+                self.user_dict[user_id] = User.from_raw(host, realm_user)
             else:
                 print("\n\nUNKNOWN USER:", user_id)
                 # TODO: grab system bots and mentioned users

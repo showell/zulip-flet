@@ -33,7 +33,7 @@ class EventInfo:
     last_event_id: int
 
 
-async def fetch_and_populate_messages(zulip_api, database, streams):
+async def fetch_and_populate_messages(zulip_api, database):
     print("\n\n---------\n\n")
     print("FETCH MESSAGES (recent)")
     params = dict(
@@ -42,7 +42,7 @@ async def fetch_and_populate_messages(zulip_api, database, streams):
         client_gravatar=json.dumps(False),
     )
     async with zulip_api.GET_json("messages", params) as data:
-        database.populate_messages(data["messages"], streams)
+        database.populate_messages(data["messages"])
 
 
 async def process_events(zulip_api, event_info):
@@ -58,10 +58,10 @@ async def process_events(zulip_api, event_info):
 async def populate_database(zulip_api, register_info):
     database = Database.create_empty_database()
 
-    await fetch_and_populate_messages(zulip_api, database, register_info.streams)
+    await fetch_and_populate_messages(zulip_api, database)
 
     # Make sure messages are already populated for these
-    database.populate_users(register_info.realm_users)
+    database.populate_users(HOST, register_info.realm_users)
     database.populate_streams(register_info.streams)
 
     return database

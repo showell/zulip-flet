@@ -19,7 +19,7 @@ async def main(page: ft.Page):
 
     database = await get_database()
 
-    buddy_list_container = await make_buddy_list_container(database)
+    buddy_list_container = make_buddy_list_container(database)
     page.controls = [buddy_list_container]
     page.update()
 
