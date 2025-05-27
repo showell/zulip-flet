@@ -16,7 +16,10 @@ def message_row(message):
         ],
     )
 
-    return ft.Container(item, padding=4)
+    def press(_):
+        print("pressed")
+
+    return ft.Container(item, padding=4, on_long_press=press)
 
 
 def make_message_pane(database):
