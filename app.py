@@ -33,7 +33,7 @@ async def main(page: ft.Page):
             ],
             vertical_alignment=ft.CrossAxisAlignment.START,
             alignment=ft.MainAxisAlignment.SPACE_AROUND,
-            expand=False,
+            expand=True,
         ),
     ]
     page.update()

@@ -13,10 +13,11 @@ def make_buddy_list_container(database):
     for user in sorted(database.user_dict.values(), key=lambda u: u.name):
         items.append(buddy_list_item(user))
 
-    buddy_list = ft.ListView(items)
+    buddy_list = ft.ListView(items, expand=True)
     buddy_list_container = ft.Container(
         buddy_list,
         width=200,
         padding=10,
+        expand=True,
     )
     return buddy_list_container
