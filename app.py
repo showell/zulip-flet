@@ -28,7 +28,7 @@ async def main(page: ft.Page):
         ft.Row(
     [
                 message_pane_container,
-                ft.VerticalDivider(width=10, thickness=3),
+                ft.VerticalDivider(width=3, thickness=1),
                 buddy_list_container,
             ],
             vertical_alignment=ft.CrossAxisAlignment.START,

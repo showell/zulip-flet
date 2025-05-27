@@ -20,4 +20,4 @@ def make_buddy_list_container(database):
         padding=10,
         expand=True,
     )
-    return buddy_list_container
+    return ft.Column([buddy_list_container], width=350)
