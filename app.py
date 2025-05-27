@@ -1,12 +1,14 @@
 import flet as ft
 from data_layer import get_database
 from buddy_list import make_buddy_list_container
+from message_pane import make_message_pane
+
 
 async def main(page: ft.Page):
     page.title = "Flet counter example"
     page.vertical_alignment = "center"
     page.horizontal_alignment = "center"
-    page.window.height = 500
+    page.window.height = 300
     page.window.top = 50
 
     text = ft.Text(
@@ -19,8 +21,21 @@ async def main(page: ft.Page):
 
     database = await get_database()
 
+    message_pane_container = make_message_pane(database)
     buddy_list_container = make_buddy_list_container(database)
-    page.controls = [buddy_list_container]
+
+    page.controls = [
+        ft.Row(
+    [
+                message_pane_container,
+                ft.VerticalDivider(width=10, thickness=3),
+                buddy_list_container,
+            ],
+            vertical_alignment=ft.CrossAxisAlignment.START,
+            alignment=ft.MainAxisAlignment.SPACE_AROUND,
+            expand=False,
+        ),
+    ]
     page.update()
 
 

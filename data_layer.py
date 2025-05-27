@@ -97,7 +97,7 @@ async def get_database():
     with open(fn, encoding="utf8") as database_file:
         db_json = database_file.read()
     database = Database.model_validate_json(db_json)
-    print("sanity check:", [user.name for user in database.user_dict.values()])
+    print("data loaded")
     return database
 
 
