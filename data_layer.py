@@ -92,10 +92,14 @@ async def main():
         database_file.write(db_json)
     print(f"Database saved to {fn}")
 
+async def get_database():
+    fn = "database.json"
     with open(fn, encoding="utf8") as database_file:
         db_json = database_file.read()
     database = Database.model_validate_json(db_json)
-    print([user.name for user in database.user_dict.values()])
+    print("sanity check:", [user.name for user in database.user_dict.values()])
+    return database
+
 
 async def original_main():
     zulip_api = ZulipApi(HOST, USER_NAME, API_KEY)
