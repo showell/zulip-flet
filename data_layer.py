@@ -18,6 +18,7 @@ REGISTER_OPTIONS = dict(
     user_list_incomplete=json.dumps(True),
 )
 
+NUM_MESSAGES = 600
 
 @dataclass
 class RegisterInfo:
@@ -38,7 +39,7 @@ async def fetch_and_populate_messages(zulip_api, database):
     print("FETCH MESSAGES (recent)")
     params = dict(
         anchor="newest",
-        num_before=50,
+        num_before=NUM_MESSAGES,
         client_gravatar=json.dumps(False),
     )
     async with zulip_api.GET_json("messages", params) as data:
@@ -73,7 +74,7 @@ async def register(zulip_api):
         register_info = RegisterInfo(
             queue_id=data["queue_id"],
             last_event_id=data["last_event_id"],
-            realm_users=data["realm_users"],
+            realm_users=data["realm_users"] + data["cross_realm_bots"],
             streams=data["streams"],
         )
         print("queue_id:", register_info.queue_id)
@@ -86,7 +87,6 @@ async def main():
     database = await populate_database(zulip_api, register_info)
 
     db_json = database.model_dump_json()
-    print(type(db_json))
     fn = "database.json"
     with open(fn, "w", encoding="utf8") as database_file:
         database_file.write(db_json)
