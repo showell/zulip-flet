@@ -78,6 +78,11 @@ class Database(BaseModel):
             stream_dict={},
         )
 
+    async def get_user(self, user_id):
+        if user_id == 5:
+            user_id = 58 # HUGE HACK
+        return self.user_dict[user_id]
+
     def populate_messages(self, raw_messages):
         for message in raw_messages:
             id = message["id"]

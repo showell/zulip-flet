@@ -21,7 +21,7 @@ async def main(page: ft.Page):
 
     database = await get_database()
 
-    message_pane_container = make_message_pane(database)
+    message_pane_container = await make_message_pane(database)
     buddy_list_container = make_buddy_list_container(database)
 
     page.controls = [
