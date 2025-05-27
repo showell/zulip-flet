@@ -10,12 +10,8 @@ async def message_row(database, message):
             ft.Column(
                 controls=[
                     ft.Text(sender.name, size=14),
-                    ft.Text(
+                    ft.Markdown(
                         message.content,
-                        color=ft.Colors.BLACK,
-                        bgcolor=ft.Colors.GREY_200,
-                        size=13,
-                        overflow=ft.TextOverflow.ELLIPSIS,
                         selectable=True,
                         expand=True,
                     ),
