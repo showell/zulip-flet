@@ -12,6 +12,7 @@ HOST = "https://chat.zulip.org"
 USER_NAME = "showell30@yahoo.com"
 
 REGISTER_OPTIONS = dict(
+    apply_markdown=json.dumps(False),
     include_subscribers=json.dumps(False),
     client_gravatar=json.dumps(False),
     include_streams=json.dumps(False),
@@ -41,6 +42,7 @@ async def fetch_and_populate_messages(zulip_api, database):
         anchor="newest",
         num_before=NUM_MESSAGES,
         client_gravatar=json.dumps(False),
+        apply_markdown=json.dumps(False),
     )
     async with zulip_api.GET_json("messages", params) as data:
         database.populate_messages(data["messages"])
