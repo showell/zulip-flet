@@ -17,9 +17,6 @@ class Database(BaseModel):
             stream_dict={},
         )
 
-    async def get_user(self, user_id):
-        return self.user_dict[user_id]
-
     def populate_messages(self, raw_messages):
         for message in raw_messages:
             id = message["id"]
