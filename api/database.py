@@ -1,31 +1,28 @@
 from pydantic import BaseModel
 from user import User
 from stream import Stream
-from message import Message
+from message_table import MessageTable
 
 
 class Database(BaseModel):
-    message_dict: dict[int, Message]
+    message_table: MessageTable
     user_dict: dict[int, User]
     stream_dict: dict[int, Stream]
 
     @staticmethod
     def create_empty_database():
         return Database(
-            message_dict={},
+            message_table=MessageTable(),
             user_dict={},
             stream_dict={},
         )
 
     def populate_messages(self, raw_messages):
-        for message in raw_messages:
-            id = message["id"]
-            self.message_dict[id] = Message.from_raw(message)
+        self.message_table.insert_many(raw_messages)
 
     def populate_streams(self, raw_streams):
-        assert (len(self.message_dict) >= 10)  # sanity check
         used_stream_ids = {
-            message.stream_id for message in self.message_dict.values()
+            message.stream_id for message in self.message_table.get_rows()
         }
 
         for stream in raw_streams:
@@ -43,8 +40,7 @@ class Database(BaseModel):
 
         user_ids = set()
 
-        for id, message in self.message_dict.items():
-            print(message)
+        for message in self.message_table.get_rows():
             user_ids.add(message.sender_id)
 
             if message.type == "private":

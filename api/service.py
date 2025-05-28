@@ -11,7 +11,7 @@ class Service:
         return self.database.user_dict[user_id]
 
     async def get_messages(self):
-        return self.database.message_dict.values()
+        return self.database.message_table.get_rows()
 
 async def get_service():
     database = await data_layer.get_database()
