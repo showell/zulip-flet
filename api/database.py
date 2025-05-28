@@ -1,24 +1,27 @@
 from pydantic import BaseModel
 from user import User
+from message import Message
 from stream import Stream
 from message_table import MessageTable
+from user_table import UserTable
 
 
 class Database(BaseModel):
     message_table: MessageTable
-    user_dict: dict[int, User]
+    user_table: UserTable
     stream_dict: dict[int, Stream]
 
     @staticmethod
     def create_empty_database():
         return Database(
             message_table=MessageTable(),
-            user_dict={},
+            user_table=UserTable(),
             stream_dict={},
         )
 
     def populate_messages(self, raw_messages):
-        self.message_table.insert_many(raw_messages)
+            for message in raw_messages:
+                self.message_table.insert(Message.from_raw(message))
 
     def populate_streams(self, raw_streams):
         used_stream_ids = {
@@ -49,9 +52,10 @@ class Database(BaseModel):
         for user_id in user_ids:
             if user_id in realm_user_dict:
                 realm_user = realm_user_dict[user_id]
-                self.user_dict[user_id] = User.from_raw(host, realm_user)
+                row = User.from_raw(host, realm_user)
+                self.user_table.insert(row)
             else:
                 print("\n\nUNKNOWN USER:", user_id)
                 # TODO: grab system bots and mentioned users
 
-        print(sorted(user.name for user in self.user_dict.values()))
+        print(sorted(user.name for user in self.user_table.get_rows()))

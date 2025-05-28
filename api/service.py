@@ -5,10 +5,10 @@ class Service:
         self.database = database
 
     async def get_users(self):
-        return self.database.user_dict.values()
+        return self.database.user_table.get_rows()
 
     async def get_user(self, user_id):
-        return self.database.user_dict[user_id]
+        return self.database.user_table.get_row(user_id)
 
     async def get_messages(self):
         return self.database.message_table.get_rows()
