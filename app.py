@@ -1,5 +1,8 @@
+import sys
+sys.path.append("api")
+
 import flet as ft
-from data_layer import get_database
+from api.data_layer import get_database
 from buddy_list import make_buddy_list_container
 from message_pane import make_message_pane
 
