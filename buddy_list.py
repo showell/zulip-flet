@@ -8,9 +8,10 @@ def buddy_list_item(user):
 
     return ft.Container(item, bgcolor=ft.Colors.LIGHT_BLUE_50, padding=5)
 
-def make_buddy_list_container(database):
+async def make_buddy_list_container(service):
     items = []
-    for user in sorted(database.user_dict.values(), key=lambda u: u.name):
+    users = await service.get_users()
+    for user in sorted(users, key=lambda u: u.name):
         items.append(buddy_list_item(user))
 
     buddy_list = ft.ListView(items, expand=True)

@@ -1,8 +1,8 @@
 import flet as ft
 
 
-async def message_row(database, message):
-    sender = await database.get_user(message.sender_id)
+async def message_row(service, message):
+    sender = await service.get_user(message.sender_id)
 
     item = ft.Row(
         controls=[
@@ -30,10 +30,11 @@ async def message_row(database, message):
         expand=True,
     )
 
-async def make_message_pane(database):
+async def make_message_pane(service):
         items = []
-        for user in sorted(database.message_dict.values(), key=lambda u: u.timestamp):
-            items.append(await message_row(database, user))
+        messages = await service.get_messages()
+        for message in sorted(messages, key=lambda u: u.timestamp):
+            items.append(await message_row(service, message))
 
         list_view = ft.ListView(items)
         list_container = ft.Container(

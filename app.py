@@ -2,7 +2,9 @@ import sys
 sys.path.append("api")
 
 import flet as ft
-from api.data_layer import get_database
+import api.service as api
+
+
 from buddy_list import make_buddy_list_container
 from message_pane import make_message_pane
 
@@ -22,10 +24,10 @@ async def main(page: ft.Page):
     page.add(text)
     page.update()
 
-    database = await get_database()
+    service = await api.get_service()
 
-    message_pane_container = await make_message_pane(database)
-    buddy_list_container = make_buddy_list_container(database)
+    message_pane_container = await make_message_pane(service)
+    buddy_list_container = await make_buddy_list_container(service)
 
     page.controls = [
         ft.Row(
