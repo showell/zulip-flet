@@ -1,17 +1,11 @@
 import asyncio
 import json
+from config import HOST, USER_NAME, API_KEY
 from dataclasses import dataclass
 from typing import Any
-
-# CREATE a one-line file called api_key.py
-from api_key import API_KEY
 from database import Database
 from event_info import EventInfo
 from zulip import ZulipApi
-
-# MODIFY THESE!!!
-HOST = "https://chat.zulip.org"
-USER_NAME = "showell30@yahoo.com"
 
 REGISTER_OPTIONS = dict(
     apply_markdown=json.dumps(False),
