@@ -42,11 +42,12 @@ class MessagePane:
             padding=10,
         )
 
-    async def populate(self, service):
+    async def populate(self, service, user):
         items = []
         messages = await service.get_messages()
         for message in sorted(messages, key=lambda u: u.timestamp):
-            items.append(await message_row(service, message))
+            if message.sender_id == user.id:
+                items.append(await message_row(service, message))
 
         self.list_view.controls = items
         self.list_view.update()

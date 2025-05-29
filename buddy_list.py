@@ -3,7 +3,7 @@ from buddy_list_row import BuddyListRow
 
 
 class BuddyList:
-    def __init__(self):
+    def __init__(self, *, on_click_user):
         self.list_view = ft.ListView([], expand=True)
         self.control = ft.Container(
             self.list_view,
@@ -11,9 +11,7 @@ class BuddyList:
             padding=10,
             expand=True,
         )
-
-    def on_click_user(self, user):
-        print(user.name)
+        self.on_click_user = on_click_user
 
     async def populate(self, service):
         items = []
