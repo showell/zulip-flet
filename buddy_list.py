@@ -1,15 +1,5 @@
 import flet as ft
-
-
-def buddy_list_item(user):
-    item = ft.Row(
-        [
-            ft.Image(src=user.avatar_url, height=15),
-            ft.Text(user.name, color=ft.Colors.BLACK, size=15, selectable=True),
-        ]
-    )
-
-    return ft.Container(item, bgcolor=ft.Colors.LIGHT_BLUE_50, padding=5)
+from buddy_list_row import BuddyListRow
 
 
 class BuddyList:
@@ -26,7 +16,7 @@ class BuddyList:
         items = []
         users = await service.get_users()
         for user in sorted(users, key=lambda u: u.name):
-            items.append(buddy_list_item(user))
+            items.append(BuddyListRow(user).control)
 
         self.list_view.controls = items
         self.list_view.update()
