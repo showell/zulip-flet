@@ -43,9 +43,13 @@ class ZulipApi:
             print("WAITING FOR EVENTS (infinite loop)")
             while True:
                 print("---> start new get")
-                async with session.get(url, auth=self.auth, params=asdict(event_info)) as response:
+                async with session.get(
+                    url, auth=self.auth, params=asdict(event_info)
+                ) as response:
                     assert response.status == 200
                     data = await response.json()
                     for event in data["events"]:
                         callback(event)
-                        event_info.last_event_id = max(event_info.last_event_id, event["id"])
+                        event_info.last_event_id = max(
+                            event_info.last_event_id, event["id"]
+                        )

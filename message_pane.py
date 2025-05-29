@@ -17,7 +17,7 @@ async def message_row(service, message):
                     ),
                     ft.Text("need emojis still", size=3, text_align=ft.TextAlign.RIGHT),
                 ]
-            )
+            ),
         ],
         vertical_alignment=ft.CrossAxisAlignment.START,
         expand=True,
@@ -30,17 +30,18 @@ async def message_row(service, message):
         expand=True,
     )
 
-async def make_message_pane(service):
-        items = []
-        messages = await service.get_messages()
-        for message in sorted(messages, key=lambda u: u.timestamp):
-            items.append(await message_row(service, message))
 
-        list_view = ft.ListView(items)
-        list_container = ft.Container(
-            list_view,
-            bgcolor=ft.Colors.GREY_200,
-            width=700,
-            padding=10,
-        )
-        return list_container
+async def make_message_pane(service):
+    items = []
+    messages = await service.get_messages()
+    for message in sorted(messages, key=lambda u: u.timestamp):
+        items.append(await message_row(service, message))
+
+    list_view = ft.ListView(items)
+    list_container = ft.Container(
+        list_view,
+        bgcolor=ft.Colors.GREY_200,
+        width=700,
+        padding=10,
+    )
+    return list_container

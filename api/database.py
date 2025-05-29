@@ -21,8 +21,8 @@ class Database(BaseModel):
         )
 
     def populate_messages(self, raw_messages):
-            for message in raw_messages:
-                self.message_table.insert(Message.from_raw(message))
+        for message in raw_messages:
+            self.message_table.insert(Message.from_raw(message))
 
     def populate_streams(self, raw_streams):
         used_stream_ids = {
@@ -36,10 +36,7 @@ class Database(BaseModel):
                 self.stream_table.insert(row)
 
     def populate_users(self, host, raw_realm_users):
-        realm_user_dict = {
-            user["user_id"]: user
-            for user in raw_realm_users
-        }
+        realm_user_dict = {user["user_id"]: user for user in raw_realm_users}
 
         user_ids = set()
 

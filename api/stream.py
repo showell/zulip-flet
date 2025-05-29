@@ -11,5 +11,3 @@ class Stream(BaseModel):
             id=raw_stream["stream_id"],
             name=raw_stream["name"],
         )
-
-

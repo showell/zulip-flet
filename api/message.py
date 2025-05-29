@@ -34,5 +34,3 @@ class Message(BaseModel):
             flags=raw_message["flags"],
             content=raw_message["content"],
         )
-
-

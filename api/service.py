@@ -1,5 +1,6 @@
 import data_layer
 
+
 class Service:
     def __init__(self, database):
         self.database = database
@@ -12,6 +13,7 @@ class Service:
 
     async def get_messages(self):
         return self.database.message_table.get_rows()
+
 
 async def get_service():
     database = await data_layer.get_database()

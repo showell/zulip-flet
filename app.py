@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append("api")
 
 import flet as ft
@@ -31,7 +32,7 @@ async def main(page: ft.Page):
 
     page.controls = [
         ft.Row(
-    [
+            [
                 message_pane_container,
                 ft.VerticalDivider(width=3, thickness=1),
                 buddy_list_container,

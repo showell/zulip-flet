@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class User(BaseModel):
     id: int
     name: str
@@ -15,5 +16,3 @@ class User(BaseModel):
             name=realm_user["full_name"],
             avatar_url=avatar_url,
         )
-
-

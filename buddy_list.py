@@ -1,12 +1,16 @@
 import flet as ft
 
+
 def buddy_list_item(user):
-    item = ft.Row([
-        ft.Image(src=user.avatar_url, height=15),
-        ft.Text(user.name, color=ft.Colors.BLACK, size=15, selectable=True),
-    ])
+    item = ft.Row(
+        [
+            ft.Image(src=user.avatar_url, height=15),
+            ft.Text(user.name, color=ft.Colors.BLACK, size=15, selectable=True),
+        ]
+    )
 
     return ft.Container(item, bgcolor=ft.Colors.LIGHT_BLUE_50, padding=5)
+
 
 async def make_buddy_list_container(service):
     items = []

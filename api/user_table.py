@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 from user import User
 
+
 class UserTable(BaseModel):
     table: dict[int, User] = {}
 

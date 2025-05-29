@@ -21,6 +21,7 @@ REGISTER_OPTIONS = dict(
 
 NUM_MESSAGES = 600
 
+
 @dataclass
 class RegisterInfo:
     queue_id: str
@@ -82,6 +83,7 @@ async def register(zulip_api):
         print("queue_id:", register_info.queue_id)
         return register_info
 
+
 async def main():
     zulip_api = ZulipApi(HOST, USER_NAME, API_KEY)
     register_info = await register(zulip_api)
@@ -93,6 +95,7 @@ async def main():
     with open(fn, "w", encoding="utf8") as database_file:
         database_file.write(db_json)
     print(f"Database saved to {fn}")
+
 
 async def get_database():
     fn = "database.json"
@@ -115,6 +118,7 @@ async def original_main():
     )
 
     await process_events(zulip_api, event_info)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
