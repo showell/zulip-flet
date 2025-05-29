@@ -1,3 +1,5 @@
+import asyncio
+
 import flet as ft
 
 
@@ -31,17 +33,24 @@ async def message_row(service, message):
     )
 
 
-async def make_message_pane(service):
-    items = []
-    messages = await service.get_messages()
-    for message in sorted(messages, key=lambda u: u.timestamp):
-        items.append(await message_row(service, message))
+class MessagePane:
+    def __init__(self):
+        self.list_view = ft.ListView([])
 
-    list_view = ft.ListView(items)
-    list_container = ft.Container(
-        list_view,
-        bgcolor=ft.Colors.GREY_200,
-        width=700,
-        padding=10,
-    )
-    return list_container
+        self.container = ft.Container(
+            self.list_view,
+            bgcolor=ft.Colors.GREY_200,
+            width=700,
+            padding=10,
+        )
+
+    async def populate(self, service):
+        await asyncio.sleep(3)
+
+        items = []
+        messages = await service.get_messages()
+        for message in sorted(messages, key=lambda u: u.timestamp):
+            items.append(await message_row(service, message))
+
+        self.list_view.controls = items
+        self.list_view.update()

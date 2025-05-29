@@ -7,15 +7,14 @@ import api.service as api
 
 
 from buddy_list import make_buddy_list_container
-from message_pane import make_message_pane
+from message_pane import MessagePane
 
 
 async def main(page: ft.Page):
     page.title = "Flet counter example"
     page.vertical_alignment = "center"
     page.horizontal_alignment = "center"
-    page.window.height = 300
-    page.window.top = 50
+    page.window.height -= 50
 
     text = ft.Text(
         value="Loading",
@@ -27,13 +26,14 @@ async def main(page: ft.Page):
 
     service = await api.get_service()
 
-    message_pane_container = await make_message_pane(service)
+    message_pane = MessagePane()
+
     buddy_list_container = await make_buddy_list_container(service)
 
     page.controls = [
         ft.Row(
             [
-                message_pane_container,
+                message_pane.container,
                 ft.VerticalDivider(width=3, thickness=1),
                 buddy_list_container,
             ],
@@ -43,6 +43,8 @@ async def main(page: ft.Page):
         ),
     ]
     page.update()
+
+    await message_pane.populate(service)
 
 
 ft.app(main)
