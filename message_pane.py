@@ -1,40 +1,9 @@
 import flet as ft
-
-
-async def message_row(service, message):
-    sender = await service.get_user(message.sender_id)
-
-    item = ft.Row(
-        controls=[
-            ft.Image(src=sender.avatar_url, height=30),
-            ft.Column(
-                controls=[
-                    ft.Text(sender.name, size=14),
-                    ft.Markdown(
-                        message.content,
-                        selectable=True,
-                        expand=True,
-                        width=600,
-                        auto_follow_links=True,
-                    ),
-                ]
-            ),
-        ],
-        vertical_alignment=ft.CrossAxisAlignment.START,
-        expand=True,
-    )
-
-    return ft.Container(
-        item,
-        border=ft.border.all(1, ft.Colors.RED_100),
-        padding=5,
-        expand=True,
-    )
-
+from message_row import MessageRow
 
 class MessagePane:
     def __init__(self):
-        self.list_view = ft.ListView([])
+        self.list_view = ft.ListView([], auto_scroll=True)
 
         self.control = ft.Container(
             self.list_view,
@@ -44,11 +13,16 @@ class MessagePane:
         )
 
     async def populate(self, service, user):
+        self.list_view.controls = []
+        self.list_view.update()
+
         items = []
         messages = await service.get_messages()
         for message in sorted(messages, key=lambda u: u.timestamp):
             if message.sender_id == user.id:
-                items.append(await message_row(service, message))
+                row = MessageRow()
+                await row.populate(service, message, width=600)
+                items.append(row.control)
 
         self.list_view.controls = items
         self.list_view.update()

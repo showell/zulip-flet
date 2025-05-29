@@ -4,6 +4,7 @@ sys.path.append("api")
 
 import flet as ft
 import api.service as api
+from api.config import HOST
 
 
 from buddy_list import BuddyList
@@ -11,7 +12,7 @@ from message_pane import MessagePane
 
 
 async def main(page: ft.Page):
-    page.title = "Flet counter example"
+    page.title = HOST
     page.vertical_alignment = "center"
     page.horizontal_alignment = "center"
     page.window.height -= 50
