@@ -6,7 +6,7 @@ from user import User
 class UserTable(BaseModel):
     table: dict[int, User] = {}
 
-    def get_row(self, id) -> User:
+    def get_row(self, id: int) -> User:
         return self.table[id]
 
     def get_rows(self) -> list[User]:

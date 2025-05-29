@@ -7,7 +7,7 @@ class Message(BaseModel):
     type: str
     sender_id: int
     stream_id: int
-    user_ids: set
+    user_ids: set[int]
     topic: str
     timestamp: int
     flags: list[str]
