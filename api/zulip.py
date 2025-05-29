@@ -1,43 +1,52 @@
 from contextlib import asynccontextmanager
 from dataclasses import asdict
+from typing import Any, AsyncGenerator
 
 import aiohttp
 
 
 class ZulipApi:
-    def __init__(self, host, user_name, api_key):
+    def __init__(self, host: str, user_name: str, api_key: str) -> None:
         self.auth = aiohttp.BasicAuth(user_name, api_key)
         self.url_prefix = host + "/api/v1/"
 
     @asynccontextmanager
-    async def post(self, url_ending, data):
+    async def post(
+        self, url_ending: str, data: dict[str, Any]
+    ) -> AsyncGenerator[Any, None]:
         async with aiohttp.ClientSession() as session:
             url = self.url_prefix + url_ending
             async with session.post(url, auth=self.auth, data=data) as response:
                 yield response
 
     @asynccontextmanager
-    async def POST_json(self, url_ending, data):
+    async def POST_json(
+        self, url_ending: str, data: dict[str, Any]
+    ) -> AsyncGenerator[Any, None]:
         async with self.post(url_ending, data) as response:
             assert response.status == 200
             yield await response.json()
 
     @asynccontextmanager
-    async def get(self, url_ending, params):
+    async def get(
+        self, url_ending: str, params: dict[str, Any]
+    ) -> AsyncGenerator[Any, None]:
         async with aiohttp.ClientSession() as session:
             url = self.url_prefix + url_ending
             async with session.get(url, auth=self.auth, params=params) as response:
                 yield response
 
     @asynccontextmanager
-    async def GET_json(self, url_ending, params):
+    async def GET_json(
+        self, url_ending: str, params: dict[str, Any]
+    ) -> AsyncGenerator[Any, None]:
         async with self.get(url_ending, params) as response:
             assert response.status == 200
             data = await response.json()
             assert data["result"] == "success"
             yield data
 
-    async def process_events(self, *, event_info, callback):
+    async def process_events(self, *, event_info, callback) -> None:
         async with aiohttp.ClientSession() as session:
             url = self.url_prefix + "events"
             print("WAITING FOR EVENTS (infinite loop)")

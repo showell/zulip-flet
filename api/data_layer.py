@@ -59,7 +59,9 @@ async def process_events(zulip_api: ZulipApi, event_info: EventInfo) -> None:
     )
 
 
-async def populate_database(zulip_api: ZulipApi, register_info: RegisterInfo) -> Database:
+async def populate_database(
+    zulip_api: ZulipApi, register_info: RegisterInfo
+) -> Database:
     database = Database.create_empty_database()
 
     await fetch_and_populate_messages(zulip_api, database)

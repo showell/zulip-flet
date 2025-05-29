@@ -6,11 +6,11 @@ from user import User
 class UserTable(BaseModel):
     table: dict[int, User] = {}
 
-    def get_row(self, id):
+    def get_row(self, id) -> User:
         return self.table[id]
 
-    def get_rows(self):
-        return self.table.values()
+    def get_rows(self) -> list[User]:
+        return list(self.table.values())
 
-    def insert(self, row):
+    def insert(self, row: User) -> None:
         self.table[row.id] = row

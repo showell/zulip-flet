@@ -35,7 +35,9 @@ class Database(BaseModel):
                 row = Stream.from_raw(stream)
                 self.stream_table.insert(row)
 
-    def populate_users(self, host: str, raw_realm_users: list[dict[str, object]]) -> None:
+    def populate_users(
+        self, host: str, raw_realm_users: list[dict[str, object]]
+    ) -> None:
         realm_user_dict = {user["user_id"]: user for user in raw_realm_users}
 
         user_ids = set()

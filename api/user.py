@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Any
 
 
 class User(BaseModel):
@@ -7,7 +8,7 @@ class User(BaseModel):
     avatar_url: str
 
     @staticmethod
-    def from_raw(host, realm_user):
+    def from_raw(host: str, realm_user: dict[str, Any]) -> "User":
         avatar_url = realm_user["avatar_url"]
         if avatar_url.startswith("/"):
             avatar_url = host + avatar_url
