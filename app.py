@@ -25,9 +25,10 @@ async def main(page: ft.Page):
     service = await api.get_service()
 
     three_pane = ThreePane(service)
-    page.add(three_pane.control)
-    await three_pane.populate()
+    page.controls = [three_pane.control]
     page.update()
+    await three_pane.populate()
+
 
 if __name__ == "__main__":
     ft.app(main)
