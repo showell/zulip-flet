@@ -9,5 +9,5 @@ class MessageTable(BaseModel):
     def get_rows(self):
         return self.table.values()
 
-    def insert(self, message: Message):
-        self.table[message.id] = message
+    def insert(self, row: Message):
+        self.table[row.id] = row

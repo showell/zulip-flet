@@ -1,22 +1,23 @@
 from pydantic import BaseModel
-from user import User
 from message import Message
 from stream import Stream
+from user import User
 from message_table import MessageTable
+from stream_table import StreamTable
 from user_table import UserTable
 
 
 class Database(BaseModel):
     message_table: MessageTable
     user_table: UserTable
-    stream_dict: dict[int, Stream]
+    stream_table: StreamTable
 
     @staticmethod
     def create_empty_database():
         return Database(
             message_table=MessageTable(),
             user_table=UserTable(),
-            stream_dict={},
+            stream_table=StreamTable(),
         )
 
     def populate_messages(self, raw_messages):
@@ -31,9 +32,8 @@ class Database(BaseModel):
         for stream in raw_streams:
             id = stream["stream_id"]
             if id in used_stream_ids:
-                self.stream_dict[id] = Stream.from_raw(stream)
-
-        print(self.stream_dict)
+                row = Stream.from_raw(stream)
+                self.stream_table.insert(row)
 
     def populate_users(self, host, raw_realm_users):
         realm_user_dict = {
