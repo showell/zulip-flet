@@ -8,7 +8,7 @@ class ThreePane:
     def __init__(self, service):
         self.service = service
         self.message_pane = MessagePane()
-        self.buddy_list = BuddyList(populate_sent_by=self.populate_sent_by)
+        self.buddy_list = BuddyList(controller=self)
 
         self.control = ft.Row(
             [

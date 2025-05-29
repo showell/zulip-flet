@@ -3,7 +3,7 @@ from buddy_list_row import BuddyListRow
 
 
 class BuddyList:
-    def __init__(self, *, populate_sent_by):
+    def __init__(self, *, controller):
         self.list_view = ft.ListView([], expand=True)
         self.control = ft.Container(
             self.list_view,
@@ -11,13 +11,13 @@ class BuddyList:
             padding=10,
             expand=True,
         )
-        self.populate_sent_by = populate_sent_by
+        self.controller = controller
 
     async def populate(self, service):
         items = []
         users = await service.get_users()
         for user in sorted(users, key=lambda u: u.name):
-            row = BuddyListRow(user, populate_sent_by=self.populate_sent_by)
+            row = BuddyListRow(user, controller=self.controller)
             items.append(row.control)
 
         self.list_view.controls = items

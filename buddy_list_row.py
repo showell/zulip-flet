@@ -2,7 +2,7 @@ import flet as ft
 
 
 class BuddyListRow:
-    def __init__(self, user, *, populate_sent_by):
+    def __init__(self, user, *, controller):
         avatar = ft.Container(ft.Image(src=user.avatar_url, height=15))
 
         item = ft.Row(
@@ -15,6 +15,6 @@ class BuddyListRow:
         self.control = ft.Container(item, bgcolor=ft.Colors.LIGHT_BLUE_50, padding=5)
 
         async def on_click(_):
-            await populate_sent_by(user)
+            await controller.populate_sent_by(user)
 
         self.control.on_click = on_click
