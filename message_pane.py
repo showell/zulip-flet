@@ -15,6 +15,7 @@ async def message_row(service, message):
                         selectable=True,
                         expand=True,
                         width=600,
+                        auto_follow_links=True,
                     ),
                 ]
             ),
