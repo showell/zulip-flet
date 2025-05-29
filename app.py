@@ -27,11 +27,11 @@ async def main(page: ft.Page):
 
     service = await api.get_service()
 
-    async def on_click_user(user):
-        await message_pane.populate(service, user)
+    async def populate_sent_by(user):
+        await message_pane.populate_sent_by(service, user)
 
     message_pane = MessagePane()
-    buddy_list = BuddyList(on_click_user=on_click_user)
+    buddy_list = BuddyList(populate_sent_by=populate_sent_by)
 
     page.controls = [
         ft.Row(

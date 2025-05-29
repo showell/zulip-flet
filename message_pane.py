@@ -13,7 +13,7 @@ class MessagePane:
             padding=10,
         )
 
-    async def populate(self, service, user):
+    async def populate_sent_by(self, service, user):
         self.list_view.controls = []
         self.list_view.update()
         messages = await service.get_messages_sent_by_user(user)
