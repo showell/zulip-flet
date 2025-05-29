@@ -14,8 +14,8 @@ async def message_row(service, message):
                         message.content,
                         selectable=True,
                         expand=True,
+                        width=600,
                     ),
-                    ft.Text("need emojis still", size=3, text_align=ft.TextAlign.RIGHT),
                 ]
             ),
         ],
