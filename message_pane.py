@@ -1,6 +1,7 @@
 import flet as ft
 from message_row import MessageRow
 
+
 class MessagePane:
     def __init__(self):
         self.list_view = ft.ListView([], auto_scroll=True)
@@ -15,14 +16,16 @@ class MessagePane:
     async def populate(self, service, user):
         self.list_view.controls = []
         self.list_view.update()
+        messages = await service.get_messages_sent_by_user(user)
+        await self.populate_messages(service, messages)
 
+    async def populate_messages(self, service, messages):
         items = []
-        messages = await service.get_messages()
-        for message in sorted(messages, key=lambda u: u.timestamp):
-            if message.sender_id == user.id:
-                row = MessageRow()
-                await row.populate(service, message, width=600)
-                items.append(row.control)
+
+        for message in messages:
+            row = MessageRow()
+            await row.populate(service, message, width=600)
+            items.append(row.control)
 
         self.list_view.controls = items
         self.list_view.update()

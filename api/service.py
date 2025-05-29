@@ -14,8 +14,10 @@ class Service:
     async def get_user(self, user_id: int) -> User:
         return self.database.user_table.get_row(user_id)
 
-    async def get_messages(self) -> list[Message]:
-        return self.database.message_table.get_rows()
+    async def get_messages_sent_by_user(self, user: User) -> list[Message]:
+        all_messages = self.database.message_table.get_rows()
+        messages = [m for m in all_messages if m.sender_id == user.id]
+        return sorted(messages, key=lambda m: m.timestamp)
 
 
 async def get_service() -> Service:

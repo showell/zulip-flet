@@ -1,5 +1,6 @@
 import flet as ft
 
+
 class MessageRow:
     async def populate(self, service, message, *, width):
         sender = await service.get_user(message.sender_id)
@@ -30,4 +31,3 @@ class MessageRow:
             padding=5,
             expand=True,
         )
-
