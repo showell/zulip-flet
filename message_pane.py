@@ -1,5 +1,3 @@
-import asyncio
-
 import flet as ft
 
 
@@ -37,7 +35,7 @@ class MessagePane:
     def __init__(self):
         self.list_view = ft.ListView([])
 
-        self.container = ft.Container(
+        self.control = ft.Container(
             self.list_view,
             bgcolor=ft.Colors.GREY_200,
             width=700,
@@ -45,8 +43,6 @@ class MessagePane:
         )
 
     async def populate(self, service):
-        await asyncio.sleep(3)
-
         items = []
         messages = await service.get_messages()
         for message in sorted(messages, key=lambda u: u.timestamp):

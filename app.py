@@ -6,7 +6,7 @@ import flet as ft
 import api.service as api
 
 
-from buddy_list import make_buddy_list_container
+from buddy_list import BuddyList
 from message_pane import MessagePane
 
 
@@ -28,14 +28,14 @@ async def main(page: ft.Page):
 
     message_pane = MessagePane()
 
-    buddy_list_container = await make_buddy_list_container(service)
+    buddy_list = BuddyList()
 
     page.controls = [
         ft.Row(
             [
-                message_pane.container,
+                message_pane.control,
                 ft.VerticalDivider(width=3, thickness=1),
-                buddy_list_container,
+                buddy_list.control,
             ],
             vertical_alignment=ft.CrossAxisAlignment.START,
             alignment=ft.MainAxisAlignment.CENTER,
@@ -45,6 +45,7 @@ async def main(page: ft.Page):
     page.update()
 
     await message_pane.populate(service)
+    await buddy_list.populate(service)
 
 
 ft.app(main)
