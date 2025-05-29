@@ -12,11 +12,15 @@ class BuddyList:
             expand=True,
         )
 
+    def on_click_user(self, user):
+        print(user.name)
+
     async def populate(self, service):
         items = []
         users = await service.get_users()
         for user in sorted(users, key=lambda u: u.name):
-            items.append(BuddyListRow(user).control)
+            row = BuddyListRow(user, on_click_user=self.on_click_user)
+            items.append(row.control)
 
         self.list_view.controls = items
         self.list_view.update()
