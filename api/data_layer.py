@@ -1,6 +1,7 @@
 import asyncio
 import json
 from dataclasses import dataclass
+from typing import Any
 
 # CREATE a one-line file called api_key.py
 from api_key import API_KEY
@@ -27,8 +28,8 @@ NUM_MESSAGES = 600
 class RegisterInfo:
     queue_id: str
     last_event_id: int
-    realm_users: list[dict]
-    streams: list[dict]
+    realm_users: list[dict[str, Any]]
+    streams: list[dict[str, Any]]
 
 
 async def fetch_and_populate_messages(zulip_api: ZulipApi, database: Database) -> None:
