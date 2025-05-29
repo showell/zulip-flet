@@ -18,4 +18,3 @@ class BuddyListRow:
             await populate_sent_by(user)
 
         self.control.on_click = on_click
-

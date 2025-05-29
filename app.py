@@ -27,27 +27,34 @@ async def main(page: ft.Page):
 
     service = await api.get_service()
 
-    async def populate_sent_by(user):
-        await message_pane.populate_sent_by(service, user)
+    three_pane = ThreePane(service)
+    page.add(three_pane.control)
+    await three_pane.populate()
+    page.update()
 
-    message_pane = MessagePane()
-    buddy_list = BuddyList(populate_sent_by=populate_sent_by)
 
-    page.controls = [
-        ft.Row(
+class ThreePane:
+    def __init__(self, service):
+        self.service = service
+        self.message_pane = MessagePane()
+        self.buddy_list = BuddyList(populate_sent_by=self.populate_sent_by)
+
+        self.control = ft.Row(
             [
-                message_pane.control,
+                self.message_pane.control,
                 ft.VerticalDivider(width=3, thickness=1),
-                buddy_list.control,
+                self.buddy_list.control,
             ],
             vertical_alignment=ft.CrossAxisAlignment.START,
             alignment=ft.MainAxisAlignment.CENTER,
             expand=True,
-        ),
-    ]
-    page.update()
+        )
 
-    await buddy_list.populate(service)
+    async def populate(self):
+        await self.buddy_list.populate(self.service)
+
+    async def populate_sent_by(self, user):
+        await self.message_pane.populate_sent_by(self.service, user)
 
 
 ft.app(main)
