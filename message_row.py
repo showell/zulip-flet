@@ -2,8 +2,8 @@ import flet as ft
 
 
 class MessageRow:
-    async def populate(self, service, message, *, width):
-        sender = await service.get_user(message.sender_id)
+    def populate(self, service, hydrated_message, *, width):
+        sender = hydrated_message.sender
 
         item = ft.Row(
             controls=[
@@ -12,7 +12,7 @@ class MessageRow:
                     controls=[
                         ft.Text(sender.name, size=14),
                         ft.Markdown(
-                            message.content,
+                            hydrated_message.content,
                             selectable=True,
                             expand=True,
                             width=width,
