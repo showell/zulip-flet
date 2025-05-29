@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from dataclasses import asdict
-from typing import Any, AsyncGenerator
+from event_info import EventInfo
+from typing import Any, AsyncGenerator, Callable
 
 import aiohttp
 
@@ -46,7 +47,9 @@ class ZulipApi:
             assert data["result"] == "success"
             yield data
 
-    async def process_events(self, *, event_info, callback) -> None:
+    async def process_events(
+        self, *, event_info: EventInfo, callback: Callable[[dict[str, object]], None]
+    ) -> None:
         async with aiohttp.ClientSession() as session:
             url = self.url_prefix + "events"
             print("WAITING FOR EVENTS (infinite loop)")

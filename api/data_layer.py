@@ -5,6 +5,7 @@ from dataclasses import dataclass
 # CREATE a one-line file called api_key.py
 from api_key import API_KEY
 from database import Database
+from event_info import EventInfo
 from zulip import ZulipApi
 
 # MODIFY THESE!!!
@@ -28,12 +29,6 @@ class RegisterInfo:
     last_event_id: int
     realm_users: list[dict]
     streams: list[dict]
-
-
-@dataclass
-class EventInfo:
-    queue_id: str
-    last_event_id: int
 
 
 async def fetch_and_populate_messages(zulip_api: ZulipApi, database: Database) -> None:
