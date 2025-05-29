@@ -36,7 +36,7 @@ class EventInfo:
     last_event_id: int
 
 
-async def fetch_and_populate_messages(zulip_api, database):
+async def fetch_and_populate_messages(zulip_api: ZulipApi, database: Database) -> None:
     print("\n\n---------\n\n")
     print("FETCH MESSAGES (recent)")
     params = dict(
@@ -49,8 +49,8 @@ async def fetch_and_populate_messages(zulip_api, database):
         database.populate_messages(data["messages"])
 
 
-async def process_events(zulip_api, event_info):
-    def handle_event(event):
+async def process_events(zulip_api: ZulipApi, event_info: EventInfo) -> None:
+    def handle_event(event: object) -> None:
         print(event)
 
     await zulip_api.process_events(
@@ -59,7 +59,7 @@ async def process_events(zulip_api, event_info):
     )
 
 
-async def populate_database(zulip_api, register_info):
+async def populate_database(zulip_api: ZulipApi, register_info: RegisterInfo) -> Database:
     database = Database.create_empty_database()
 
     await fetch_and_populate_messages(zulip_api, database)
@@ -71,7 +71,7 @@ async def populate_database(zulip_api, register_info):
     return database
 
 
-async def register(zulip_api):
+async def register(zulip_api: ZulipApi) -> RegisterInfo:
     print("REGISTER")
     async with zulip_api.POST_json("register", REGISTER_OPTIONS) as data:
         register_info = RegisterInfo(
@@ -84,7 +84,7 @@ async def register(zulip_api):
         return register_info
 
 
-async def main():
+async def main() -> None:
     zulip_api = ZulipApi(HOST, USER_NAME, API_KEY)
     register_info = await register(zulip_api)
 
@@ -97,7 +97,7 @@ async def main():
     print(f"Database saved to {fn}")
 
 
-async def get_database():
+async def get_database() -> Database:
     fn = "database.json"
     with open(fn, encoding="utf8") as database_file:
         db_json = database_file.read()
@@ -106,7 +106,7 @@ async def get_database():
     return database
 
 
-async def original_main():
+async def original_main() -> None:
     zulip_api = ZulipApi(HOST, USER_NAME, API_KEY)
     register_info = await register(zulip_api)
 

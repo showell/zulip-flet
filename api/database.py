@@ -13,18 +13,18 @@ class Database(BaseModel):
     stream_table: StreamTable
 
     @staticmethod
-    def create_empty_database():
+    def create_empty_database() -> "Database":
         return Database(
             message_table=MessageTable(),
             user_table=UserTable(),
             stream_table=StreamTable(),
         )
 
-    def populate_messages(self, raw_messages):
+    def populate_messages(self, raw_messages: list[dict[str, object]]) -> None:
         for message in raw_messages:
             self.message_table.insert(Message.from_raw(message))
 
-    def populate_streams(self, raw_streams):
+    def populate_streams(self, raw_streams: list[dict[str, object]]) -> None:
         used_stream_ids = {
             message.stream_id for message in self.message_table.get_rows()
         }
@@ -35,7 +35,7 @@ class Database(BaseModel):
                 row = Stream.from_raw(stream)
                 self.stream_table.insert(row)
 
-    def populate_users(self, host, raw_realm_users):
+    def populate_users(self, host: str, raw_realm_users: list[dict[str, object]]) -> None:
         realm_user_dict = {user["user_id"]: user for user in raw_realm_users}
 
         user_ids = set()
