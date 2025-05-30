@@ -60,7 +60,7 @@ has an `await` before it.
 And when we actually go to render the messages (after the `await`), we
 simply do this in our render code:
 
-    sender = hydrated_message.deferred_sender.full_object(
+    sender = hydrated_message.deferred_sender.full_object()
     # and then use sender.full_name, sender.avatar_url, etc.
 """
 
