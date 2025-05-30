@@ -13,9 +13,9 @@ class BuddyList:
         )
         self.controller = controller
 
-    async def populate(self, service):
+    def populate(self, service):
         items = []
-        users = await service.get_users()
+        users = service.get_local_users()
         for user in sorted(users, key=lambda u: u.name):
             row = BuddyListRow(user, controller=self.controller)
             items.append(row.control)

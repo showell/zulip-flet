@@ -22,7 +22,7 @@ class ThreePane:
         )
 
     async def populate(self):
-        await self.buddy_list.populate(self.service)
+        self.buddy_list.populate(self.service)
 
     async def populate_sent_by(self, user):
         await self.message_pane.populate_sent_by(self.service, user)
