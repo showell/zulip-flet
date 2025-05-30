@@ -3,7 +3,7 @@ import flet as ft
 
 class MessageRow:
     def populate(self, service, hydrated_message, *, width):
-        sender = hydrated_message.sender
+        sender = hydrated_message.deferred_sender.full_object()
 
         item = ft.Row(
             controls=[
@@ -18,6 +18,7 @@ class MessageRow:
                             width=width,
                             auto_follow_links=True,
                         ),
+                        ft.Text(hydrated_message.timestamp, size=9),
                     ]
                 ),
             ],

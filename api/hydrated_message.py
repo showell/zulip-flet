@@ -1,17 +1,17 @@
 from dataclasses import dataclass
-from user import User
-
+from deferred_user import DeferredUser, DeferredUserFactory
+from message import Message
 
 @dataclass
 class HydratedMessage:
-    sender: User
+    deferred_sender: DeferredUser
     content: str
     timestamp: int
 
     @staticmethod
-    def create(*, message, service):
+    def create(*, message: Message, factory: DeferredUserFactory) -> "HydratedMessage":
         return HydratedMessage(
-            sender=service.get_local_user(message.sender_id),
+            deferred_sender=factory.create_user(message.sender_id),
             content=message.content,
-            timestamp=message.content,
+            timestamp=message.timestamp,
         )
