@@ -10,16 +10,21 @@ class Service:
         self.database = database
 
     async def get_remote_users(self, user_ids: set[int]) -> dict[int, User]:
+        # TODO: Actually get remote users!  This function only exists
+        # now to test out async logic.
+        import asyncio
+
+        await asyncio.sleep(2)
         user_dict = {}
         for user_id in user_ids:
-            user_dict[user_id] = self.get_local_user(user_id)
+            user_dict[user_id] = self.database.user_table.get_row(user_id)
         return user_dict
 
     def get_local_users(self) -> list[User]:
         return self.database.user_table.get_rows()
 
-    def get_local_user(self, user_id: int) -> User:
-        return self.database.user_table.get_row(user_id)
+    def maybe_get_local_user(self, user_id: int) -> User | None:
+        return self.database.user_table.maybe_get_row(user_id)
 
     async def get_messages_sent_by_user(self, user: User) -> list[HydratedMessage]:
         all_messages = self.database.message_table.get_rows()
@@ -28,7 +33,10 @@ class Service:
         hydrated_messages = [
             HydratedMessage.create(message=m, factory=factory) for m in messages
         ]
-        helper = DeferredUserHelper(get_remote_users=self.get_remote_users)
+        helper = DeferredUserHelper(
+            maybe_get_local_user=self.maybe_get_local_user,
+            get_remote_users=self.get_remote_users,
+        )
         await factory.finalize(helper=helper)
         return sorted(hydrated_messages, key=lambda m: m.timestamp)
 

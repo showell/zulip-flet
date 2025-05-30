@@ -9,6 +9,9 @@ class UserTable(BaseModel):
     def get_row(self, id: int) -> User:
         return self.table[id]
 
+    def maybe_get_row(self, id: int) -> User | None:
+        return self.table.get(id, None)
+
     def get_rows(self) -> list[User]:
         return list(self.table.values())
 

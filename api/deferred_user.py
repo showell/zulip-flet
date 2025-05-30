@@ -6,6 +6,7 @@ from user import User
 
 @dataclass
 class DeferredUserHelper:
+    maybe_get_local_user: Callable[[int], User | None]
     get_remote_users: Callable[[set[int]], Awaitable[dict[int, User]]]
 
 
@@ -29,9 +30,19 @@ class DeferredUserFactory:
         return DeferredUser(user_id, factory=self)
 
     async def finalize(self, *, helper: DeferredUserHelper) -> None:
-        remote_dict = await helper.get_remote_users(self.user_ids)
-        for user_id, user in remote_dict.items():
-            self.user_dict[user_id] = user
+        remote_user_ids: set[int] = set()
+
+        for user_id in self.user_ids:
+            maybe_user = helper.maybe_get_local_user(user_id)
+            if maybe_user is None:
+                remote_user_ids.add(user_id)
+            else:
+                self.user_dict[user_id] = maybe_user
+
+        if remote_user_ids:
+            remote_dict = await helper.get_remote_users(remote_user_ids)
+            for user_id, user in remote_dict.items():
+                self.user_dict[user_id] = user
         self.finalized = True
 
     def get_user(self, user_id: int) -> User:
