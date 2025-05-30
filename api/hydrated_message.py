@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from deferred_user import DeferredUser, DeferredUserFactory
 from message import Message
 
+
 @dataclass
 class HydratedMessage:
     deferred_sender: DeferredUser

@@ -1,6 +1,6 @@
 import data_layer
 from database import Database
-from deferred_user import DeferredUserFactory
+from deferred_user import DeferredUserFactory, DeferredUserHelper
 from user import User
 from hydrated_message import HydratedMessage
 
@@ -28,7 +28,8 @@ class Service:
         hydrated_messages = [
             HydratedMessage.create(message=m, factory=factory) for m in messages
         ]
-        await factory.finalize(service=self)
+        helper = DeferredUserHelper(get_remote_users=self.get_remote_users)
+        await factory.finalize(helper=helper)
         return sorted(hydrated_messages, key=lambda m: m.timestamp)
 
 
