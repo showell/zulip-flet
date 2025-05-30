@@ -57,7 +57,7 @@ has an `await` before it.
         await factory.finalize(helper=helper)
         return sorted(hydrated_messages, key=lambda m: m.timestamp)
         
-And then we actually go to render the messages (after the `await`), we
+And when we actually go to render the messages (after the `await`), we
 simply do this in our render code:
 
     sender = hydrated_message.deferred_sender.full_object(
