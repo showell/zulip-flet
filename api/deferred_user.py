@@ -1,12 +1,12 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Coroutine
+from typing import Awaitable, Callable
 
 from user import User
 
 
 @dataclass
 class DeferredUserHelper:
-    get_remote_users: Callable[[set[int]], Coroutine[Any, Any, dict[int, User]]]
+    get_remote_users: Callable[[set[int]], Awaitable[dict[int, User]]]
 
 
 class DeferredUser:
