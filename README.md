@@ -31,5 +31,6 @@ for coordinating between the components.
 
 TODOS:
 * add left sidebar code
+* figure out how to deal with Zulip markdown
 * start to handle some live-update scenarios
 * get mypy to play nice with flet
