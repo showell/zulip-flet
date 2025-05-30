@@ -44,8 +44,8 @@ First, we change our message object class to use
             )
         
 Then we change our controller code to look like below.  Note that we create
-our messages synchronously, and its only the call to `factory.finalize` that
-has an `await` before it.
+our hydrated messages synchronously, and its only the call to `factory.finalize`
+that has an `await` before it.
 
         factory = DeferredUserFactory()
         hydrated_messages = [
