@@ -2,7 +2,7 @@ import flet as ft
 
 
 class AddressLink:
-    def __init__(self, hydrated_message):
+    def __init__(self, hydrated_message, controller):
         text = ft.Text(
             hydrated_message.address_name,
             size=10,
@@ -11,16 +11,19 @@ class AddressLink:
 
         self.control = ft.Container(text)
 
-        def on_click(_):
-            print(hydrated_message.address)
+        async def on_click(_):
+            await controller.populate_for_address(hydrated_message.address)
 
         self.control.on_click = on_click
 
 
 class MessageRow:
+    def __init__(self, controller):
+        self.controller = controller
+
     def populate(self, hydrated_message, *, width):
         sender = hydrated_message.deferred_sender.full_object()
-        address_link = AddressLink(hydrated_message)
+        address_link = AddressLink(hydrated_message, self.controller)
 
         item = ft.Row(
             controls=[

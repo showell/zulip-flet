@@ -3,7 +3,7 @@ from message_row import MessageRow
 
 
 class MessagePane:
-    def __init__(self):
+    def __init__(self, controller):
         self.list_view = ft.ListView([], auto_scroll=True)
 
         self.control = ft.Container(
@@ -13,6 +13,8 @@ class MessagePane:
             padding=10,
         )
 
+        self.controller = controller
+
     def populate_messages(self, hydrated_messages):
         self.list_view.controls = []
         self.list_view.update()
@@ -20,7 +22,7 @@ class MessagePane:
         items = []
 
         for message in hydrated_messages:
-            row = MessageRow()
+            row = MessageRow(self.controller)
             row.populate(message, width=600)
             items.append(row.control)
 

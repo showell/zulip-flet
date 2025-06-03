@@ -7,7 +7,7 @@ from message_pane import MessagePane
 class ThreePane:
     def __init__(self, service):
         self.service = service
-        self.message_pane = MessagePane()
+        self.message_pane = MessagePane(controller=self)
         self.buddy_list = BuddyList(controller=self)
 
         self.control = ft.Row(
@@ -26,4 +26,8 @@ class ThreePane:
 
     async def populate_sent_by(self, user):
         messages = await self.service.get_messages_sent_by_user(user)
+        self.message_pane.populate_messages(messages)
+
+    async def populate_for_address(self, address):
+        messages = await self.service.get_messages_for_address(address)
         self.message_pane.populate_messages(messages)

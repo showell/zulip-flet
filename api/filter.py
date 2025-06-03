@@ -7,3 +7,11 @@ class SentByFilter:
 
     def get_rows(self, all_messages: list[Message]) -> list[Message]:
         return [m for m in all_messages if m.sender_id == self.sender_id]
+
+
+class AddressFilter:
+    def __init__(self, address):
+        self.address = address
+
+    def get_rows(self, all_messages: list[Message]) -> list[Message]:
+        return [m for m in all_messages if m.address == self.address]
