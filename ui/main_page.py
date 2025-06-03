@@ -1,7 +1,7 @@
 import flet as ft
 import api.service as api
 from api.config import HOST
-from ui.three_pane import ThreePane
+from three_pane import ThreePane
 
 
 async def main(page: ft.Page):
