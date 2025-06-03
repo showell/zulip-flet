@@ -26,4 +26,4 @@ class ThreePane:
 
     async def populate_sent_by(self, user):
         messages = await self.service.get_messages_sent_by_user(user)
-        await self.message_pane.populate_messages(messages)
+        self.message_pane.populate_messages(messages)
