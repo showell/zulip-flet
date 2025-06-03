@@ -1,6 +1,8 @@
 import data_layer
 from database import Database
 from deferred_user import DeferredUserFactory, DeferredUserHelper
+from filter import SentByFilter
+from message import Message
 from user import User
 from hydrated_message import HydratedMessage
 
@@ -28,7 +30,12 @@ class Service:
 
     async def get_messages_sent_by_user(self, user: User) -> list[HydratedMessage]:
         all_messages = self.database.message_table.get_rows()
-        messages = [m for m in all_messages if m.sender_id == user.id]
+        messages = SentByFilter(user.id).get_rows(all_messages)
+        return await self._get_hydrated_messages(messages)
+
+    async def _get_hydrated_messages(
+        self, messages: list[Message]
+    ) -> list[HydratedMessage]:
         factory = DeferredUserFactory()
         hydrated_messages = [
             HydratedMessage.create(message=m, factory=factory, database=self.database)
