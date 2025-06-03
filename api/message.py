@@ -15,11 +15,11 @@ class Message(BaseModel):
     def from_raw(raw_message: dict[str, Any], topic_table: TopicTable) -> "Message":
         display_recipient = raw_message["display_recipient"]
         if raw_message["type"] == "stream":
-            stream_id = raw_message["stream_id"]
             user_ids = set()
-            topic_id = topic_table.get_topic_id(stream_id, raw_message["subject"])
+            topic_id = topic_table.get_topic_id(
+                raw_message["stream_id"], raw_message["subject"]
+            )
         else:
-            stream_id = 0
             topic_id = 0
             user_ids = {recip["id"] for recip in display_recipient}
 
