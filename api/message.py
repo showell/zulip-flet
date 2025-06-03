@@ -8,7 +8,6 @@ class Message(BaseModel):
     id: int
     sender_id: int
     address: Address
-    user_ids: set[int]
     timestamp: int
     content: str
 
@@ -24,13 +23,14 @@ class Message(BaseModel):
             topic_id = 0
             user_ids = {recip["id"] for recip in display_recipient}
 
-        address = Address(type=raw_message["type"], topic_id=topic_id)
+        address = Address(
+            type=raw_message["type"], topic_id=topic_id, user_ids=user_ids
+        )
 
         return Message(
             id=raw_message["id"],
             address=address,
             sender_id=raw_message["sender_id"],
-            user_ids=user_ids,
             timestamp=raw_message["timestamp"],
             content=raw_message["content"],
         )

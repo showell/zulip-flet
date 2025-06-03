@@ -53,7 +53,7 @@ class Database(BaseModel):
             user_ids.add(message.sender_id)
 
             if message.address.type == "private":
-                user_ids |= message.user_ids
+                user_ids |= message.address.user_ids
 
         for user_id in user_ids:
             if user_id in realm_user_dict:
