@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class Topic(BaseModel):
     stream_id: int
     name: str
@@ -7,14 +8,22 @@ class Topic(BaseModel):
     def key(self) -> str:
         return f"{self.stream_id},{self.name}"
 
+
 class TopicTable(BaseModel):
     id_seq: int = 0
     get_id_dict: dict[str, int] = {}
+    topic_dict: dict[int, Topic] = {}
 
     def get_topic_id(self, stream_id: int, topic_str: str) -> int:
-        topic_key = Topic(stream_id=stream_id, name=topic_str).key()
+        topic = Topic(stream_id=stream_id, name=topic_str)
+        topic_key = topic.key()
         if topic_key in self.get_id_dict.keys():
             return self.get_id_dict[topic_key]
         self.id_seq += 1
-        self.get_id_dict[topic_key] = self.id_seq
+        topic_id = self.id_seq
+        self.get_id_dict[topic_key] = topic_id
+        self.topic_dict[topic_id] = topic
         return self.id_seq
+
+    def get_topic(self, topic_id: int) -> Topic:
+        return self.topic_dict[topic_id]

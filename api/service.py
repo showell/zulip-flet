@@ -31,7 +31,8 @@ class Service:
         messages = [m for m in all_messages if m.sender_id == user.id]
         factory = DeferredUserFactory()
         hydrated_messages = [
-            HydratedMessage.create(message=m, factory=factory) for m in messages
+            HydratedMessage.create(message=m, factory=factory, database=self.database)
+            for m in messages
         ]
         helper = DeferredUserHelper(
             maybe_get_local_user=self.maybe_get_local_user,

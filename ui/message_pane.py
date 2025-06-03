@@ -24,7 +24,7 @@ class MessagePane:
 
         for message in hydrated_messages:
             row = MessageRow()
-            row.populate(service, message, width=600)
+            row.populate(message, width=600)
             items.append(row.control)
 
         self.list_view.controls = items

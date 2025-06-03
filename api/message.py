@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Any
 from topic_table import TopicTable
 
+
 class Message(BaseModel):
     id: int
     type: str

@@ -2,7 +2,7 @@ import flet as ft
 
 
 class MessageRow:
-    def populate(self, service, hydrated_message, *, width):
+    def populate(self, hydrated_message, *, width):
         sender = hydrated_message.deferred_sender.full_object()
 
         item = ft.Row(
@@ -10,7 +10,12 @@ class MessageRow:
                 ft.Image(src=sender.avatar_url, height=30),
                 ft.Column(
                     controls=[
-                        ft.Text(sender.name, size=14),
+                        ft.Row(
+                            controls=[
+                                ft.Text(sender.name, size=14),
+                                ft.Text(hydrated_message.topic_name, size=14),
+                            ],
+                        ),
                         ft.Markdown(
                             hydrated_message.content,
                             selectable=True,

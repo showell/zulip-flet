@@ -25,7 +25,9 @@ class Database(BaseModel):
 
     def populate_messages(self, raw_messages: list[dict[str, object]]) -> None:
         for message in raw_messages:
-            self.message_table.insert(Message.from_raw(message, topic_table=self.topic_table))
+            self.message_table.insert(
+                Message.from_raw(message, topic_table=self.topic_table)
+            )
 
     def populate_streams(self, raw_streams: list[dict[str, object]]) -> None:
         used_stream_ids = {
