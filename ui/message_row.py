@@ -13,7 +13,7 @@ class MessageRow:
                         ft.Row(
                             controls=[
                                 ft.Text(sender.name, size=14),
-                                ft.Text(hydrated_message.topic_name, size=14),
+                                ft.Text(hydrated_message.address_name, size=14),
                             ],
                         ),
                         ft.Markdown(
