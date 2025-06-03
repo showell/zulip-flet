@@ -13,7 +13,11 @@ class MessageRow:
                         ft.Row(
                             controls=[
                                 ft.Text(sender.name, size=14),
-                                ft.Text(hydrated_message.address_name, size=14),
+                                ft.Text(
+                                    hydrated_message.address_name,
+                                    size=12,
+                                    weight=ft.FontWeight.BOLD,
+                                ),
                             ],
                         ),
                         ft.Markdown(
@@ -23,7 +27,6 @@ class MessageRow:
                             width=width,
                             auto_follow_links=True,
                         ),
-                        ft.Text(hydrated_message.timestamp, size=9),
                     ]
                 ),
             ],
