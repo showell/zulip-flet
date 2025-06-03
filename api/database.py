@@ -4,6 +4,7 @@ from stream import Stream
 from user import User
 from message_table import MessageTable
 from stream_table import StreamTable
+from topic_table import TopicTable
 from user_table import UserTable
 
 
@@ -11,6 +12,7 @@ class Database(BaseModel):
     message_table: MessageTable
     user_table: UserTable
     stream_table: StreamTable
+    topic_table: TopicTable
 
     @staticmethod
     def create_empty_database() -> "Database":
@@ -18,11 +20,12 @@ class Database(BaseModel):
             message_table=MessageTable(),
             user_table=UserTable(),
             stream_table=StreamTable(),
+            topic_table=TopicTable(),
         )
 
     def populate_messages(self, raw_messages: list[dict[str, object]]) -> None:
         for message in raw_messages:
-            self.message_table.insert(Message.from_raw(message))
+            self.message_table.insert(Message.from_raw(message, topic_table=self.topic_table))
 
     def populate_streams(self, raw_streams: list[dict[str, object]]) -> None:
         used_stream_ids = {
