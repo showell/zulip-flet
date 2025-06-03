@@ -23,6 +23,8 @@ class HydratedMessage:
             timestamp=message.timestamp,
             address=message.address,
             address_name=message.address.name(
-                topic_table=database.topic_table, user_table=database.user_table
+                stream_table=database.stream_table,
+                topic_table=database.topic_table,
+                user_table=database.user_table,
             ),
         )
