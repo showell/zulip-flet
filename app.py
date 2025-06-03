@@ -1,11 +1,12 @@
 import sys
 
 sys.path.append("api")
+sys.path.append("ui")
 
 import flet as ft
 import api.service as api
 from api.config import HOST
-from three_pane import ThreePane
+from ui.three_pane import ThreePane
 
 
 async def main(page: ft.Page):
