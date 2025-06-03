@@ -15,8 +15,8 @@ class HydratedMessage:
     def create(
         *, message: Message, factory: DeferredUserFactory, database: Database
     ) -> "HydratedMessage":
-        if message.type == "stream":
-            topic_name = database.topic_table.get_topic(message.topic_id).name
+        if message.address.type == "stream":
+            topic_name = database.topic_table.get_topic(message.address.topic_id).name
         else:
             topic_name = ""
 

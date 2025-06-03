@@ -31,7 +31,9 @@ class Database(BaseModel):
 
     def populate_streams(self, raw_streams: list[dict[str, object]]) -> None:
         used_stream_ids = {
-            message.stream_id for message in self.message_table.get_rows()
+            message.get_stream_id(topic_table=self.topic_table)
+            for message in self.message_table.get_rows()
+            if message.address.type == "stream"
         }
 
         for stream in raw_streams:
@@ -50,7 +52,7 @@ class Database(BaseModel):
         for message in self.message_table.get_rows():
             user_ids.add(message.sender_id)
 
-            if message.type == "private":
+            if message.address.type == "private":
                 user_ids |= message.user_ids
 
         for user_id in user_ids:

@@ -1,17 +1,15 @@
 from pydantic import BaseModel
 from typing import Any
 from topic_table import TopicTable
+from address import Address
 
 
 class Message(BaseModel):
     id: int
-    type: str
     sender_id: int
-    stream_id: int
+    address: Address
     user_ids: set[int]
-    topic_id: int
     timestamp: int
-    flags: list[str]
     content: str
 
     @staticmethod
@@ -26,14 +24,18 @@ class Message(BaseModel):
             topic_id = 0
             user_ids = {recip["id"] for recip in display_recipient}
 
+        address = Address(type=raw_message["type"], topic_id=topic_id)
+
         return Message(
             id=raw_message["id"],
-            type=raw_message["type"],
+            address=address,
             sender_id=raw_message["sender_id"],
-            stream_id=stream_id,
             user_ids=user_ids,
-            topic_id=topic_id,
             timestamp=raw_message["timestamp"],
-            flags=raw_message["flags"],
             content=raw_message["content"],
         )
+
+    def get_stream_id(self, topic_table: TopicTable) -> int:
+        assert self.address.type == "stream"
+        topic = topic_table.get_topic(self.address.topic_id)
+        return topic.stream_id
