@@ -3,11 +3,11 @@ from topic_list_row import TopicListRow
 
 
 class TopicList:
-    def __init__(self, *, controller):
+    def __init__(self, *, controller, width):
         self.list_view = ft.ListView([], expand=True)
         self.control = ft.Container(
             self.list_view,
-            width=250,
+            width=width,
             padding=10,
             expand=True,
         )

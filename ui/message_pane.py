@@ -3,13 +3,13 @@ from message_row import MessageRow
 
 
 class MessagePane:
-    def __init__(self, controller):
+    def __init__(self, *, controller, width):
         self.list_view = ft.ListView([])
 
         self.control = ft.Container(
             self.list_view,
             bgcolor=ft.Colors.GREY_200,
-            width=700,
+            width=width,
             padding=10,
         )
 

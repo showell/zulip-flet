@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from stream_table import StreamTable
 
+
 class Topic(BaseModel):
     stream_id: int
     name: str
