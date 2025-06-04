@@ -27,3 +27,7 @@ class TopicTable(BaseModel):
 
     def get_topic(self, topic_id: int) -> Topic:
         return self.topic_dict[topic_id]
+
+    def get_sorted_rows(self):
+        topics = self.topic_dict.values()
+        return sorted(topics, key=lambda topic: topic.name)

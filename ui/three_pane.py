@@ -2,6 +2,7 @@ import flet as ft
 
 from buddy_list import BuddyList
 from message_pane import MessagePane
+from topic_list import TopicList
 
 
 class ThreePane:
@@ -9,9 +10,12 @@ class ThreePane:
         self.service = service
         self.message_pane = MessagePane(controller=self)
         self.buddy_list = BuddyList(controller=self)
+        self.topic_list = TopicList(controller=self)
 
         self.control = ft.Row(
             [
+                self.topic_list.control,
+                ft.VerticalDivider(width=3, thickness=1),
                 self.message_pane.control,
                 ft.VerticalDivider(width=3, thickness=1),
                 self.buddy_list.control,
@@ -23,6 +27,7 @@ class ThreePane:
 
     async def populate(self):
         self.buddy_list.populate(self.service)
+        self.topic_list.populate(self.service)
 
     async def populate_sent_by(self, user):
         messages = await self.service.get_messages_sent_by_user(user)

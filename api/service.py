@@ -26,6 +26,9 @@ class Service:
     def get_local_users(self) -> list[User]:
         return self.database.user_table.get_rows()
 
+    def get_sorted_topics(self):
+        return self.database.topic_table.get_sorted_rows()
+
     def maybe_get_local_user(self, user_id: int) -> User | None:
         return self.database.user_table.maybe_get_row(user_id)
 
