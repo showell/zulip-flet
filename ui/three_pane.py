@@ -46,7 +46,12 @@ class ThreePane:
 
     async def populate_for_address(self, address):
         messages = await self.service.get_messages_for_address(address)
-        message_list_config = MessageListConfig(label=address.name())
+        label = address.name(
+            stream_table=self.service.database.stream_table,
+            topic_table=self.service.database.topic_table,
+            user_table=self.service.database.user_table,
+        )
+        message_list_config = MessageListConfig(label=label)
         self.message_pane.populate_messages(
             message_list_config=message_list_config, hydrated_messages=messages
         )
