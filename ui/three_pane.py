@@ -2,6 +2,7 @@ import flet as ft
 
 from buddy_list import BuddyList
 from message_pane import MessagePane
+from message_list_config import MessageListConfig
 from topic_list import TopicList
 
 
@@ -31,12 +32,21 @@ class ThreePane:
 
     async def populate_sent_by(self, user):
         messages = await self.service.get_messages_sent_by_user(user)
-        self.message_pane.populate_messages(messages)
+        message_list_config = MessageListConfig(label="sent_by")
+        self.message_pane.populate_messages(
+            message_list_config=message_list_config, hydrated_messages=messages
+        )
 
     async def populate_for_topic(self, topic):
         messages = await self.service.get_messages_for_topic(topic)
-        self.message_pane.populate_messages(messages)
+        message_list_config = MessageListConfig(label="topic")
+        self.message_pane.populate_messages(
+            message_list_config=message_list_config, hydrated_messages=messages
+        )
 
     async def populate_for_address(self, address):
         messages = await self.service.get_messages_for_address(address)
-        self.message_pane.populate_messages(messages)
+        message_list_config = MessageListConfig(label="address")
+        self.message_pane.populate_messages(
+            message_list_config=message_list_config, hydrated_messages=messages
+        )

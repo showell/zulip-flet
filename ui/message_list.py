@@ -11,6 +11,7 @@ class MessageList:
             bgcolor=ft.Colors.GREY_200,
             width=width,
             padding=10,
+            expand=True,
         )
 
         self.controller = controller
