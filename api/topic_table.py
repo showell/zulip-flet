@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from topic import Topic
-
+from stream_table import StreamTable
 
 class TopicTable(BaseModel):
     id_seq: int = 0
@@ -9,6 +9,9 @@ class TopicTable(BaseModel):
 
     def get_topic_id(self, stream_id: int, topic_str: str) -> int:
         topic = Topic(stream_id=stream_id, name=topic_str)
+        return self.get_id(topic)
+
+    def get_id(self, topic: Topic) -> int:
         topic_key = topic.key()
         if topic_key in self.get_id_dict.keys():
             return self.get_id_dict[topic_key]
@@ -21,6 +24,6 @@ class TopicTable(BaseModel):
     def get_topic(self, topic_id: int) -> Topic:
         return self.topic_dict[topic_id]
 
-    def get_sorted_rows(self, *, stream_table):
+    def get_sorted_rows(self, *, stream_table: StreamTable) -> list[Topic]:
         topics = self.topic_dict.values()
         return sorted(topics, key=lambda topic: topic.label(stream_table=stream_table))
