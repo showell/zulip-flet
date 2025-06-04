@@ -17,14 +17,16 @@ class MessageList:
         self.controller = controller
         self.width = width
 
-    def populate_messages(self, hydrated_messages):
+    def populate_messages(self, hydrated_messages, message_list_config):
         self.list_view.controls = []
         self.list_view.update()
 
         items = []
 
         for message in hydrated_messages:
-            row = MessageRow(self.controller)
+            row = MessageRow(
+                controller=self.controller, message_list_config=message_list_config
+            )
             row.populate(message, width=self.width - 100)
             items.append(row.control)
 

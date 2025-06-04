@@ -11,6 +11,6 @@ class MessagePane:
 
     def populate_messages(self, *, message_list_config, hydrated_messages):
         self.label = ft.Text(message_list_config.label, height=30)
-        self.message_list.populate_messages(hydrated_messages)
+        self.message_list.populate_messages(hydrated_messages, message_list_config)
         self.control.controls = [self.label, self.message_list.control]
         self.control.update()

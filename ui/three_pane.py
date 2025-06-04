@@ -32,7 +32,9 @@ class ThreePane:
 
     async def populate_sent_by(self, user):
         messages = await self.service.get_messages_sent_by_user(user)
-        message_list_config = MessageListConfig(label=f"sent by {user.name}")
+        message_list_config = MessageListConfig(
+            label=f"sent by {user.name}", show_sender=False
+        )
         self.message_pane.populate_messages(
             message_list_config=message_list_config, hydrated_messages=messages
         )
@@ -40,7 +42,7 @@ class ThreePane:
     async def populate_for_topic(self, topic):
         messages = await self.service.get_messages_for_topic(topic)
         label = topic.label(stream_table=self.service.database.stream_table)
-        message_list_config = MessageListConfig(label=label)
+        message_list_config = MessageListConfig(label=label, show_sender=True)
         self.message_pane.populate_messages(
             message_list_config=message_list_config, hydrated_messages=messages
         )
@@ -52,7 +54,7 @@ class ThreePane:
             topic_table=self.service.database.topic_table,
             user_table=self.service.database.user_table,
         )
-        message_list_config = MessageListConfig(label=label)
+        message_list_config = MessageListConfig(label=label, show_sender=True)
         self.message_pane.populate_messages(
             message_list_config=message_list_config, hydrated_messages=messages
         )
