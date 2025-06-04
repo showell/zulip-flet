@@ -1,4 +1,5 @@
 import flet as ft
+from mypy.util import soft_wrap
 
 
 class TopicListRow:
@@ -9,7 +10,7 @@ class TopicListRow:
                     topic.label(stream_table=stream_table),
                     color=ft.Colors.BLACK,
                     size=12,
-                    selectable=True,
+                    width=width,
                 ),
             ]
         )
