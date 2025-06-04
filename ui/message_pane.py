@@ -1,31 +1,14 @@
 import flet as ft
-from message_row import MessageRow
+from message_list import MessageList
 
 
 class MessagePane:
     def __init__(self, *, controller, width):
-        self.list_view = ft.ListView([])
-
-        self.control = ft.Container(
-            self.list_view,
-            bgcolor=ft.Colors.GREY_200,
-            width=width,
-            padding=10,
+        self.message_list = MessageList(controller=controller, width=width)
+        self.label = ft.Text("messages", height=40)
+        self.control = ft.Column(
+            controls=[self.label, self.message_list.control],
         )
 
-        self.controller = controller
-        self.width = width
-
     def populate_messages(self, hydrated_messages):
-        self.list_view.controls = []
-        self.list_view.update()
-
-        items = []
-
-        for message in hydrated_messages:
-            row = MessageRow(self.controller)
-            row.populate(message, width=self.width - 100)
-            items.append(row.control)
-
-        self.list_view.controls = items
-        self.list_view.update()
+        self.message_list.populate_messages(hydrated_messages)
