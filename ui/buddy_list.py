@@ -3,11 +3,11 @@ from buddy_list_row import BuddyListRow
 
 
 class BuddyList:
-    def __init__(self, *, controller):
+    def __init__(self, *, controller, width):
         self.list_view = ft.ListView([], expand=True)
         self.control = ft.Container(
             self.list_view,
-            width=350,
+            width=width,
             padding=10,
             expand=True,
         )

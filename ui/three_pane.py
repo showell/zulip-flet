@@ -8,9 +8,9 @@ from topic_list import TopicList
 class ThreePane:
     def __init__(self, service):
         self.service = service
-        self.message_pane = MessagePane(controller=self, width=550)
-        self.buddy_list = BuddyList(controller=self)
         self.topic_list = TopicList(controller=self, width=275)
+        self.message_pane = MessagePane(controller=self, width=550)
+        self.buddy_list = BuddyList(controller=self, width=250)
 
         self.control = ft.Row(
             [

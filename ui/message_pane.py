@@ -14,6 +14,7 @@ class MessagePane:
         )
 
         self.controller = controller
+        self.width = width
 
     def populate_messages(self, hydrated_messages):
         self.list_view.controls = []
@@ -23,7 +24,7 @@ class MessagePane:
 
         for message in hydrated_messages:
             row = MessageRow(self.controller)
-            row.populate(message, width=600)
+            row.populate(message, width=self.width - 100)
             items.append(row.control)
 
         self.list_view.controls = items
