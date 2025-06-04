@@ -17,7 +17,7 @@ class TopicList:
         items = []
         topics = service.get_sorted_topics()
         for topic in topics:
-            row = TopicListRow(topic, controller=self.controller)
+            row = TopicListRow(topic, controller=self.controller, stream_table=service.database.stream_table)
             items.append(row.control)
 
         self.list_view.controls = items
