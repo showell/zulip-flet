@@ -12,6 +12,7 @@ class TopicList:
             expand=True,
         )
         self.controller = controller
+        self.width = width
 
     def populate(self, service):
         items = []
@@ -21,6 +22,7 @@ class TopicList:
                 topic,
                 controller=self.controller,
                 stream_table=service.database.stream_table,
+                width=self.width - 20,
             )
             items.append(row.control)
 
