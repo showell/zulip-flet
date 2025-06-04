@@ -33,8 +33,8 @@ class ThreePane:
         messages = await self.service.get_messages_sent_by_user(user)
         self.message_pane.populate_messages(messages)
 
-    async def populate_for_topic(self, address):
-        messages = await self.service.get_messages_for_address(topic)
+    async def populate_for_topic(self, topic):
+        messages = await self.service.get_messages_for_topic(topic)
         self.message_pane.populate_messages(messages)
 
     async def populate_for_address(self, address):

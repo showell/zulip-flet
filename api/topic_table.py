@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from topic import Topic
 from stream_table import StreamTable
 
+
 class TopicTable(BaseModel):
     id_seq: int = 0
     get_id_dict: dict[str, int] = {}
