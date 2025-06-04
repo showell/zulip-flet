@@ -15,7 +15,7 @@ REGISTER_OPTIONS = dict(
     user_list_incomplete=json.dumps(True),
 )
 
-NUM_MESSAGES = 5_000
+MESSAGE_BATCH_SIZE = 5_000
 
 
 @dataclass
@@ -31,7 +31,7 @@ async def fetch_and_populate_messages(zulip_api: ZulipApi, database: Database) -
     print("FETCH MESSAGES (recent)")
     params = dict(
         anchor="newest",
-        num_before=NUM_MESSAGES,
+        num_before=MESSAGE_BATCH_SIZE,
         client_gravatar=json.dumps(False),
         apply_markdown=json.dumps(False),
     )
