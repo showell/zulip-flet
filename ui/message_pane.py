@@ -4,7 +4,7 @@ from message_row import MessageRow
 
 class MessagePane:
     def __init__(self, controller):
-        self.list_view = ft.ListView([], auto_scroll=True)
+        self.list_view = ft.ListView([])
 
         self.control = ft.Container(
             self.list_view,

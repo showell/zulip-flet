@@ -8,7 +8,7 @@ class BuddyListRow:
         item = ft.Row(
             [
                 avatar,
-                ft.Text(user.name, color=ft.Colors.BLACK, size=15, selectable=True),
+                ft.Text(user.name, color=ft.Colors.BLACK, size=15),
             ]
         )
 
