@@ -15,7 +15,7 @@ REGISTER_OPTIONS = dict(
     user_list_incomplete=json.dumps(True),
 )
 
-NUM_MESSAGES = 3000
+NUM_MESSAGES = 5_000
 
 
 @dataclass

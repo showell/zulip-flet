@@ -41,11 +41,18 @@ class ZulipApi:
     async def GET_json(
         self, url_ending: str, params: dict[str, Any]
     ) -> AsyncGenerator[Any, None]:
-        async with self.get(url_ending, params) as response:
-            assert response.status == 200
-            data = await response.json()
-            assert data["result"] == "success"
-            yield data
+        for _ in range(5):
+            async with self.get(url_ending, params) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    assert data["result"] == "success"
+                    yield data
+                    return
+                else:
+                    print(response.status)
+                    print(response.text)
+                    print(await response.json())
+                    raise Exception("invalid response")
 
     async def process_events(
         self, *, event_info: EventInfo, callback: Callable[[dict[str, object]], None]
