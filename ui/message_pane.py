@@ -17,7 +17,9 @@ class MessagePane:
             sender_dict[sender.id] = sender
 
         participants = sorted(sender_dict.values(), key=lambda u: u.name)
-        self.header.populate(message_list_config=message_list_config, participants=participants)
+        self.header.populate(
+            message_list_config=message_list_config, participants=participants
+        )
         self.message_list.populate_messages(hydrated_messages, message_list_config)
         self.control.controls = [self.header.control, self.message_list.control]
         self.control.update()
