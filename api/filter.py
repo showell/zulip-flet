@@ -1,6 +1,13 @@
 from address import Address
 from message import Message
-from topic import Topic
+
+
+class DirectMessageFilter:
+    def __init__(self, *, user_id: int) -> None:
+        self.user_id = user_id
+
+    def get_rows(self, all_messages: list[Message]) -> list[Message]:
+        return [m for m in all_messages if self.user_id in m.address.user_ids]
 
 
 class SentByFilter:
@@ -12,7 +19,7 @@ class SentByFilter:
 
 
 class TopicFilter:
-    def __init__(self, topic_id: int) -> None:
+    def __init__(self, *, topic_id: int) -> None:
         self.topic_id = topic_id
 
     def get_rows(self, all_messages: list[Message]) -> list[Message]:

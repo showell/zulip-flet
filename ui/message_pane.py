@@ -6,7 +6,7 @@ from message_pane_header import MessagePaneHeader
 class MessagePane:
     def __init__(self, *, controller, width):
         self.message_list = MessageList(controller=controller, width=width)
-        self.header = MessagePaneHeader()
+        self.header = MessagePaneHeader(controller=controller)
         self.control = ft.Column()
         self.control.controls = [self.header.control, self.message_list.control]
 

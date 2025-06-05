@@ -39,6 +39,14 @@ class ThreePane:
             message_list_config=message_list_config, hydrated_messages=messages
         )
 
+    async def populate_for_direct_message(self, user):
+        messages = await self.service.get_direct_messages_for_user(user)
+        label = f"DMs with {user.name}"
+        message_list_config = MessageListConfig(label=label, show_sender=True)
+        self.message_pane.populate_messages(
+            message_list_config=message_list_config, hydrated_messages=messages
+        )
+
     async def populate_for_topic(self, topic):
         messages = await self.service.get_messages_for_topic(topic)
         label = topic.label(stream_table=self.service.database.stream_table)

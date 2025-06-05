@@ -2,7 +2,7 @@ import data_layer
 from database import Database
 from address import Address
 from deferred_user import DeferredUserFactory, DeferredUserHelper
-from filter import AddressFilter, SentByFilter, TopicFilter
+from filter import AddressFilter, DirectMessageFilter, SentByFilter, TopicFilter
 from message import Message
 from topic import Topic
 from user import User
@@ -40,6 +40,11 @@ class Service:
         messages = SentByFilter(user.id).get_rows(all_messages)
         return await self._get_hydrated_messages(messages)
 
+    async def get_direct_messages_for_user(self, user: User) -> list[HydratedMessage]:
+        all_messages = self.database.message_table.get_rows()
+        messages = DirectMessageFilter(user_id=user.id).get_rows(all_messages)
+        return await self._get_hydrated_messages(messages)
+
     async def get_messages_for_address(self, address: Address) -> list[HydratedMessage]:
         all_messages = self.database.message_table.get_rows()
         messages = AddressFilter(address).get_rows(all_messages)
@@ -48,7 +53,7 @@ class Service:
     async def get_messages_for_topic(self, topic: Topic) -> list[HydratedMessage]:
         all_messages = self.database.message_table.get_rows()
         topic_id = self.database.topic_table.get_id(topic)
-        messages = TopicFilter(topic_id).get_rows(all_messages)
+        messages = TopicFilter(topic_id=topic_id).get_rows(all_messages)
         return await self._get_hydrated_messages(messages)
 
     async def _get_hydrated_messages(
