@@ -15,8 +15,8 @@ class BuddyList:
 
     def populate(self, service):
         items = []
-        users = service.get_local_users()
-        for user in sorted(users, key=lambda u: u.name):
+        users = service.get_sorted_local_users()
+        for user in users:
             row = BuddyListRow(user, controller=self.controller)
             items.append(row.control)
 

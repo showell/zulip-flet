@@ -24,8 +24,11 @@ class Service:
             user_dict[user_id] = self.database.user_table.get_row(user_id)
         return user_dict
 
-    def get_local_users(self) -> list[User]:
-        return self.database.user_table.get_rows()
+    def get_sorted_local_users(self) -> list[User]:
+        users = self.database.user_table.get_rows()
+        return sorted(
+            users, key=lambda u: (u.id != self.database.current_user_id, u.name)
+        )
 
     def get_sorted_topics(self):
         return self.database.topic_table.get_sorted_rows(
