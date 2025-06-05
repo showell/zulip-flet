@@ -18,7 +18,7 @@ class MessageRow:
 
         item = ft.Row(
             controls=[
-                ft.Image(src=sender.avatar_url, height=30),
+                ft.Image(src=sender.avatar_url, tooltip=sender.name, height=30),
                 ft.Column(
                     controls=[
                         ft.Row(
