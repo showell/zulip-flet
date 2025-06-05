@@ -22,7 +22,7 @@ class TopicList:
                 topic,
                 controller=self.controller,
                 stream_table=service.database.stream_table,
-                width=self.width - 20,
+                width=self.width - 30,
             )
             items.append(row.control)
 
