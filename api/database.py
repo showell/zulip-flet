@@ -9,6 +9,7 @@ from user_table import UserTable
 
 
 class Database(BaseModel):
+    current_user_id: int
     message_table: MessageTable
     user_table: UserTable
     stream_table: StreamTable
@@ -17,6 +18,7 @@ class Database(BaseModel):
     @staticmethod
     def create_empty_database() -> "Database":
         return Database(
+            current_user_id=0,
             message_table=MessageTable(),
             user_table=UserTable(),
             stream_table=StreamTable(),
@@ -43,7 +45,7 @@ class Database(BaseModel):
                 self.stream_table.insert(row)
 
     def populate_users(
-        self, host: str, raw_realm_users: list[dict[str, object]]
+        self, *, email: str, host: str, raw_realm_users: list[dict[str, object]]
     ) -> None:
         realm_user_dict = {user["user_id"]: user for user in raw_realm_users}
 
@@ -58,6 +60,9 @@ class Database(BaseModel):
         for user_id in user_ids:
             if user_id in realm_user_dict:
                 realm_user = realm_user_dict[user_id]
+                if realm_user["delivery_email"] == email:
+                    self.current_user_id = user_id
+                    print("USER_ID", user_id)
                 row = User.from_raw(host, realm_user)
                 self.user_table.insert(row)
             else:

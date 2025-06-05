@@ -40,7 +40,9 @@ async def populate_database(
     await fetch_and_populate_messages(zulip_api, database)
 
     # Make sure messages are already populated for these
-    database.populate_users(HOST, register_info.realm_users)
+    database.populate_users(
+        email=USER_NAME, host=HOST, raw_realm_users=register_info.realm_users
+    )
     database.populate_streams(register_info.streams)
 
     return database
