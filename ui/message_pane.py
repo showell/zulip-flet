@@ -11,7 +11,13 @@ class MessagePane:
         self.control.controls = [self.header.control, self.message_list.control]
 
     def populate_messages(self, *, message_list_config, hydrated_messages):
-        self.header.populate(message_list_config=message_list_config)
+        sender_dict = dict()
+        for m in hydrated_messages:
+            sender = m.deferred_sender.full_object()
+            sender_dict[sender.id] = sender
+
+        participants = sorted(sender_dict.values(), key=lambda u: u.name)
+        self.header.populate(message_list_config=message_list_config, participants=participants)
         self.message_list.populate_messages(hydrated_messages, message_list_config)
         self.control.controls = [self.header.control, self.message_list.control]
         self.control.update()

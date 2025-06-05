@@ -3,12 +3,12 @@ import flet as ft
 
 class BuddyListRow:
     def __init__(self, user, *, controller):
-        avatar = ft.Container(ft.Image(src=user.avatar_url, height=15))
+        avatar = ft.Container(ft.Image(src=user.avatar_url, height=13))
 
         item = ft.Row(
             [
                 avatar,
-                ft.Text(user.name, color=ft.Colors.BLACK, size=15),
+                ft.Text(user.name, color=ft.Colors.BLACK, size=13),
             ]
         )
 
