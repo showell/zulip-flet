@@ -63,5 +63,3 @@ class Database(BaseModel):
             else:
                 print("\n\nUNKNOWN USER:", user_id)
                 # TODO: grab system bots and mentioned users
-
-        print(sorted(user.name for user in self.user_table.get_rows()))

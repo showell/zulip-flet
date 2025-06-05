@@ -64,7 +64,7 @@ async def get_database() -> Database:
     with open(fn, encoding="utf8") as database_file:
         db_json = database_file.read()
     database = Database.model_validate_json(db_json)
-    print("data loaded")
+    print(f"cached data loaded from {fn}")
     return database
 
 

@@ -4,6 +4,13 @@ from topic_table import TopicTable
 from address import Address
 
 
+def fix_content(content: str) -> str:
+    host = "https://chat.zulip.org"
+    if "/user_uploads" in content:
+        content = content.replace("/user_uploads", host + "/user_uploads")
+    return content
+
+
 class Message(BaseModel):
     id: int
     sender_id: int
@@ -27,12 +34,14 @@ class Message(BaseModel):
             type=raw_message["type"], topic_id=topic_id, user_ids=user_ids
         )
 
+        content = fix_content(raw_message["content"])
+
         return Message(
             id=raw_message["id"],
             address=address,
             sender_id=raw_message["sender_id"],
             timestamp=raw_message["timestamp"],
-            content=raw_message["content"],
+            content=content,
         )
 
     def get_stream_id(self, topic_table: TopicTable) -> int:
