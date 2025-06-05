@@ -41,6 +41,6 @@ class MessageRow:
         self.control = ft.Container(
             item,
             border=ft.border.all(1, ft.Colors.GREY_200),
-            padding=5,
+            padding=7,
             expand=True,
         )
