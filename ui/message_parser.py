@@ -1,12 +1,22 @@
 from lxml import etree
+from pydantic import BaseModel
 
+class BaseNode(BaseModel):
+    pass
 
-def get_text(elem):
+class DumbNode(BaseNode):
+    text: str
+    children: list[BaseNode]
+
+    def as_text(self):
+        return self.text + "".join(c.as_text() for c in self.children)
+
+def get_node(elem):
     text = elem.text or ""
-    text += "".join(get_text(c) for c in elem)
-    return text
+    children = [get_node(c) for c in elem]
+    return DumbNode(text=text, children=children)
 
 
 def text_content(html):
     root = etree.HTML("<html>" + html + "</html>")
-    return get_text(root)
+    return "raw: " + get_node(root).as_text()
