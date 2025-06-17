@@ -16,7 +16,7 @@ async def fetch_and_populate_messages(zulip_api: ZulipApi, database: Database) -
         anchor="newest",
         num_before=MESSAGE_BATCH_SIZE,
         client_gravatar=json.dumps(False),
-        apply_markdown=json.dumps(False),
+        apply_markdown=json.dumps(True),
     )
     async with zulip_api.GET_json("messages", params) as data:
         database.populate_messages(data["messages"])

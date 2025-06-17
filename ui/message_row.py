@@ -24,12 +24,12 @@ class MessageRow:
                         ft.Row(
                             controls=[info],
                         ),
-                        ft.Markdown(
+                        ft.Text(
                             hydrated_message.content,
                             selectable=True,
                             expand=True,
                             width=width,
-                            auto_follow_links=True,
+                            # auto_follow_links=True,
                         ),
                     ]
                 ),
