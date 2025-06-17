@@ -1,6 +1,11 @@
 import flet as ft
 from address_link import AddressLink
+from lxml import etree
 
+
+def text_content(html):
+    root = etree.HTML("<html>" + html + "</html>")
+    return "p" + etree.tostring(root).decode("utf8")
 
 class MessageRow:
     def __init__(self, *, controller, message_list_config):
@@ -16,6 +21,8 @@ class MessageRow:
         else:
             info = address_link.control
 
+        content = text_content(hydrated_message.content)
+
         item = ft.Row(
             controls=[
                 ft.Image(src=sender.avatar_url, tooltip=sender.name, height=30),
@@ -25,7 +32,7 @@ class MessageRow:
                             controls=[info],
                         ),
                         ft.Text(
-                            hydrated_message.content,
+                            content,
                             selectable=True,
                             expand=True,
                             width=width,
