@@ -2,6 +2,7 @@ import flet as ft
 from address_link import AddressLink
 from message_parser import text_content
 
+
 class MessageRow:
     def __init__(self, *, controller, message_list_config):
         self.controller = controller
