@@ -1,11 +1,6 @@
 import flet as ft
 from address_link import AddressLink
-from lxml import etree
-
-
-def text_content(html):
-    root = etree.HTML("<html>" + html + "</html>")
-    return "p" + etree.tostring(root).decode("utf8")
+from message_parser import text_content
 
 class MessageRow:
     def __init__(self, *, controller, message_list_config):
