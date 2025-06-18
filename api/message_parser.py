@@ -88,6 +88,13 @@ class StrongNode(ContainerNode):
         return f"**{''.join(c.as_text() for c in self.children)}**"
 
 
+class OrderedListNode(ContainerNode):
+    def as_text(self) -> str:
+        return "".join(
+            f"\n    {i}. " + c.as_text() for i, c in enumerate(self.children)
+        )
+
+
 class UnorderedListNode(ContainerNode):
     def as_text(self) -> str:
         return "".join("\n    - " + c.as_text() for c in self.children)
@@ -176,6 +183,7 @@ def get_node(elem: etree._Element) -> BaseNode:
         code=CodeNode,
         em=EmNode,
         li=ListItemNode,
+        ol=OrderedListNode,
         p=ParagraphNode,
         strong=StrongNode,
         ul=UnorderedListNode,
