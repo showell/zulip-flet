@@ -56,6 +56,13 @@ class PNode(BaseNode):
         return " ".join(c.as_text() for c in self.children) + "\n\n"
 
 
+class ULNode(BaseNode):
+    children: list[BaseNode]
+
+    def as_text(self) -> str:
+        return "".join("\n    - " + c.as_text() for c in self.children)
+
+
 class UserMentionNode(BaseNode):
     name: str
     user_id: str
@@ -120,6 +127,9 @@ def get_node(elem: etree._Element) -> BaseNode:
         if elem_class == "codehilite":
             return get_code_block_node(elem)
         return get_raw_node(elem)
+    elif elem.tag == "ul":
+        children = [get_node(c) for c in elem]
+        return ULNode(children=children)
     elif elem.tag == "span":
         elem_class = elem.get("class")
         if elem_class == "user-mention":
