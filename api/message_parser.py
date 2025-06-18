@@ -16,17 +16,20 @@ class RawNode(BaseNode):
         return self.text
 
 
-class BlockQuoteNode(BaseNode):
+class ContainerNode(BaseNode):
     children: list[BaseNode]
 
+    def as_text(self) -> str:
+        return " ".join(c.as_text() for c in self.children)
+
+
+class BlockQuoteNode(ContainerNode):
     def as_text(self) -> str:
         content = "".join(c.as_text() for c in self.children)
         return f"\n-----\n{content}\n-----\n"
 
 
-class BodyNode(BaseNode):
-    children: list[BaseNode]
-
+class BodyNode(ContainerNode):
     def as_text(self) -> str:
         return "".join(c.as_text() for c in self.children)
 
@@ -43,34 +46,24 @@ class TextNode(BaseNode):
     text: str
 
     def as_text(self) -> str:
-        print("use", self.text)
         return self.text
 
 
-class ListItemNode(BaseNode):
-    children: list[BaseNode]
-
-    def as_text(self) -> str:
-        return " ".join(c.as_text() for c in self.children)
+class ListItemNode(ContainerNode):
+    pass
 
 
-class ParagraphNode(BaseNode):
-    children: list[BaseNode]
-
+class ParagraphNode(ContainerNode):
     def as_text(self) -> str:
         return " ".join(c.as_text() for c in self.children) + "\n\n"
 
 
-class StrongNode(BaseNode):
-    children: list[BaseNode]
-
+class StrongNode(ContainerNode):
     def as_text(self) -> str:
         return f"**{''.join(c.as_text() for c in self.children)}**"
 
 
-class UnorderedListNode(BaseNode):
-    children: list[BaseNode]
-
+class UnorderedListNode(ContainerNode):
     def as_text(self) -> str:
         return "".join("\n    - " + c.as_text() for c in self.children)
 
@@ -102,6 +95,12 @@ def get_raw_node(elem: etree._Element) -> RawNode:
     return RawNode(text=etree.tostring(elem, with_tail=False).decode("utf8"))
 
 
+def get_user_mention_node(elem: etree._Element, silent: bool) -> UserMentionNode:
+    name = elem.text or ""
+    user_id = elem.get("data-user-id") or ""
+    return UserMentionNode(name=name, user_id=user_id, silent=silent)
+
+
 def get_child_nodes(elem: etree._Element) -> list[BaseNode]:
     children: list[BaseNode] = []
     if elem.text:
@@ -118,28 +117,21 @@ def get_child_nodes(elem: etree._Element) -> list[BaseNode]:
     return children
 
 
-def get_user_mention_node(elem: etree._Element, silent: bool) -> UserMentionNode:
-    name = elem.text or ""
-    user_id = elem.get("data-user-id") or ""
-    return UserMentionNode(name=name, user_id=user_id, silent=silent)
-
-
 def get_node(elem: etree._Element) -> BaseNode:
     if elem.tag == "html":
         return get_node(elem[0])
 
-    if elem.tag == "body":
-        return BodyNode(children=get_child_nodes(elem))
-    if elem.tag == "blockquote":
-        return BlockQuoteNode(children=get_child_nodes(elem))
-    if elem.tag == "li":
-        return ListItemNode(children=get_child_nodes(elem))
-    if elem.tag == "p":
-        return ParagraphNode(children=get_child_nodes(elem))
-    if elem.tag == "strong":
-        return StrongNode(children=get_child_nodes(elem))
-    if elem.tag == "ul":
-        return UnorderedListNode(children=get_child_nodes(elem))
+    simple_nodes: dict[str, type[ContainerNode]] = dict(
+        body=BodyNode,
+        blockquote=BlockQuoteNode,
+        li=ListItemNode,
+        p=ParagraphNode,
+        strong=StrongNode,
+        ul=UnorderedListNode,
+    )
+
+    if elem.tag in simple_nodes:
+        return simple_nodes[elem.tag](children=get_child_nodes(elem))
 
     if elem.tag == "div":
         elem_class = elem.get("class")
