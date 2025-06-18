@@ -39,7 +39,15 @@ class PNode(BaseNode):
     children: list[BaseNode]
 
     def as_text(self):
-        return "".join(c.as_text() for c in self.children) + "\n\n"
+        return " ".join(c.as_text() for c in self.children) + "\n\n"
+
+
+class UserMentionNode(BaseNode):
+    name: str
+    user_id: str
+
+    def as_text(self):
+        return f"[ {self.name} {self.user_id} ]"
 
 
 def get_p_node(elem):
@@ -59,6 +67,12 @@ def get_p_node(elem):
     return PNode(children=children)
 
 
+def get_user_mention_node(elem):
+    name = elem.text
+    user_id = elem.get("data-user-id")
+    return UserMentionNode(name=name, user_id=user_id)
+
+
 def get_node(elem):
     text = elem.text or ""
     children = [get_node(c) for c in elem]
@@ -68,6 +82,10 @@ def get_node(elem):
         return BodyNode(children=children)
     elif elem.tag == "p":
         return get_p_node(elem)
+    elif elem.tag == "span":
+        if elem.get("class") == "user-mention":
+            return get_user_mention_node(elem)
+        return DumbNode(tag=elem.tag, text=text, children=children)
     else:
         return DumbNode(tag=elem.tag, text=text, children=children)
 
