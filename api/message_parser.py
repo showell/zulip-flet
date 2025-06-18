@@ -17,6 +17,15 @@ class RawNode(BaseNode):
         return self.text
 
 
+class AnchorNode(BaseNode):
+    href: str
+    children: list[BaseNode]
+
+    def as_text(self) -> str:
+        content = "".join(c.as_text() for c in self.children)
+        return f"[{content}]({self.href})"
+
+
 class BreakNode(BaseNode):
     def as_text(self) -> str:
         return "\n"
@@ -136,6 +145,12 @@ def get_child_nodes(elem: etree._Element) -> list[BaseNode]:
 def get_node(elem: etree._Element) -> BaseNode:
     if elem.tag == "html":
         return get_node(elem[0])
+
+    if elem.tag == "a" and not elem.get("class"):
+        assert len(elem.attrib) == 1
+        href = elem.get("href")
+        assert href is not None
+        return AnchorNode(href=href, children=get_child_nodes(elem))
 
     if elem.tag == "br":
         assert len(elem.attrib) == 0
