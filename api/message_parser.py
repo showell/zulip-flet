@@ -31,6 +31,14 @@ class BodyNode(BaseNode):
         return "".join(c.as_text() for c in self.children)
 
 
+class CodeBlockNode(BaseNode):
+    lang: str
+    content: str
+
+    def as_text(self) -> str:
+        return f"\n~~~~~~~~ lang: {self.lang}\n{self.content}~~~~~~~~\n"
+
+
 class TextNode(BaseNode):
     text: str
 
@@ -55,6 +63,20 @@ class UserMentionNode(BaseNode):
 
     def as_text(self) -> str:
         return f"[ {'_' if self.silent else ''}{self.name} {self.user_id} ]"
+
+
+def text_content(elem: etree._Element) -> str:
+    s = elem.text or ""
+    for c in elem:
+        s += text_content(c)
+        s += c.tail or ""
+    return s
+
+
+def get_code_block_node(elem: etree._Element) -> CodeBlockNode:
+    lang = elem.get("data-code-language") or "NOT SPECIFIED"
+    content = text_content(elem)
+    return CodeBlockNode(lang=lang, content=content)
 
 
 def get_raw_node(elem: etree._Element) -> RawNode:
@@ -93,11 +115,14 @@ def get_node(elem: etree._Element) -> BaseNode:
         return BodyNode(children=children)
     elif elem.tag == "p":
         return get_p_node(elem)
+    elif elem.tag == "div":
+        elem_class = elem.get("class")
+        if elem_class == "codehilite":
+            return get_code_block_node(elem)
+        return get_raw_node(elem)
     elif elem.tag == "span":
         elem_class = elem.get("class")
-        if elem_class is None:
-            return get_raw_node(elem)
-        elif elem_class == "user-mention":
+        if elem_class == "user-mention":
             return get_user_mention_node(elem, silent=False)
         elif elem_class == "user-mention silent":
             return get_user_mention_node(elem, silent=True)
@@ -109,6 +134,6 @@ def get_node(elem: etree._Element) -> BaseNode:
         return get_raw_node(elem)
 
 
-def text_content(html: str) -> str:
+def message_text(html: str) -> str:
     root = etree.HTML("<body>" + html + "</body>")
     return get_node(root).as_text()

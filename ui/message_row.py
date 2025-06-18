@@ -1,6 +1,6 @@
 import flet as ft
 from address_link import AddressLink
-from api.message_parser import text_content
+from api.message_parser import message_text
 
 
 class MessageRow:
@@ -17,7 +17,7 @@ class MessageRow:
         else:
             info = address_link.control
 
-        content = text_content(hydrated_message.content)
+        content = message_text(hydrated_message.content)
 
         item = ft.Row(
             controls=[
