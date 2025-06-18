@@ -34,12 +34,22 @@ class BodyNode(ContainerNode):
         return "".join(c.as_text() for c in self.children)
 
 
+class CodeNode(ContainerNode):
+    def as_text(self) -> str:
+        return f"`{''.join(c.as_text() for c in self.children)}`"
+
+
 class CodeBlockNode(BaseNode):
     lang: str
     content: str
 
     def as_text(self) -> str:
         return f"\n~~~~~~~~ lang: {self.lang}\n{self.content}~~~~~~~~\n"
+
+
+class EmNode(ContainerNode):
+    def as_text(self) -> str:
+        return f"*{''.join(c.as_text() for c in self.children)}*"
 
 
 class TextNode(BaseNode):
@@ -124,6 +134,8 @@ def get_node(elem: etree._Element) -> BaseNode:
     simple_nodes: dict[str, type[ContainerNode]] = dict(
         body=BodyNode,
         blockquote=BlockQuoteNode,
+        code=CodeNode,
+        em=EmNode,
         li=ListItemNode,
         p=ParagraphNode,
         strong=StrongNode,
