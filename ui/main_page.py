@@ -10,6 +10,8 @@ async def main(page: ft.Page):
     page.horizontal_alignment = "center"
     page.window.height -= 50
 
+    page.theme = ft.Theme(scrollbar_theme=ft.ScrollbarTheme(thumb_visibility=True))
+
     text = ft.Text(
         value="Loading",
         color=ft.Colors.RED,
