@@ -2,12 +2,15 @@ from lxml import etree
 from pydantic import BaseModel
 
 
-def enclose(tag, inners):
+def enclose(tag: str, inners: str) -> str:
     return f"<{tag}>{inners}</{tag}>"
 
 
 class BaseNode(BaseModel):
     pass
+
+    def as_text(self) -> str:
+        return "UNKNOWN"
 
 
 class DumbNode(BaseNode):
@@ -15,7 +18,7 @@ class DumbNode(BaseNode):
     text: str
     children: list[BaseNode]
 
-    def as_text(self):
+    def as_text(self) -> str:
         return enclose(
             self.tag, self.text + "".join(c.as_text() for c in self.children)
         )
@@ -24,21 +27,21 @@ class DumbNode(BaseNode):
 class BodyNode(BaseNode):
     children: list[BaseNode]
 
-    def as_text(self):
+    def as_text(self) -> str:
         return "".join(c.as_text() for c in self.children)
 
 
 class TextNode(BaseNode):
     text: str
 
-    def as_text(self):
+    def as_text(self) -> str:
         return self.text
 
 
 class PNode(BaseNode):
     children: list[BaseNode]
 
-    def as_text(self):
+    def as_text(self) -> str:
         return " ".join(c.as_text() for c in self.children) + "\n\n"
 
 
@@ -47,12 +50,12 @@ class UserMentionNode(BaseNode):
     user_id: str
     silent: bool
 
-    def as_text(self):
+    def as_text(self) -> str:
         return f"[ {'_' if self.silent else ''}{self.name} {self.user_id} ]"
 
 
-def get_p_node(elem):
-    children = []
+def get_p_node(elem: etree._Element) -> PNode:
+    children: list[BaseNode] = []
     if elem.text:
         text = elem.text.strip()
         if text:
@@ -68,13 +71,13 @@ def get_p_node(elem):
     return PNode(children=children)
 
 
-def get_user_mention_node(elem, silent):
-    name = elem.text
-    user_id = elem.get("data-user-id")
+def get_user_mention_node(elem: etree._Element, silent: bool) -> UserMentionNode:
+    name = elem.text or ""
+    user_id = elem.get("data-user-id") or ""
     return UserMentionNode(name=name, user_id=user_id, silent=silent)
 
 
-def get_node(elem):
+def get_node(elem: etree._Element) -> BaseNode:
     text = elem.text or ""
     children = [get_node(c) for c in elem]
     if elem.tag == "html":
@@ -96,6 +99,6 @@ def get_node(elem):
         return DumbNode(tag=elem.tag, text=text, children=children)
 
 
-def text_content(html):
+def text_content(html: str) -> str:
     root = etree.HTML("<body>" + html + "</body>")
     return get_node(root).as_text()

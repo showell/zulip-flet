@@ -1,6 +1,6 @@
 import flet as ft
 from address_link import AddressLink
-from message_parser import text_content
+from api.message_parser import text_content
 
 
 class MessageRow:
