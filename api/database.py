@@ -1,10 +1,10 @@
-from pydantic import BaseModel
 from message import Message
-from stream import Stream
-from user import User
 from message_table import MessageTable
+from pydantic import BaseModel
+from stream import Stream
 from stream_table import StreamTable
 from topic_table import TopicTable
+from user import User
 from user_table import UserTable
 
 

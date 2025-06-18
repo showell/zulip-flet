@@ -1,8 +1,7 @@
 import flet as ft
-
 from buddy_list import BuddyList
-from message_pane import MessagePane
 from message_list_config import MessageListConfig
+from message_pane import MessagePane
 from topic_list import TopicList
 
 

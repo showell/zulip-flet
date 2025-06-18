@@ -1,5 +1,6 @@
 import flet as ft
 from address_link import AddressLink
+
 from api.message_parser import message_text
 
 

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
-from topic import Topic
 from stream_table import StreamTable
+from topic import Topic
 
 
 class TopicTable(BaseModel):

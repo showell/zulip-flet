@@ -1,12 +1,12 @@
 import data_layer
-from database import Database
 from address import Address
+from database import Database
 from deferred_user import DeferredUserFactory, DeferredUserHelper
 from filter import AddressFilter, DirectMessageFilter, SentByFilter, TopicFilter
+from hydrated_message import HydratedMessage
 from message import Message
 from topic import Topic
 from user import User
-from hydrated_message import HydratedMessage
 
 
 class Service:

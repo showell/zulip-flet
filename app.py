@@ -1,6 +1,7 @@
 if __name__ == "__main__":
-    import flet as ft
     import sys
+
+    import flet as ft
 
     sys.path.append("api")
     sys.path.append("ui")

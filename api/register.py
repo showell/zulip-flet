@@ -1,6 +1,7 @@
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from typing import Any
+
 from zulip import ZulipApi
 
 REGISTER_OPTIONS = dict(

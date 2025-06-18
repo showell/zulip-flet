@@ -1,7 +1,8 @@
-from pydantic import BaseModel
 from typing import Any
-from topic_table import TopicTable
+
 from address import Address
+from pydantic import BaseModel
+from topic_table import TopicTable
 
 
 def fix_content(content: str) -> str:

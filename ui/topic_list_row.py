@@ -1,5 +1,4 @@
 import flet as ft
-from mypy.util import soft_wrap
 
 
 class TopicListRow:

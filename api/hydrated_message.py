@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from address import Address
 from database import Database
 from deferred_user import DeferredUser, DeferredUserFactory

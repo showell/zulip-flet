@@ -1,6 +1,7 @@
+from abc import ABC, abstractmethod
+
 from lxml import etree
 from pydantic import BaseModel
-from abc import ABC, abstractmethod
 
 
 class BaseNode(BaseModel, ABC):
@@ -131,20 +132,6 @@ def get_node(elem: etree._Element) -> BaseNode:
     if elem.tag == "html":
         return get_node(elem[0])
 
-    simple_nodes: dict[str, type[ContainerNode]] = dict(
-        body=BodyNode,
-        blockquote=BlockQuoteNode,
-        code=CodeNode,
-        em=EmNode,
-        li=ListItemNode,
-        p=ParagraphNode,
-        strong=StrongNode,
-        ul=UnorderedListNode,
-    )
-
-    if elem.tag in simple_nodes:
-        return simple_nodes[elem.tag](children=get_child_nodes(elem))
-
     if elem.tag == "div":
         elem_class = elem.get("class")
         if elem_class == "codehilite":
@@ -159,6 +146,22 @@ def get_node(elem: etree._Element) -> BaseNode:
             return get_user_mention_node(elem, silent=True)
         return get_raw_node(elem)
 
+    simple_nodes: dict[str, type[ContainerNode]] = dict(
+        body=BodyNode,
+        blockquote=BlockQuoteNode,
+        code=CodeNode,
+        em=EmNode,
+        li=ListItemNode,
+        p=ParagraphNode,
+        strong=StrongNode,
+        ul=UnorderedListNode,
+    )
+
+    if elem.tag in simple_nodes:
+        assert len(elem.attrib.keys()) == 0
+        return simple_nodes[elem.tag](children=get_child_nodes(elem))
+
+    print("UNHANDLED", elem.tag)
     return get_raw_node(elem)
 
 

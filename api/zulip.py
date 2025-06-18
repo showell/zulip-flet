@@ -1,9 +1,9 @@
 from contextlib import asynccontextmanager
 from dataclasses import asdict
-from event_info import EventInfo
 from typing import Any, AsyncGenerator, Callable
 
 import aiohttp
+from event_info import EventInfo
 
 
 class ZulipApi:

@@ -1,9 +1,10 @@
 import asyncio
 import json
-from config import HOST, USER_NAME, API_KEY
+
+from config import API_KEY, HOST, USER_NAME
 from database import Database
 from event_info import EventInfo
-from register import register, RegisterInfo
+from register import RegisterInfo, register
 from zulip import ZulipApi
 
 MESSAGE_BATCH_SIZE = 5_000

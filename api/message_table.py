@@ -1,6 +1,5 @@
-from pydantic import BaseModel
-
 from message import Message
+from pydantic import BaseModel
 
 
 class MessageTable(BaseModel):
