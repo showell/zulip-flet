@@ -45,9 +45,10 @@ class PNode(BaseNode):
 class UserMentionNode(BaseNode):
     name: str
     user_id: str
+    silent: bool
 
     def as_text(self):
-        return f"[ {self.name} {self.user_id} ]"
+        return f"[ {'_' if self.silent else ''}{self.name} {self.user_id} ]"
 
 
 def get_p_node(elem):
@@ -67,10 +68,10 @@ def get_p_node(elem):
     return PNode(children=children)
 
 
-def get_user_mention_node(elem):
+def get_user_mention_node(elem, silent):
     name = elem.text
     user_id = elem.get("data-user-id")
-    return UserMentionNode(name=name, user_id=user_id)
+    return UserMentionNode(name=name, user_id=user_id, silent=silent)
 
 
 def get_node(elem):
@@ -83,8 +84,13 @@ def get_node(elem):
     elif elem.tag == "p":
         return get_p_node(elem)
     elif elem.tag == "span":
-        if elem.get("class") == "user-mention":
-            return get_user_mention_node(elem)
+        elem_class = elem.get("class")
+        if elem_class is None:
+            return DumbNode(tag=elem.tag, text=text, children=children)
+        elif elem_class == "user-mention":
+            return get_user_mention_node(elem, silent=False)
+        elif elem_class == "user-mention silent":
+            return get_user_mention_node(elem, silent=True)
         return DumbNode(tag=elem.tag, text=text, children=children)
     else:
         return DumbNode(tag=elem.tag, text=text, children=children)
