@@ -1,12 +1,12 @@
 from lxml import etree
 from pydantic import BaseModel
+from abc import ABC, abstractmethod
 
 
-class BaseNode(BaseModel):
-    pass
-
+class BaseNode(BaseModel, ABC):
+    @abstractmethod
     def as_text(self) -> str:
-        return "UNKNOWN"
+        pass
 
 
 class RawNode(BaseNode):
