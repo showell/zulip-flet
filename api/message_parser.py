@@ -47,21 +47,28 @@ class TextNode(BaseNode):
         return self.text
 
 
-class LI_Node(BaseNode):
+class ListItemNode(BaseNode):
     children: list[BaseNode]
 
     def as_text(self) -> str:
         return " ".join(c.as_text() for c in self.children)
 
 
-class P_Node(BaseNode):
+class ParagraphNode(BaseNode):
     children: list[BaseNode]
 
     def as_text(self) -> str:
         return " ".join(c.as_text() for c in self.children) + "\n\n"
 
 
-class UL_Node(BaseNode):
+class StrongNode(BaseNode):
+    children: list[BaseNode]
+
+    def as_text(self) -> str:
+        return f"**{''.join(c.as_text() for c in self.children)}**"
+
+
+class UnorderedListNode(BaseNode):
     children: list[BaseNode]
 
     def as_text(self) -> str:
@@ -126,11 +133,13 @@ def get_node(elem: etree._Element) -> BaseNode:
     if elem.tag == "blockquote":
         return BlockQuoteNode(children=get_child_nodes(elem))
     if elem.tag == "li":
-        return LI_Node(children=get_child_nodes(elem))
+        return ListItemNode(children=get_child_nodes(elem))
     if elem.tag == "p":
-        return P_Node(children=get_child_nodes(elem))
+        return ParagraphNode(children=get_child_nodes(elem))
+    if elem.tag == "strong":
+        return StrongNode(children=get_child_nodes(elem))
     if elem.tag == "ul":
-        return UL_Node(children=get_child_nodes(elem))
+        return UnorderedListNode(children=get_child_nodes(elem))
 
     if elem.tag == "div":
         elem_class = elem.get("class")
