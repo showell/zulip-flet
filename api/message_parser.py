@@ -2,10 +2,6 @@ from lxml import etree
 from pydantic import BaseModel
 
 
-def enclose(tag: str, inners: str) -> str:
-    return f"<{tag}>{inners}</{tag}>"
-
-
 class BaseNode(BaseModel):
     pass
 
@@ -13,15 +9,11 @@ class BaseNode(BaseModel):
         return "UNKNOWN"
 
 
-class DumbNode(BaseNode):
-    tag: str
+class RawNode(BaseNode):
     text: str
-    children: list[BaseNode]
 
     def as_text(self) -> str:
-        return enclose(
-            self.tag, self.text + "".join(c.as_text() for c in self.children)
-        )
+        return self.text
 
 
 class BodyNode(BaseNode):
@@ -54,6 +46,10 @@ class UserMentionNode(BaseNode):
         return f"[ {'_' if self.silent else ''}{self.name} {self.user_id} ]"
 
 
+def get_raw_node(elem: etree._Element) -> RawNode:
+    return RawNode(text=etree.tostring(elem).decode("utf8"))
+
+
 def get_p_node(elem: etree._Element) -> PNode:
     children: list[BaseNode] = []
     if elem.text:
@@ -78,7 +74,6 @@ def get_user_mention_node(elem: etree._Element, silent: bool) -> UserMentionNode
 
 
 def get_node(elem: etree._Element) -> BaseNode:
-    text = elem.text or ""
     children = [get_node(c) for c in elem]
     if elem.tag == "html":
         return get_node(elem[0])
@@ -89,14 +84,14 @@ def get_node(elem: etree._Element) -> BaseNode:
     elif elem.tag == "span":
         elem_class = elem.get("class")
         if elem_class is None:
-            return DumbNode(tag=elem.tag, text=text, children=children)
+            return get_raw_node(elem)
         elif elem_class == "user-mention":
             return get_user_mention_node(elem, silent=False)
         elif elem_class == "user-mention silent":
             return get_user_mention_node(elem, silent=True)
-        return DumbNode(tag=elem.tag, text=text, children=children)
+        return get_raw_node(elem)
     else:
-        return DumbNode(tag=elem.tag, text=text, children=children)
+        return get_raw_node(elem)
 
 
 def text_content(html: str) -> str:
