@@ -28,12 +28,35 @@ class BodyNode(BaseNode):
         return "".join(c.as_text() for c in self.children)
 
 
-class PNode(BaseNode):
+class TextNode(BaseNode):
     text: str
+
+    def as_text(self):
+        return self.text
+
+
+class PNode(BaseNode):
     children: list[BaseNode]
 
     def as_text(self):
-        return self.text + "".join(c.as_text() for c in self.children) + "\n\n"
+        return "".join(c.as_text() for c in self.children) + "\n\n"
+
+
+def get_p_node(elem):
+    children = []
+    if elem.text:
+        text = elem.text.strip()
+        if text:
+            children.append(TextNode(text=text))
+
+    for c in elem:
+        children.append(get_node(c))
+        if c.tail:
+            text = c.tail.strip()
+            if text:
+                children.append(TextNode(text=text))
+
+    return PNode(children=children)
 
 
 def get_node(elem):
@@ -44,7 +67,7 @@ def get_node(elem):
     elif elem.tag == "body":
         return BodyNode(children=children)
     elif elem.tag == "p":
-        return PNode(text=text, children=children)
+        return get_p_node(elem)
     else:
         return DumbNode(tag=elem.tag, text=text, children=children)
 
