@@ -47,16 +47,21 @@ class TextNode(BaseNode):
         return self.text
 
 
-class PNode(BaseNode):
+class LI_Node(BaseNode):
     children: list[BaseNode]
 
     def as_text(self) -> str:
-        for c in self.children:
-            print("Yo", c.as_text())
+        return " ".join(c.as_text() for c in self.children)
+
+
+class P_Node(BaseNode):
+    children: list[BaseNode]
+
+    def as_text(self) -> str:
         return " ".join(c.as_text() for c in self.children) + "\n\n"
 
 
-class ULNode(BaseNode):
+class UL_Node(BaseNode):
     children: list[BaseNode]
 
     def as_text(self) -> str:
@@ -90,8 +95,7 @@ def get_raw_node(elem: etree._Element) -> RawNode:
     return RawNode(text=etree.tostring(elem, with_tail=False).decode("utf8"))
 
 
-def get_p_node(elem: etree._Element) -> PNode:
-    print("-------------\n", etree.tostring(elem).decode("utf8"))
+def get_child_nodes(elem: etree._Element) -> list[BaseNode]:
     children: list[BaseNode] = []
     if elem.text:
         text = elem.text.strip()
@@ -102,10 +106,9 @@ def get_p_node(elem: etree._Element) -> PNode:
         tail_text = (c.tail or "").strip()
         children.append(get_node(c))
         if tail_text:
-            print("USE", tail_text)
             children.append(TextNode(text=tail_text))
 
-    return PNode(children=children)
+    return children
 
 
 def get_user_mention_node(elem: etree._Element, silent: bool) -> UserMentionNode:
@@ -117,31 +120,33 @@ def get_user_mention_node(elem: etree._Element, silent: bool) -> UserMentionNode
 def get_node(elem: etree._Element) -> BaseNode:
     if elem.tag == "html":
         return get_node(elem[0])
-    elif elem.tag == "body":
-        children = [get_node(c) for c in elem]
-        return BodyNode(children=children)
-    elif elem.tag == "p":
-        return get_p_node(elem)
-    elif elem.tag == "div":
+
+    if elem.tag == "body":
+        return BodyNode(children=get_child_nodes(elem))
+    if elem.tag == "blockquote":
+        return BlockQuoteNode(children=get_child_nodes(elem))
+    if elem.tag == "li":
+        return LI_Node(children=get_child_nodes(elem))
+    if elem.tag == "p":
+        return P_Node(children=get_child_nodes(elem))
+    if elem.tag == "ul":
+        return UL_Node(children=get_child_nodes(elem))
+
+    if elem.tag == "div":
         elem_class = elem.get("class")
         if elem_class == "codehilite":
             return get_code_block_node(elem)
         return get_raw_node(elem)
-    elif elem.tag == "ul":
-        children = [get_node(c) for c in elem]
-        return ULNode(children=children)
-    elif elem.tag == "span":
+
+    if elem.tag == "span":
         elem_class = elem.get("class")
         if elem_class == "user-mention":
             return get_user_mention_node(elem, silent=False)
         elif elem_class == "user-mention silent":
             return get_user_mention_node(elem, silent=True)
         return get_raw_node(elem)
-    elif elem.tag == "blockquote":
-        child_nodes = [get_node(c) for c in elem]
-        return BlockQuoteNode(children=child_nodes)
-    else:
-        return get_raw_node(elem)
+
+    return get_raw_node(elem)
 
 
 def message_text(html: str) -> str:
