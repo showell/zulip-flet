@@ -17,6 +17,11 @@ class RawNode(BaseNode):
         return self.text
 
 
+class BreakNode(BaseNode):
+    def as_text(self) -> str:
+        return "\n"
+
+
 class ContainerNode(BaseNode):
     children: list[BaseNode]
 
@@ -131,6 +136,10 @@ def get_child_nodes(elem: etree._Element) -> list[BaseNode]:
 def get_node(elem: etree._Element) -> BaseNode:
     if elem.tag == "html":
         return get_node(elem[0])
+
+    if elem.tag == "br":
+        assert len(elem.attrib) == 0
+        return BreakNode()
 
     if elem.tag == "div":
         elem_class = elem.get("class")
