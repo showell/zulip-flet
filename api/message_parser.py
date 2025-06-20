@@ -1,112 +1,23 @@
-from abc import ABC, abstractmethod
-
 from lxml import etree
-from pydantic import BaseModel
-
-
-class BaseNode(BaseModel, ABC):
-    @abstractmethod
-    def as_text(self) -> str:
-        pass
-
-
-class RawNode(BaseNode):
-    text: str
-
-    def as_text(self) -> str:
-        return self.text
-
-
-class AnchorNode(BaseNode):
-    href: str
-    children: list[BaseNode]
-
-    def as_text(self) -> str:
-        content = "".join(c.as_text() for c in self.children)
-        return f"[{content}]({self.href})"
-
-
-class BreakNode(BaseNode):
-    def as_text(self) -> str:
-        return "\n"
-
-
-class ContainerNode(BaseNode):
-    children: list[BaseNode]
-
-    def as_text(self) -> str:
-        return " ".join(c.as_text() for c in self.children)
-
-
-class BlockQuoteNode(ContainerNode):
-    def as_text(self) -> str:
-        content = "".join(c.as_text() for c in self.children)
-        return f"\n-----\n{content}\n-----\n"
-
-
-class BodyNode(ContainerNode):
-    def as_text(self) -> str:
-        return "".join(c.as_text() for c in self.children)
-
-
-class CodeNode(ContainerNode):
-    def as_text(self) -> str:
-        return f"`{''.join(c.as_text() for c in self.children)}`"
-
-
-class CodeBlockNode(BaseNode):
-    lang: str
-    content: str
-
-    def as_text(self) -> str:
-        return f"\n~~~~~~~~ lang: {self.lang}\n{self.content}~~~~~~~~\n"
-
-
-class EmNode(ContainerNode):
-    def as_text(self) -> str:
-        return f"*{''.join(c.as_text() for c in self.children)}*"
-
-
-class TextNode(BaseNode):
-    text: str
-
-    def as_text(self) -> str:
-        return self.text
-
-
-class ListItemNode(ContainerNode):
-    pass
-
-
-class ParagraphNode(ContainerNode):
-    def as_text(self) -> str:
-        return " ".join(c.as_text() for c in self.children) + "\n\n"
-
-
-class StrongNode(ContainerNode):
-    def as_text(self) -> str:
-        return f"**{''.join(c.as_text() for c in self.children)}**"
-
-
-class OrderedListNode(ContainerNode):
-    def as_text(self) -> str:
-        return "".join(
-            f"\n    {i}. " + c.as_text() for i, c in enumerate(self.children)
-        )
-
-
-class UnorderedListNode(ContainerNode):
-    def as_text(self) -> str:
-        return "".join("\n    - " + c.as_text() for c in self.children)
-
-
-class UserMentionNode(BaseNode):
-    name: str
-    user_id: str
-    silent: bool
-
-    def as_text(self) -> str:
-        return f"[ {'_' if self.silent else ''}{self.name} {self.user_id} ]"
+from message_node import (
+    AnchorNode,
+    BaseNode,
+    BlockQuoteNode,
+    BodyNode,
+    BreakNode,
+    CodeBlockNode,
+    CodeNode,
+    ContainerNode,
+    EmNode,
+    ListItemNode,
+    OrderedListNode,
+    ParagraphNode,
+    RawNode,
+    StrongNode,
+    TextNode,
+    UnorderedListNode,
+    UserMentionNode,
+)
 
 
 def text_content(elem: etree._Element) -> str:
