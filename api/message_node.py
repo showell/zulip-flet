@@ -65,13 +65,14 @@ class CodeBlockNode(BaseNode):
         return f"\n~~~~~~~~ lang: {self.lang}\n{self.content}~~~~~~~~\n"
 
 
-class StreamTopicLinkNode(BaseNode):
+class StreamLinkNode(BaseNode):
     href: str
     stream_id: str
     text: str
+    has_topic: bool
 
     def as_text(self) -> str:
-        return f"[{self.text} (stream id {self.stream_id})]({self.href})"
+        return f"[{self.text} (stream id {self.stream_id}, has_topic: {self.has_topic})]({self.href})"
 
 
 class UserMentionNode(BaseNode):

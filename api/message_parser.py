@@ -13,7 +13,7 @@ from message_node import (
     OrderedListNode,
     ParagraphNode,
     RawNode,
-    StreamTopicLinkNode,
+    StreamLinkNode,
     StrongNode,
     TextNode,
     UnorderedListNode,
@@ -73,14 +73,17 @@ def get_node(elem: etree._Element) -> BaseNode:
             assert href is not None
             return AnchorNode(href=href, children=get_child_nodes(elem))
 
-        if elem_class == "stream-topic":
+        if elem_class in ["stream", "stream-topic"]:
+            has_topic = elem_class == "stream-topic"
             assert set(elem.attrib.keys()) == {"class", "data-stream-id", "href"}
             stream_id = elem.get("data-stream-id") or ""
             href = elem.get("href") or ""
             text = elem.text or ""
             assert href and stream_id and text
             assert len(list(elem.iterchildren())) == 0
-            return StreamTopicLinkNode(href=href, stream_id=stream_id, text=text)
+            return StreamLinkNode(
+                href=href, stream_id=stream_id, text=text, has_topic=has_topic
+            )
 
     if elem.tag == "br":
         assert len(elem.attrib) == 0
