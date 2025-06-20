@@ -72,7 +72,7 @@ class StreamLinkNode(BaseNode):
     has_topic: bool
 
     def as_text(self) -> str:
-        return f"[{self.text} (stream id {self.stream_id}, has_topic: {self.has_topic})]({self.href})"
+        return f"[{self.text}] ({self.href}) (stream id {self.stream_id}, has_topic: {self.has_topic})"
 
 
 class UserMentionNode(BaseNode):

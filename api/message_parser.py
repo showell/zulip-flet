@@ -39,6 +39,19 @@ def get_raw_node(elem: etree._Element) -> RawNode:
     return RawNode(text=etree.tostring(elem, with_tail=False).decode("utf8"))
 
 
+def get_stream_link_node(elem: etree._Element) -> StreamLinkNode:
+    has_topic = elem.get("class") == "stream-topic"
+    assert set(elem.attrib.keys()) == {"class", "data-stream-id", "href"}
+    stream_id = elem.get("data-stream-id") or ""
+    href = elem.get("href") or ""
+    text = elem.text or ""
+    assert href and stream_id and text
+    assert len(list(elem.iterchildren())) == 0
+    return StreamLinkNode(
+        href=href, stream_id=stream_id, text=text, has_topic=has_topic
+    )
+
+
 def get_user_mention_node(elem: etree._Element, silent: bool) -> UserMentionNode:
     name = elem.text or ""
     user_id = elem.get("data-user-id") or ""
@@ -74,16 +87,7 @@ def get_node(elem: etree._Element) -> BaseNode:
             return AnchorNode(href=href, children=get_child_nodes(elem))
 
         if elem_class in ["stream", "stream-topic"]:
-            has_topic = elem_class == "stream-topic"
-            assert set(elem.attrib.keys()) == {"class", "data-stream-id", "href"}
-            stream_id = elem.get("data-stream-id") or ""
-            href = elem.get("href") or ""
-            text = elem.text or ""
-            assert href and stream_id and text
-            assert len(list(elem.iterchildren())) == 0
-            return StreamLinkNode(
-                href=href, stream_id=stream_id, text=text, has_topic=has_topic
-            )
+            return get_stream_link_node(elem)
 
     if elem.tag == "br":
         assert len(elem.attrib) == 0
