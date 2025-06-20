@@ -90,7 +90,6 @@ def get_node(elem: etree._Element) -> BaseNode:
         elem_class = elem.get("class")
         if elem_class == "codehilite":
             return get_code_block_node(elem)
-        return get_raw_node(elem)
 
     if elem.tag == "span":
         elem_class = elem.get("class")
@@ -117,6 +116,8 @@ def get_node(elem: etree._Element) -> BaseNode:
         return simple_nodes[elem.tag](children=get_child_nodes(elem))
 
     print("UNHANDLED", elem.tag)
+    print(etree.tostring(elem))
+    print()
     return get_raw_node(elem)
 
 
