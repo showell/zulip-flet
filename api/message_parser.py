@@ -13,6 +13,7 @@ from message_node import (
     OrderedListNode,
     ParagraphNode,
     RawNode,
+    StreamTopicLinkNode,
     StrongNode,
     TextNode,
     UnorderedListNode,
@@ -64,11 +65,22 @@ def get_node(elem: etree._Element) -> BaseNode:
     if elem.tag == "html":
         return get_node(elem[0])
 
-    if elem.tag == "a" and not elem.get("class"):
-        assert len(elem.attrib) == 1
-        href = elem.get("href")
-        assert href is not None
-        return AnchorNode(href=href, children=get_child_nodes(elem))
+    if elem.tag == "a":
+        elem_class = elem.get("class")
+        if not elem_class:
+            assert len(elem.attrib) == 1
+            href = elem.get("href")
+            assert href is not None
+            return AnchorNode(href=href, children=get_child_nodes(elem))
+
+        if elem_class == "stream-topic":
+            assert set(elem.attrib.keys()) == {"class", "data-stream-id", "href"}
+            stream_id = elem.get("data-stream-id") or ""
+            href = elem.get("href") or ""
+            text = elem.text or ""
+            assert href and stream_id and text
+            assert len(list(elem.iterchildren())) == 0
+            return StreamTopicLinkNode(href=href, stream_id=stream_id, text=text)
 
     if elem.tag == "br":
         assert len(elem.attrib) == 0
