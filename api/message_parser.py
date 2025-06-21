@@ -59,6 +59,7 @@ def get_spoiler_content(elem: etree._Element) -> BaseNode:
     assert elem.get("aria-hidden") == "true"
     assert elem.text == "\n"
     content = elem[0]
+    print(etree.tostring(content))
     assert content.tail == "\n"
     content.tail = ""
     return get_node(content)

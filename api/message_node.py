@@ -70,7 +70,9 @@ class SpoilerNode(BaseNode):
     content: BaseNode
 
     def as_text(self) -> str:
-        return f"SPOILER: {self.header.as_text()}\n----{self.content}\n----\n"
+        header = self.header.as_text()
+        content = self.content.as_text()
+        return f"SPOILER: {header}\nHIDDEN:\n{content}\nENDHIDDEN\n"
 
 
 class StreamLinkNode(BaseNode):
