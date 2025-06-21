@@ -171,7 +171,6 @@ def get_node(elem: etree._Element) -> BaseNode:
             return get_user_mention_node(elem, silent=False)
         elif elem_class == "user-mention silent":
             return get_user_mention_node(elem, silent=True)
-        return get_raw_node(elem)
 
     simple_nodes: dict[str, type[ContainerNode]] = dict(
         body=BodyNode,
