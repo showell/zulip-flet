@@ -65,6 +65,14 @@ class CodeBlockNode(BaseNode):
         return f"\n~~~~~~~~ lang: {self.lang}\n{self.content}~~~~~~~~\n"
 
 
+class SpoilerNode(BaseNode):
+    header: BaseNode
+    content: BaseNode
+
+    def as_text(self) -> str:
+        return f"SPOILER: {self.header.as_text()}\n----{self.content}\n----\n"
+
+
 class StreamLinkNode(BaseNode):
     href: str
     stream_id: str

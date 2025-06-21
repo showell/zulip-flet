@@ -13,6 +13,7 @@ from message_node import (
     OrderedListNode,
     ParagraphNode,
     RawNode,
+    SpoilerNode,
     StreamLinkNode,
     StrongNode,
     TextNode,
@@ -39,9 +40,41 @@ def get_raw_node(elem: etree._Element) -> RawNode:
     return RawNode(text=etree.tostring(elem, with_tail=False).decode("utf8"))
 
 
+def get_spoiler_header(elem: etree._Element) -> BaseNode:
+    assert set(elem.attrib) == {"class"}
+    assert elem.get("class") == "spoiler-header"
+    assert len(elem) == 1
+    assert elem.text == "\n"
+    para = elem[0]
+    assert para.tag == "p"
+    assert para.tail == "\n"
+    para.tail = ""
+    return get_node(para)
+
+
+def get_spoiler_content(elem: etree._Element) -> BaseNode:
+    assert elem.tag == "div"
+    assert set(elem.attrib) == {"class", "aria-hidden"}
+    assert elem.get("class") == "spoiler-content"
+    assert elem.get("aria-hidden") == "true"
+    assert elem.text == "\n"
+    content = elem[0]
+    assert content.tail == "\n"
+    content.tail = ""
+    return get_node(content)
+
+
+def get_spoiler_node(elem: etree._Element) -> SpoilerNode:
+    children = list(elem.iterchildren())
+    assert len(children) == 2
+    header = get_spoiler_header(children[0])
+    content = get_spoiler_content(children[1])
+    return SpoilerNode(header=header, content=content)
+
+
 def get_stream_link_node(elem: etree._Element) -> StreamLinkNode:
     has_topic = elem.get("class") == "stream-topic"
-    assert set(elem.attrib.keys()) == {"class", "data-stream-id", "href"}
+    assert set(elem.attrib) == {"class", "data-stream-id", "href"}
     stream_id = elem.get("data-stream-id") or ""
     href = elem.get("href") or ""
     text = elem.text or ""
@@ -97,6 +130,8 @@ def get_node(elem: etree._Element) -> BaseNode:
         elem_class = elem.get("class")
         if elem_class == "codehilite":
             return get_code_block_node(elem)
+        if elem_class == "spoiler-block":
+            return get_spoiler_node(elem)
 
     if elem.tag == "span":
         elem_class = elem.get("class")
