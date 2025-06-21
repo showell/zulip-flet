@@ -9,6 +9,7 @@ from message_node import (
     CodeNode,
     ContainerNode,
     EmNode,
+    InlineImageNode,
     ListItemNode,
     OrderedListNode,
     ParagraphNode,
@@ -38,6 +39,35 @@ def get_code_block_node(elem: etree._Element) -> CodeBlockNode:
 
 def get_raw_node(elem: etree._Element) -> RawNode:
     return RawNode(text=etree.tostring(elem, with_tail=False).decode("utf8"))
+
+
+def get_inline_image_node(elem: etree._Element) -> InlineImageNode:
+    assert set(elem.attrib) == {"class"}
+    assert elem.get("class") == "message_inline_image"
+    assert len(elem) == 1
+    child = elem[0]
+    assert child.tag == "a"
+    assert set(child.attrib).issubset({"href", "title"})
+    href = child.get("href") or ""
+    title = child.get("title") or ""
+    assert href
+    assert len(child) == 1
+    grandchild = child[0]
+    assert grandchild.tag == "img"
+    assert set(grandchild.attrib).issubset(
+        {"src", "data-original-dimensions", "data-original-content-type"}
+    )
+    src = grandchild.get("src") or ""
+    original_dimensions = grandchild.get("data-original-dimensions") or ""
+    original_content_type = grandchild.get("data-original-content-type") or ""
+    assert src
+    return InlineImageNode(
+        href=href,
+        title=title,
+        src=src,
+        original_dimensions=original_dimensions,
+        original_content_type=original_content_type,
+    )
 
 
 def get_spoiler_header(elem: etree._Element) -> BaseNode:
@@ -132,6 +162,8 @@ def get_node(elem: etree._Element) -> BaseNode:
             return get_code_block_node(elem)
         if elem_class == "spoiler-block":
             return get_spoiler_node(elem)
+        if elem_class == "message_inline_image":
+            return get_inline_image_node(elem)
 
     if elem.tag == "span":
         elem_class = elem.get("class")

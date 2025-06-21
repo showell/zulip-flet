@@ -65,6 +65,17 @@ class CodeBlockNode(BaseNode):
         return f"\n~~~~~~~~ lang: {self.lang}\n{self.content}~~~~~~~~\n"
 
 
+class InlineImageNode(BaseNode):
+    href: str
+    title: str
+    src: str
+    original_dimensions: str
+    original_content_type: str
+
+    def as_text(self) -> str:
+        return f"INLINE IMAGE: {self.href}"
+
+
 class SpoilerNode(BaseNode):
     header: BaseNode
     content: BaseNode
