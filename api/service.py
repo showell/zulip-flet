@@ -30,7 +30,7 @@ class Service:
             users, key=lambda u: (u.id != self.database.current_user_id, u.name)
         )
 
-    def get_sorted_topics(self):
+    def get_sorted_topics(self) -> list[Topic]:
         return self.database.topic_table.get_sorted_rows(
             stream_table=self.database.stream_table
         )
