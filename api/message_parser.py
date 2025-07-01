@@ -58,7 +58,6 @@ def get_emoji_span_node(elem: etree._Element) -> EmojiSpanNode:
     elem_class = elem.get("class") or ""
     assert elem_class.startswith("emoji ")
     _, emoji_unicode_class = elem_class.split(" ")
-    print(etree.tostring(elem))
     emoji_prefix, *unicodes = emoji_unicode_class.split("-")
     assert emoji_prefix == "emoji"
     assert unicodes
@@ -86,7 +85,12 @@ def get_inline_image_node(elem: etree._Element) -> InlineImageNode:
     assert grandchild.tag == "img"
 
     if not set(grandchild.attrib).issubset(
-        {"src", "data-animated", "data-original-dimensions", "data-original-content-type"}
+        {
+            "src",
+            "data-animated",
+            "data-original-dimensions",
+            "data-original-content-type",
+        }
     ):
         print(etree.tostring(elem).decode("utf8"))
         raise AssertionError()
