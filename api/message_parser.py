@@ -9,6 +9,7 @@ from message_node import (
     CodeNode,
     ContainerNode,
     EmNode,
+    EmojiImageNode,
     InlineImageNode,
     ListItemNode,
     OrderedListNode,
@@ -35,6 +36,16 @@ def get_code_block_node(elem: etree._Element) -> CodeBlockNode:
     lang = elem.get("data-code-language") or "NOT SPECIFIED"
     content = text_content(elem)
     return CodeBlockNode(lang=lang, content=content)
+
+
+def get_emoji_image_node(elem: etree._Element) -> EmojiImageNode:
+    assert set(elem.attrib) == {"alt", "class", "src", "title"}
+    alt = elem.get("alt")
+    src = elem.get("src")
+    title = elem.get("title")
+    assert alt and src and title
+    assert alt == ":" + title + ":"
+    return EmojiImageNode(src=src, title=title)
 
 
 def get_raw_node(elem: etree._Element) -> RawNode:
@@ -141,8 +152,9 @@ def get_node(elem: etree._Element) -> BaseNode:
     if elem.tag == "html":
         return get_node(elem[0])
 
+    elem_class = elem.get("class")
+
     if elem.tag == "a":
-        elem_class = elem.get("class")
         if not elem_class:
             assert len(elem.attrib) == 1
             href = elem.get("href")
@@ -157,7 +169,6 @@ def get_node(elem: etree._Element) -> BaseNode:
         return BreakNode()
 
     if elem.tag == "div":
-        elem_class = elem.get("class")
         if elem_class == "codehilite":
             return get_code_block_node(elem)
         if elem_class == "spoiler-block":
@@ -165,8 +176,11 @@ def get_node(elem: etree._Element) -> BaseNode:
         if elem_class == "message_inline_image":
             return get_inline_image_node(elem)
 
+    if elem.tag == "img":
+        if elem_class == "emoji":
+            return get_emoji_image_node(elem)
+
     if elem.tag == "span":
-        elem_class = elem.get("class")
         if elem_class == "user-mention":
             return get_user_mention_node(elem, silent=False)
         elif elem_class == "user-mention silent":

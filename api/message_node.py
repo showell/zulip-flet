@@ -65,6 +65,14 @@ class CodeBlockNode(BaseNode):
         return f"\n~~~~~~~~ lang: {self.lang}\n{self.content}~~~~~~~~\n"
 
 
+class EmojiImageNode(BaseNode):
+    src: str
+    title: str
+
+    def as_text(self) -> str:
+        return f":{self.title}:"
+
+
 class InlineImageNode(BaseNode):
     href: str
     title: str
