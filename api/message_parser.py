@@ -45,7 +45,7 @@ def get_emoji_image_node(elem: etree._Element) -> EmojiImageNode:
     src = elem.get("src")
     title = elem.get("title")
     assert alt and src and title
-    assert alt == f":{title}:"
+    assert alt == f":{title.replace(' ', '_')}:"
     return EmojiImageNode(src=src, title=title)
 
 
@@ -58,11 +58,13 @@ def get_emoji_span_node(elem: etree._Element) -> EmojiSpanNode:
     elem_class = elem.get("class") or ""
     assert elem_class.startswith("emoji ")
     _, emoji_unicode_class = elem_class.split(" ")
-    emoji_prefix, unicode = emoji_unicode_class.split("-")
+    print(etree.tostring(elem))
+    emoji_prefix, *unicodes = emoji_unicode_class.split("-")
     assert emoji_prefix == "emoji"
+    assert unicodes
     assert elem.text == f":{title.replace(' ', '_')}:"
     assert len(list(elem.iterchildren())) == 0
-    return EmojiSpanNode(title=title, unicode=unicode)
+    return EmojiSpanNode(title=title, unicodes=unicodes)
 
 
 def get_raw_node(elem: etree._Element) -> RawNode:
@@ -82,10 +84,15 @@ def get_inline_image_node(elem: etree._Element) -> InlineImageNode:
     assert len(child) == 1
     grandchild = child[0]
     assert grandchild.tag == "img"
-    assert set(grandchild.attrib).issubset(
-        {"src", "data-original-dimensions", "data-original-content-type"}
-    )
+
+    if not set(grandchild.attrib).issubset(
+        {"src", "data-animated", "data-original-dimensions", "data-original-content-type"}
+    ):
+        print(etree.tostring(elem).decode("utf8"))
+        raise AssertionError()
+
     src = grandchild.get("src") or ""
+    animated = (grandchild.get("data-animated") or "") == "true"
     original_dimensions = grandchild.get("data-original-dimensions") or ""
     original_content_type = grandchild.get("data-original-content-type") or ""
     assert src
@@ -93,6 +100,7 @@ def get_inline_image_node(elem: etree._Element) -> InlineImageNode:
         href=href,
         title=title,
         src=src,
+        animated=animated,
         original_dimensions=original_dimensions,
         original_content_type=original_content_type,
     )
@@ -101,8 +109,10 @@ def get_inline_image_node(elem: etree._Element) -> InlineImageNode:
 def get_spoiler_header(elem: etree._Element) -> BaseNode:
     assert set(elem.attrib) == {"class"}
     assert elem.get("class") == "spoiler-header"
-    assert len(elem) == 1
     assert elem.text == "\n"
+    if len(elem) == 0:
+        return TextNode(text="")
+    assert len(elem) == 1
     para = elem[0]
     assert para.tag == "p"
     assert para.tail == "\n"
@@ -135,11 +145,10 @@ def get_stream_link_node(elem: etree._Element) -> StreamLinkNode:
     assert set(elem.attrib) == {"class", "data-stream-id", "href"}
     stream_id = elem.get("data-stream-id") or ""
     href = elem.get("href") or ""
-    text = elem.text or ""
-    assert href and stream_id and text
-    assert len(list(elem.iterchildren())) == 0
+    assert href and stream_id
+    children = get_child_nodes(elem)
     return StreamLinkNode(
-        href=href, stream_id=stream_id, text=text, has_topic=has_topic
+        href=href, stream_id=stream_id, children=children, has_topic=has_topic
     )
 
 
@@ -217,8 +226,14 @@ def get_node(elem: etree._Element) -> BaseNode:
         ul=UnorderedListNode,
     )
 
+    # XXX
+    if elem.tag == "ol" and elem.get("start"):
+        del elem.attrib["start"]
+
     if elem.tag in simple_nodes:
-        assert len(elem.attrib.keys()) == 0
+        if len(elem.attrib.keys()) > 0:
+            print(etree.tostring(elem))
+            raise Exception("Unknown attributes")
         return simple_nodes[elem.tag](children=get_child_nodes(elem))
 
     print("UNHANDLED", elem.tag)
@@ -227,6 +242,6 @@ def get_node(elem: etree._Element) -> BaseNode:
     return get_raw_node(elem)
 
 
-def message_text(html: str) -> str:
+def get_message_node(html: str) -> BaseNode:
     root = etree.HTML("<body>" + html + "</body>")
-    return get_node(root).as_text()
+    return get_node(root)

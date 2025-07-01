@@ -74,11 +74,11 @@ class EmojiImageNode(BaseNode):
 
 
 class EmojiSpanNode(BaseNode):
-    unicode: str
+    unicodes: list[str]
     title: str
 
     def as_text(self) -> str:
-        c = chr(int(self.unicode, 16))
+        c = " ".join(chr(int(unicode, 16)) for unicode in self.unicodes)
         return f"{c} (:{self.title})"
 
 
@@ -86,6 +86,7 @@ class InlineImageNode(BaseNode):
     href: str
     title: str
     src: str
+    animated: bool
     original_dimensions: str
     original_content_type: str
 
@@ -106,11 +107,12 @@ class SpoilerNode(BaseNode):
 class StreamLinkNode(BaseNode):
     href: str
     stream_id: str
-    text: str
+    children: list[BaseNode]
     has_topic: bool
 
     def as_text(self) -> str:
-        return f"[{self.text}] ({self.href}) (stream id {self.stream_id}, has_topic: {self.has_topic})"
+        text = " ".join(c.as_text() for c in self.children)
+        return f"[{text}] ({self.href}) (stream id {self.stream_id}, has_topic: {self.has_topic})"
 
 
 class UserMentionNode(BaseNode):
