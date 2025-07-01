@@ -8,6 +8,7 @@ from message_node import (
     CodeBlockNode,
     CodeNode,
     ContainerNode,
+    DelNode,
     EmNode,
     EmojiImageNode,
     EmojiSpanNode,
@@ -241,6 +242,8 @@ def get_node(elem: etree._Element) -> BaseNode:
         strong=StrongNode,
         ul=UnorderedListNode,
     )
+
+    simple_nodes["del"] = DelNode
 
     # XXX
     if elem.tag == "ol" and elem.get("start"):

@@ -189,6 +189,11 @@ class CodeNode(ContainerNode):
         return f"`{self.children_text()}`"
 
 
+class DelNode(ContainerNode):
+    def as_text(self) -> str:
+        return f"~~{self.children_text()}~~"
+
+
 class EmNode(ContainerNode):
     def as_text(self) -> str:
         return f"*{self.children_text()}*"
