@@ -10,6 +10,7 @@ from message_node import (
     ContainerNode,
     EmNode,
     EmojiImageNode,
+    EmojiSpanNode,
     InlineImageNode,
     ListItemNode,
     OrderedListNode,
@@ -44,8 +45,24 @@ def get_emoji_image_node(elem: etree._Element) -> EmojiImageNode:
     src = elem.get("src")
     title = elem.get("title")
     assert alt and src and title
-    assert alt == ":" + title + ":"
+    assert alt == f":{title}:"
     return EmojiImageNode(src=src, title=title)
+
+
+def get_emoji_span_node(elem: etree._Element) -> EmojiSpanNode:
+    assert set(elem.attrib) == {"aria-label", "class", "role", "title"}
+    title = elem.get("title") or ""
+    assert title
+    assert elem.get("role") == "img"
+    assert elem.get("aria-label") == title
+    elem_class = elem.get("class") or ""
+    assert elem_class.startswith("emoji ")
+    _, emoji_unicode_class = elem_class.split(" ")
+    emoji_prefix, unicode = emoji_unicode_class.split("-")
+    assert emoji_prefix == "emoji"
+    assert elem.text == f":{title.replace(' ', '_')}:"
+    assert len(list(elem.iterchildren())) == 0
+    return EmojiSpanNode(title=title, unicode=unicode)
 
 
 def get_raw_node(elem: etree._Element) -> RawNode:
@@ -152,7 +169,7 @@ def get_node(elem: etree._Element) -> BaseNode:
     if elem.tag == "html":
         return get_node(elem[0])
 
-    elem_class = elem.get("class")
+    elem_class = elem.get("class") or ""
 
     if elem.tag == "a":
         if not elem_class:
@@ -181,9 +198,11 @@ def get_node(elem: etree._Element) -> BaseNode:
             return get_emoji_image_node(elem)
 
     if elem.tag == "span":
+        if elem_class.startswith("emoji "):
+            return get_emoji_span_node(elem)
         if elem_class == "user-mention":
             return get_user_mention_node(elem, silent=False)
-        elif elem_class == "user-mention silent":
+        if elem_class == "user-mention silent":
             return get_user_mention_node(elem, silent=True)
 
     simple_nodes: dict[str, type[ContainerNode]] = dict(

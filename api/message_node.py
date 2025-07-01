@@ -73,6 +73,15 @@ class EmojiImageNode(BaseNode):
         return f":{self.title}:"
 
 
+class EmojiSpanNode(BaseNode):
+    unicode: str
+    title: str
+
+    def as_text(self) -> str:
+        c = chr(int(self.unicode, 16))
+        return f"{c} (:{self.title})"
+
+
 class InlineImageNode(BaseNode):
     href: str
     title: str
