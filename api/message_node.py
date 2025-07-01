@@ -155,8 +155,11 @@ attributes ("class" or otherwise) on the start tags.
 class ContainerNode(BaseNode):
     children: list[BaseNode]
 
-    def as_text(self) -> str:
+    def children_text(self) -> str:
         return " ".join(c.as_text() for c in self.children)
+
+    def as_text(self) -> str:
+        return self.children_text()
 
 
 """
@@ -173,7 +176,7 @@ into a text widget until you're ready to flesh out the UI.
 
 class BlockQuoteNode(ContainerNode):
     def as_text(self) -> str:
-        content = "".join(c.as_text() for c in self.children)
+        content = self.children_text()
         return f"\n-----\n{content}\n-----\n"
 
 
@@ -183,12 +186,17 @@ class BodyNode(ContainerNode):
 
 class CodeNode(ContainerNode):
     def as_text(self) -> str:
-        return f"`{''.join(c.as_text() for c in self.children)}`"
+        return f"`{self.children_text()}`"
 
 
 class EmNode(ContainerNode):
     def as_text(self) -> str:
-        return f"*{''.join(c.as_text() for c in self.children)}*"
+        return f"*{self.children_text()}*"
+
+
+class Header1Node(ContainerNode):
+    def as_text(self) -> str:
+        return f"#{self.children_text()}\n\n"
 
 
 class ListItemNode(ContainerNode):
@@ -204,12 +212,12 @@ class OrderedListNode(ContainerNode):
 
 class ParagraphNode(ContainerNode):
     def as_text(self) -> str:
-        return " ".join(c.as_text() for c in self.children) + "\n\n"
+        return self.children_text() + "\n\n"
 
 
 class StrongNode(ContainerNode):
     def as_text(self) -> str:
-        return f"**{''.join(c.as_text() for c in self.children)}**"
+        return f"**{self.children_text()}**"
 
 
 class UnorderedListNode(ContainerNode):
