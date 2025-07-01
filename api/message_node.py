@@ -94,6 +94,13 @@ class InlineImageNode(BaseNode):
         return f"INLINE IMAGE: {self.href}"
 
 
+class InlineVideoNode(BaseNode):
+    href: str
+
+    def as_text(self) -> str:
+        return f"INLINE VIDEO: {self.href}"
+
+
 class SpoilerNode(BaseNode):
     header: BaseNode
     content: BaseNode

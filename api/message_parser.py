@@ -20,6 +20,7 @@ from message_node import (
     Header6Node,
     HrNode,
     InlineImageNode,
+    InlineVideoNode,
     ListItemNode,
     OrderedListNode,
     ParagraphNode,
@@ -118,6 +119,29 @@ def get_inline_image_node(elem: etree._Element) -> InlineImageNode:
     )
 
 
+def get_inline_video_node(elem: etree._Element) -> InlineVideoNode:
+    assert set(elem.attrib) == {"class"}
+    assert elem.get("class") == "message_inline_image message_inline_video"
+    assert elem.text is None
+    assert len(elem) == 1
+    anchor = elem[0]
+    assert anchor.tag == "a"
+    assert set(anchor.attrib) == {"href", "title"}
+    href = anchor.get("href") or ""
+    title = anchor.get("title") or ""
+    assert href and title
+    assert len(anchor) == 1
+    assert anchor.text is None
+    video = anchor[0]
+    assert video.tag == "video"
+    assert set(video.attrib) == {"preload", "src"}
+    assert video.get("preload") == "metadata"
+    src = video.get("src") or ""
+    assert src == href
+    assert video.text is None
+    return InlineVideoNode(href=href)
+
+
 def get_spoiler_header(elem: etree._Element) -> BaseNode:
     assert set(elem.attrib) == {"class"}
     assert elem.get("class") == "spoiler-header"
@@ -214,6 +238,8 @@ def get_node(elem: etree._Element) -> BaseNode:
             return get_spoiler_node(elem)
         if elem_class == "message_inline_image":
             return get_inline_image_node(elem)
+        if elem_class == "message_inline_image message_inline_video":
+            return get_inline_video_node(elem)
 
     if elem.tag == "hr":
         assert len(elem.attrib) == 0
