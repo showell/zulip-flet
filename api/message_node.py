@@ -196,7 +196,32 @@ class EmNode(ContainerNode):
 
 class Header1Node(ContainerNode):
     def as_text(self) -> str:
-        return f"#{self.children_text()}\n\n"
+        return f"# {self.children_text()}\n\n"
+
+
+class Header2Node(ContainerNode):
+    def as_text(self) -> str:
+        return f"## {self.children_text()}\n\n"
+
+
+class Header3Node(ContainerNode):
+    def as_text(self) -> str:
+        return f"### {self.children_text()}\n\n"
+
+
+class Header4Node(ContainerNode):
+    def as_text(self) -> str:
+        return f"#### {self.children_text()}\n\n"
+
+
+class Header5Node(ContainerNode):
+    def as_text(self) -> str:
+        return f"##### {self.children_text()}\n\n"
+
+
+class Header6Node(ContainerNode):
+    def as_text(self) -> str:
+        return f"###### {self.children_text()}\n\n"
 
 
 class ListItemNode(ContainerNode):
