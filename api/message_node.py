@@ -101,6 +101,15 @@ class InlineVideoNode(BaseNode):
         return f"INLINE VIDEO: {self.href}"
 
 
+class MessageLinkNode(BaseNode):
+    href: str
+    children: list[BaseNode]
+
+    def as_text(self) -> str:
+        text = " ".join(c.as_text() for c in self.children)
+        return f"[{text} (MESSAGE LINK: {self.href})]"
+
+
 class SpoilerNode(BaseNode):
     header: BaseNode
     content: BaseNode

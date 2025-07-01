@@ -22,6 +22,7 @@ from message_node import (
     InlineImageNode,
     InlineVideoNode,
     ListItemNode,
+    MessageLinkNode,
     OrderedListNode,
     ParagraphNode,
     RawNode,
@@ -143,6 +144,17 @@ def get_inline_video_node(elem: etree._Element) -> InlineVideoNode:
     return InlineVideoNode(href=href)
 
 
+def get_message_link_node(elem: etree._Element) -> MessageLinkNode:
+    assert set(elem.attrib) == {"class", "href"}
+    href = elem.get("href") or ""
+    assert href
+    children = get_child_nodes(elem)
+    return MessageLinkNode(
+        href=href,
+        children=children,
+    )
+
+
 def get_spoiler_header(elem: etree._Element) -> BaseNode:
     assert set(elem.attrib) == {"class"}
     assert elem.get("class") == "spoiler-header"
@@ -235,6 +247,9 @@ def get_node(elem: etree._Element) -> BaseNode:
             href = elem.get("href")
             assert href is not None
             return AnchorNode(href=href, children=get_child_nodes(elem))
+
+        if elem_class == "message-link":
+            return get_message_link_node(elem)
 
         if elem_class in ["stream", "stream-topic"]:
             return get_stream_link_node(elem)
