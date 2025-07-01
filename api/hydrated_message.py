@@ -4,13 +4,12 @@ from address import Address
 from database import Database
 from deferred_user import DeferredUser, DeferredUserFactory
 from message import Message
-from message_node import BaseNode
 
 
 @dataclass
 class HydratedMessage:
     deferred_sender: DeferredUser
-    message_node: BaseNode
+    content: str
     timestamp: int
     address: Address
     address_name: str
@@ -21,7 +20,7 @@ class HydratedMessage:
     ) -> "HydratedMessage":
         return HydratedMessage(
             deferred_sender=factory.create_user(message.sender_id),
-            message_node=message.message_node,
+            content=message.content,
             timestamp=message.timestamp,
             address=message.address,
             address_name=message.address.name(

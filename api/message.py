@@ -1,7 +1,6 @@
 from typing import Any
 
 from address import Address
-from message_node import BaseNode
 from message_parser import get_message_node
 from pydantic import BaseModel
 from topic_table import TopicTable
@@ -19,7 +18,7 @@ class Message(BaseModel):
     sender_id: int
     address: Address
     timestamp: int
-    message_node: BaseNode
+    content: str
 
     @staticmethod
     def from_raw(raw_message: dict[str, Any], topic_table: TopicTable) -> "Message":
@@ -39,12 +38,14 @@ class Message(BaseModel):
 
         content = fix_content(raw_message["content"])
 
+        get_message_node(content)  # for validation
+
         return Message(
             id=raw_message["id"],
             address=address,
             sender_id=raw_message["sender_id"],
             timestamp=raw_message["timestamp"],
-            message_node=get_message_node(content),
+            content=content,
         )
 
     def get_stream_id(self, topic_table: TopicTable) -> int:

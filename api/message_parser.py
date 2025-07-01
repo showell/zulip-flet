@@ -248,4 +248,5 @@ def get_node(elem: etree._Element) -> BaseNode:
 
 def get_message_node(html: str) -> BaseNode:
     root = etree.HTML("<body>" + html + "</body>")
-    return get_node(root)
+    message_node = get_node(root)
+    return message_node
