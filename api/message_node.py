@@ -145,6 +145,11 @@ class BreakNode(BaseNode):
         return "\n"
 
 
+class HrNode(BaseNode):
+    def as_text(self) -> str:
+        return "\n\n---\n\n"
+
+
 """
 Subclasses of ContainerNode tend to be pretty vanilla,
 and in the Zulip markdown you have no special

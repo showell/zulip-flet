@@ -18,6 +18,7 @@ from message_node import (
     Header4Node,
     Header5Node,
     Header6Node,
+    HrNode,
     InlineImageNode,
     ListItemNode,
     OrderedListNode,
@@ -203,6 +204,7 @@ def get_node(elem: etree._Element) -> BaseNode:
 
     if elem.tag == "br":
         assert len(elem.attrib) == 0
+        assert len(elem) == 0
         return BreakNode()
 
     if elem.tag == "div":
@@ -212,6 +214,11 @@ def get_node(elem: etree._Element) -> BaseNode:
             return get_spoiler_node(elem)
         if elem_class == "message_inline_image":
             return get_inline_image_node(elem)
+
+    if elem.tag == "hr":
+        assert len(elem.attrib) == 0
+        assert len(elem) == 0
+        return HrNode()
 
     if elem.tag == "img":
         if elem_class == "emoji":
