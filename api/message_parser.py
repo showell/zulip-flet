@@ -30,6 +30,7 @@ from message_node import (
     StreamLinkNode,
     StrongNode,
     TextNode,
+    TimeWidgetNode,
     UnorderedListNode,
     UserGroupMentionNode,
     UserMentionNode,
@@ -42,6 +43,15 @@ def text_content(elem: etree._Element) -> str:
         s += text_content(c)
         s += c.tail or ""
     return s
+
+
+def get_raw_node(elem: etree._Element) -> RawNode:
+    return RawNode(text=etree.tostring(elem, with_tail=False).decode("utf8"))
+
+
+"""
+Custom validators follow.
+"""
 
 
 def get_code_block_node(elem: etree._Element) -> CodeBlockNode:
@@ -75,10 +85,6 @@ def get_emoji_span_node(elem: etree._Element) -> EmojiSpanNode:
     assert elem.text == f":{title.replace(' ', '_')}:"
     assert len(list(elem.iterchildren())) == 0
     return EmojiSpanNode(title=title, unicodes=unicodes)
-
-
-def get_raw_node(elem: etree._Element) -> RawNode:
-    return RawNode(text=etree.tostring(elem, with_tail=False).decode("utf8"))
 
 
 def get_inline_image_node(elem: etree._Element) -> InlineImageNode:
@@ -201,6 +207,16 @@ def get_stream_link_node(elem: etree._Element) -> StreamLinkNode:
     )
 
 
+def get_time_widget_node(elem: etree._Element) -> TimeWidgetNode:
+    assert set(elem.attrib) == {"datetime"}
+    datetime = elem.get("datetime") or ""
+    assert datetime
+    assert len(elem) == 0
+    text = elem.text
+    assert text
+    return TimeWidgetNode(datetime=datetime, text=text)
+
+
 def get_user_group_mention_node(
     elem: etree._Element, silent: bool
 ) -> UserGroupMentionNode:
@@ -289,6 +305,9 @@ def get_node(elem: etree._Element) -> BaseNode:
             return get_user_mention_node(elem, silent=False)
         if elem_class == "user-mention silent":
             return get_user_mention_node(elem, silent=True)
+
+    if elem.tag == "time":
+        return get_time_widget_node(elem)
 
     simple_nodes: dict[str, type[ContainerNode]] = dict(
         body=BodyNode,

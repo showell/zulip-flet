@@ -131,6 +131,14 @@ class StreamLinkNode(BaseNode):
         return f"[{text}] ({self.href}) (stream id {self.stream_id}, has_topic: {self.has_topic})"
 
 
+class TimeWidgetNode(BaseNode):
+    datetime: str
+    text: str
+
+    def as_text(self) -> str:
+        return self.text
+
+
 class UserGroupMentionNode(BaseNode):
     name: str
     group_id: str
