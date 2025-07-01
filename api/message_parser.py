@@ -30,6 +30,7 @@ from message_node import (
     StrongNode,
     TextNode,
     UnorderedListNode,
+    UserGroupMentionNode,
     UserMentionNode,
 )
 
@@ -188,9 +189,21 @@ def get_stream_link_node(elem: etree._Element) -> StreamLinkNode:
     )
 
 
+def get_user_group_mention_node(
+    elem: etree._Element, silent: bool
+) -> UserGroupMentionNode:
+    name = elem.text or ""
+    assert set(elem.attrib) == {"class", "data-user-group-id"}
+    group_id = elem.get("data-user-group-id") or ""
+    assert group_id
+    return UserGroupMentionNode(name=name, group_id=group_id, silent=silent)
+
+
 def get_user_mention_node(elem: etree._Element, silent: bool) -> UserMentionNode:
     name = elem.text or ""
+    assert set(elem.attrib) == {"class", "data-user-id"}
     user_id = elem.get("data-user-id") or ""
+    assert user_id
     return UserMentionNode(name=name, user_id=user_id, silent=silent)
 
 
@@ -253,6 +266,10 @@ def get_node(elem: etree._Element) -> BaseNode:
     if elem.tag == "span":
         if elem_class.startswith("emoji "):
             return get_emoji_span_node(elem)
+        if elem_class == "user-group-mention":
+            return get_user_group_mention_node(elem, silent=False)
+        if elem_class == "user-group-mention silent":
+            return get_user_group_mention_node(elem, silent=True)
         if elem_class == "user-mention":
             return get_user_mention_node(elem, silent=False)
         if elem_class == "user-mention silent":

@@ -122,6 +122,15 @@ class StreamLinkNode(BaseNode):
         return f"[{text}] ({self.href}) (stream id {self.stream_id}, has_topic: {self.has_topic})"
 
 
+class UserGroupMentionNode(BaseNode):
+    name: str
+    group_id: str
+    silent: bool
+
+    def as_text(self) -> str:
+        return f"[ GROUP {'_' if self.silent else ''}{self.name} {self.group_id} ]"
+
+
 class UserMentionNode(BaseNode):
     name: str
     user_id: str
