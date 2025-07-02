@@ -25,6 +25,7 @@ from message_node import (
     MessageLinkNode,
     OrderedListNode,
     ParagraphNode,
+    RawKatexNode,
     RawNode,
     SpoilerNode,
     StreamLinkNode,
@@ -43,10 +44,6 @@ def text_content(elem: etree._Element) -> str:
         s += text_content(c)
         s += c.tail or ""
     return s
-
-
-def get_raw_node(elem: etree._Element) -> RawNode:
-    return RawNode(text=etree.tostring(elem, with_tail=False).decode("utf8"))
 
 
 """
@@ -159,6 +156,18 @@ def get_message_link_node(elem: etree._Element) -> MessageLinkNode:
         href=href,
         children=children,
     )
+
+
+def get_raw_katex_node(elem: etree._Element) -> RawKatexNode:
+    assert set(elem.attrib) == {"class"}
+    tag_class = elem.get("class") or ""
+    assert tag_class in ["katex", "katex-display"]
+    html = etree.tostring(elem, with_tail=False).decode("utf8")
+    return RawKatexNode(html=html, tag_class=tag_class)
+
+
+def get_raw_node(elem: etree._Element) -> RawNode:
+    return RawNode(html=etree.tostring(elem, with_tail=False).decode("utf8"))
 
 
 def get_spoiler_header(elem: etree._Element) -> BaseNode:
@@ -297,6 +306,8 @@ def get_node(elem: etree._Element) -> BaseNode:
     if elem.tag == "span":
         if elem_class.startswith("emoji "):
             return get_emoji_span_node(elem)
+        if elem_class in ["katex", "katex-display"]:
+            return get_raw_katex_node(elem)
         if elem_class == "user-group-mention":
             return get_user_group_mention_node(elem, silent=False)
         if elem_class == "user-group-mention silent":
@@ -327,6 +338,7 @@ def get_node(elem: etree._Element) -> BaseNode:
         ul=UnorderedListNode,
     )
 
+    # del is a keyword in Python
     simple_nodes["del"] = DelNode
 
     # XXX

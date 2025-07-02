@@ -9,11 +9,44 @@ class BaseNode(BaseModel, ABC):
         pass
 
 
+"""
+The aim of this code is to define the structure of Zulip
+messages in a semantic way, and I don't want to box myself
+into particular implementation details when it comes to how
+the server renders it.  In particular, I am hoping that decades
+down the road, we don't even use HTML as the over-the-wire
+format for telling clients what to render.  Maybe that's a bit
+extreme.
+
+Having said all that, I live in the real world in 2025.  Certain
+things are very baked into HTML at this point.  And I mostly
+like HTML.
+
+In particular, we use HTML to render LaTeX via KaTeX for mathematical
+typesetting, and there is no way in the near future that I want
+to re-invent the wheel when it comes to producing HTML for that.
+
+Long story short, I only choose to represent LaTeX/KaTeX blocks
+as raw HTML.
+
+Also, during this stage of development, I use RawNode as a
+catch-all class for obscure corner cases that I haven't encountered
+yet, and then my demo app just spews out raw HTML as bare text.
+"""
+
+
 class RawNode(BaseNode):
-    text: str
+    html: str
 
     def as_text(self) -> str:
-        return self.text
+        return self.html
+
+
+class RawKatexNode(RawNode):
+    tag_class: str
+
+    def as_text(self) -> str:
+        return f"<<<some katex html (not shown) with {self.tag_class} class>>>"
 
 
 """
