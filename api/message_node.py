@@ -324,3 +324,61 @@ class StrongNode(ContainerNode):
 class UnorderedListNode(ContainerNode):
     def as_text(self) -> str:
         return "".join("\n    - " + c.as_text() for c in self.children)
+
+
+"""
+Zulip tables are their own special beast.  Zulip, to my knowledge,
+doesn't do anything custom with the actual conversion of Markdown
+tables into HTML tables, but we need to get granular on the description
+of tables, since the headers and cells of Zulip tables **can**
+include custom thingies.
+"""
+
+
+class ThNode(ContainerNode):
+    text_align: str | None
+
+    def as_text(self) -> str:
+        return f"    TH: {self.children_text()} ({self.text_align})\n"
+
+
+class TdNode(ContainerNode):
+    text_align: str | None
+
+    def as_text(self) -> str:
+        return f"    TD: {self.children_text()} ({self.text_align})\n"
+
+
+class TrNode(BaseNode):
+    tds: list[TdNode]
+
+    def as_text(self) -> str:
+        s = "TR\n"
+        for td in self.tds:
+            s += td.as_text()
+        s += "\n"
+        return s
+
+
+class TBodyNode(BaseNode):
+    trs: list[TrNode]
+
+    def as_text(self) -> str:
+        tr_text = "".join(tr.as_text() for tr in self.trs)
+        return f"\n-----------\n{tr_text}"
+
+
+class THeadNode(BaseNode):
+    ths: list[ThNode]
+
+    def as_text(self) -> str:
+        th_text = "".join(th.as_text() for th in self.ths)
+        return f"\n-----------\n{th_text}"
+
+
+class TableNode(BaseNode):
+    thead: THeadNode
+    tbody: TBodyNode
+
+    def as_text(self) -> str:
+        return self.thead.as_text() + "\n" + self.tbody.as_text()

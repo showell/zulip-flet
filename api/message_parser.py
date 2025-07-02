@@ -30,8 +30,14 @@ from message_node import (
     SpoilerNode,
     StreamLinkNode,
     StrongNode,
+    TableNode,
+    TBodyNode,
+    TdNode,
     TextNode,
+    THeadNode,
+    ThNode,
     TimeWidgetNode,
+    TrNode,
     UnorderedListNode,
     UserGroupMentionNode,
     UserMentionNode,
@@ -216,6 +222,48 @@ def get_stream_link_node(elem: etree._Element) -> StreamLinkNode:
     )
 
 
+def table_cell_alignment(elem: etree._Element) -> str | None:
+    assert set(elem.attrib).issubset({"style"})
+    style = elem.get("style")
+    if style is None:
+        return None
+    label, value = style.strip(";").split(": ")
+    assert label == "text-align"
+    assert value in ("center", "left", "right")
+    return value
+
+
+def get_table_node(elem: etree._Element) -> TableNode:
+    def get_thead_node(thead: etree._Element) -> THeadNode:
+        def get_th_node(th: etree._Element) -> ThNode:
+            text_align = table_cell_alignment(th)
+            children = get_child_nodes(th)
+            return ThNode(text_align=text_align, children=children)
+
+        assert len(thead) == 1
+        tr = thead[0]
+        assert tr.tag == "tr"
+        ths = [get_th_node(th) for th in tr.iterchildren()]
+        return THeadNode(ths=ths)
+
+    def get_tbody_node(tbody: etree._Element) -> TBodyNode:
+        def get_tr_node(tr: etree._Element) -> TrNode:
+            def get_td_node(td: etree._Element) -> TdNode:
+                text_align = table_cell_alignment(td)
+                children = get_child_nodes(td)
+                return TdNode(text_align=text_align, children=children)
+
+            tds = [get_td_node(td) for td in tr.iterchildren()]
+            return TrNode(tds=tds)
+
+        trs = [get_tr_node(tr) for tr in tbody.iterchildren()]
+        return TBodyNode(trs=trs)
+
+    thead = get_thead_node(elem[0])
+    tbody = get_tbody_node(elem[1])
+    return TableNode(thead=thead, tbody=tbody)
+
+
 def get_time_widget_node(elem: etree._Element) -> TimeWidgetNode:
     assert set(elem.attrib) == {"datetime"}
     datetime = elem.get("datetime") or ""
@@ -316,6 +364,9 @@ def get_node(elem: etree._Element) -> BaseNode:
             return get_user_mention_node(elem, silent=False)
         if elem_class == "user-mention silent":
             return get_user_mention_node(elem, silent=True)
+
+    if elem.tag == "table":
+        return get_table_node(elem)
 
     if elem.tag == "time":
         return get_time_widget_node(elem)
