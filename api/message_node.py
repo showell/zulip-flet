@@ -87,10 +87,11 @@ the latter is clearly better for humans.
 
 
 def escape_text(text: str) -> str:
-    special_chars = [c for c in text if ord(c) > 8000]
+    special_chars = [c for c in text if ord(c) > 128]
     for c in special_chars:
         text = text.replace(c, f"&#{ord(c)};")
     text = text.replace(">", "&gt;")
+    text = text.replace("<", "&lt;")
     return text
 
 
@@ -197,6 +198,7 @@ class MessageLinkNode(ContainerNode):
         href = self.href
         return f"""<a class="message-link" href="{href}">{self.inner()}</a>"""
 
+
 class SpoilerNode(BaseNode):
     header: BaseNode
     content: BaseNode
@@ -205,6 +207,11 @@ class SpoilerNode(BaseNode):
         header = self.header.as_text()
         content = self.content.as_text()
         return f"SPOILER: {header}\nHIDDEN:\n{content}\nENDHIDDEN\n"
+
+    def as_html(self):
+        header = self.header.as_html()
+        content = self.content.as_html()
+        return f"""<div class="spoiler-block"><div class="spoiler-header">\n{header}\n</div><div class="spoiler-content" aria-hidden="true">\n{content}\n</div></div>"""
 
 
 class StreamLinkNode(ContainerNode):
@@ -221,6 +228,7 @@ class StreamLinkNode(ContainerNode):
         stream_id = self.stream_id
         href = self.href
         return f"""<a class="{tag_class}" data-stream-id="{stream_id}" href="{href}">{self.inner()}</a>"""
+
 
 class TimeWidgetNode(BaseNode):
     datetime: str
@@ -248,9 +256,11 @@ class UserMentionNode(BaseNode):
         return f"[ {'_' if self.silent else ''}{self.name} {self.user_id} ]"
 
     def as_html(self) -> str:
+        tag_class = "user-mention silent" if self.silent else "user-mention"
         user_id = self.user_id
         name = escape_text(self.name)
-        return f"""<span class="user-mention silent" data-user-id="{user_id}">{name}</span>"""
+        return f"""<span class="{tag_class}" data-user-id="{user_id}">{name}</span>"""
+
 
 """
 We have nodes for things like the <br> and <hr> tags
@@ -349,12 +359,14 @@ class Header2Node(ContainerNode):
     def as_html(self) -> str:
         return self.tag("h2")
 
+
 class Header3Node(ContainerNode):
     def as_text(self) -> str:
         return f"### {self.children_text()}\n\n"
 
     def as_html(self) -> str:
         return self.tag("h3")
+
 
 class Header4Node(ContainerNode):
     def as_text(self) -> str:
@@ -363,6 +375,7 @@ class Header4Node(ContainerNode):
     def as_html(self) -> str:
         return self.tag("h4")
 
+
 class Header5Node(ContainerNode):
     def as_text(self) -> str:
         return f"##### {self.children_text()}\n\n"
@@ -370,12 +383,14 @@ class Header5Node(ContainerNode):
     def as_html(self) -> str:
         return self.tag("h5")
 
+
 class Header6Node(ContainerNode):
     def as_text(self) -> str:
         return f"###### {self.children_text()}\n\n"
 
     def as_html(self) -> str:
         return self.tag("h6")
+
 
 class ListItemNode(ContainerNode):
     def as_html(self) -> str:
@@ -390,6 +405,7 @@ class OrderedListNode(ContainerNode):
 
     def as_html(self) -> str:
         return self.tag("ol")
+
 
 class ParagraphNode(ContainerNode):
     def as_text(self) -> str:
@@ -406,12 +422,13 @@ class StrongNode(ContainerNode):
     def as_html(self) -> str:
         return self.tag("strong")
 
+
 class UnorderedListNode(ContainerNode):
     def as_text(self) -> str:
         return "".join("\n    - " + c.as_text() for c in self.children)
 
     def as_html(self) -> str:
-        return  self.tag("ul")
+        return self.tag("ul")
 
 
 """
