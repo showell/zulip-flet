@@ -211,7 +211,11 @@ class SpoilerNode(BaseNode):
     def as_html(self):
         header = self.header.as_html()
         content = self.content.as_html()
-        return f"""<div class="spoiler-block"><div class="spoiler-header">\n{header}\n</div><div class="spoiler-content" aria-hidden="true">\n{content}\n</div></div>"""
+        header_tag = f"""<div class="spoiler-header">\n{header}\n</div>"""
+        content_tag = (
+            f"""<div class="spoiler-content" aria-hidden="true">\n{content}\n</div>"""
+        )
+        return f"""<div class="spoiler-block">{header_tag}{content_tag}</div>"""
 
 
 class StreamLinkNode(ContainerNode):
