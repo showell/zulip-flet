@@ -308,9 +308,8 @@ def get_child_nodes(elem: etree._Element) -> list[BaseNode]:
     return children
 
 
-def get_node(elem: etree._Element) -> BaseNode:
-    if elem.tag == "html":
-        return get_node(elem[0])
+def _get_node(elem: etree._Element) -> BaseNode:
+
 
     elem_class = elem.get("class") or ""
 
@@ -408,7 +407,25 @@ def get_node(elem: etree._Element) -> BaseNode:
     return get_raw_node(elem)
 
 
+def get_node(elem: etree._Element) -> BaseNode:
+    html = etree.tostring(elem).decode("utf8")
+    node = _get_node(elem)
+    if not hasattr(node, "as_html"):
+        print(node)
+        raise AssertionError(f"need as_html for {type(node)}")
+
+    if node.as_html() != html:
+        print(html)
+        print(node.as_html())
+        raise AssertionError("as_html is not precise")
+
+    return node
+
 def get_message_node(html: str) -> BaseNode:
     root = etree.HTML("<body>" + html + "</body>")
-    message_node = get_node(root)
+    assert root.tag == "html"
+    assert len(root) == 1
+    body = root[0]
+    assert body.tag == "body"
+    message_node = get_node(body)
     return message_node

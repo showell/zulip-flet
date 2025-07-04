@@ -74,6 +74,8 @@ class TextNode(BaseNode):
     def as_text(self) -> str:
         return self.text
 
+    def as_html(self) -> str:
+        return self.text
 
 """
 The following classes can be considered to be
@@ -232,6 +234,9 @@ class ContainerNode(BaseNode):
     def as_text(self) -> str:
         return self.children_text()
 
+    def tag(self, tag: str) -> str:
+        inner = "".join(c.as_html() for c in self.children)
+        return f"<{tag}>{inner}</{tag}>"
 
 """
 The various subclasses of ContainerNode are below.
@@ -252,7 +257,8 @@ class BlockQuoteNode(ContainerNode):
 
 
 class BodyNode(ContainerNode):
-    pass
+    def as_html(self):
+        return self.tag("body")
 
 
 class CodeNode(ContainerNode):
@@ -315,6 +321,8 @@ class ParagraphNode(ContainerNode):
     def as_text(self) -> str:
         return self.children_text() + "\n\n"
 
+    def as_html(self) -> str:
+        return self.tag("p")
 
 class StrongNode(ContainerNode):
     def as_text(self) -> str:
