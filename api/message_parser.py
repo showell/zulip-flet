@@ -5,7 +5,6 @@ from message_node import (
     BlockQuoteNode,
     BodyNode,
     BreakNode,
-    CodeBlockNode,
     CodeNode,
     ContainerNode,
     DelNode,
@@ -25,6 +24,7 @@ from message_node import (
     MessageLinkNode,
     OrderedListNode,
     ParagraphNode,
+    RawCodeBlockNode,
     RawKatexNode,
     RawNode,
     SpoilerNode,
@@ -57,10 +57,11 @@ Custom validators follow.
 """
 
 
-def get_code_block_node(elem: etree._Element) -> CodeBlockNode:
+def get_code_block_node(elem: etree._Element) -> RawCodeBlockNode:
+    html = etree.tostring(elem, with_tail=False).decode("utf-8")
     lang = elem.get("data-code-language") or "NOT SPECIFIED"
     content = text_content(elem)
-    return CodeBlockNode(lang=lang, content=content)
+    return RawCodeBlockNode(html=html, lang=lang, content=content)
 
 
 def get_emoji_image_node(elem: etree._Element) -> EmojiImageNode:

@@ -41,6 +41,24 @@ class RawNode(BaseNode):
     def as_text(self) -> str:
         return self.html
 
+    def as_html(self) -> str:
+        return self.html
+
+
+class RawCodeBlockNode(RawNode):
+    # Note that we treat code blocks as completely
+    # opaque things, and we don't want to deal with
+    # all the pygments markup at this layer of the
+    # software.  We assume our callers may have their
+    # own alternative to pygments to render code, or
+    # maybe they are even just fine with vanilla
+    # code blocks.
+    lang: str
+    content: str
+
+    def as_text(self) -> str:
+        return f"\n~~~~~~~~ lang: {self.lang}\n{self.content}~~~~~~~~\n"
+
 
 class RawKatexNode(RawNode):
     tag_class: str
@@ -84,21 +102,6 @@ somewhat "custom" to Zulip. The incoming
 markup generally uses class attributes to denote the
 special Zulip constructs.
 """
-
-
-class CodeBlockNode(BaseNode):
-    # Note that we treat code blocks as completely
-    # opaque things, and we don't want to deal with
-    # all the pygments markup at this layer of the
-    # software.  We assume our callers may have their
-    # own alternative to pygments to render code, or
-    # maybe they are even just fine with vanilla
-    # code blocks.
-    lang: str
-    content: str
-
-    def as_text(self) -> str:
-        return f"\n~~~~~~~~ lang: {self.lang}\n{self.content}~~~~~~~~\n"
 
 
 class EmojiImageNode(BaseNode):
