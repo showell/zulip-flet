@@ -242,7 +242,12 @@ class ContainerNode(BaseNode):
         return self.children_text()
 
     def tag(self, tag: str) -> str:
-        inner = "".join(c.as_html() for c in self.children)
+        inner = ""
+        for c in self.children:
+            child = c.as_html()
+            if inner and not inner.endswith(">"):
+                inner += " "
+            inner += child
         return f"<{tag}>{inner}</{tag}>"
 
 
