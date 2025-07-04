@@ -296,12 +296,12 @@ def get_user_mention_node(elem: etree._Element, silent: bool) -> UserMentionNode
 def get_child_nodes(elem: etree._Element) -> list[BaseNode]:
     children: list[BaseNode] = []
     if elem.text:
-        text = elem.text.strip()
+        text = elem.text
         if text:
             children.append(TextNode(text=text))
 
     for c in elem:
-        tail_text = (c.tail or "").strip()
+        tail_text = c.tail or ""
         children.append(get_node(c))
         if tail_text:
             children.append(TextNode(text=tail_text))
@@ -409,20 +409,27 @@ def _get_node(elem: etree._Element) -> BaseNode:
 def get_node(elem: etree._Element) -> BaseNode:
     html = etree.tostring(elem, with_tail=False).decode("utf8")
     node = _get_node(elem)
+
+    print()
+    print(type(node), node)
+
     if not hasattr(node, "as_html"):
         print(node)
         raise AssertionError(f"need as_html for {type(node)}")
 
     if node.as_html() != html:
-        print(html)
+        print("\n------- as_html MISMATCH\n")
+        print(repr(html))
         print()
-        print(node.as_html())
+        print(repr(node.as_html()))
+        print()
         raise AssertionError("as_html is not precise")
 
     return node
 
 
 def get_message_node(html: str) -> BaseNode:
+    print(f"\nOUTER HMTL:\n{repr(html)}")
     root = etree.HTML("<body>" + html + "</body>")
     assert root.tag == "html"
     assert len(root) == 1
