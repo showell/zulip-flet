@@ -175,6 +175,9 @@ class InlineImageNode(BaseNode):
     def as_text(self) -> str:
         return f"INLINE IMAGE: {self.href}"
 
+    def as_html(self) -> str:
+        return f""""""
+
 
 class InlineVideoNode(BaseNode):
     href: str
@@ -261,7 +264,7 @@ class BreakNode(BaseNode):
         return "\n"
 
     def as_html(self) -> str:
-        return "<br>"
+        return "<br/>"
 
 
 class HrNode(BaseNode):
@@ -270,7 +273,7 @@ class HrNode(BaseNode):
 
 
 """
-The various subclasses of ContainerNode are below.
+The mostly-vanilla subclasses of ContainerNode are below.
 
 Generally it's up to the calling code to map these into some
 kind of UI paradigm.  The as_text methods are basically
@@ -319,41 +322,60 @@ class DelNode(ContainerNode):
     def as_text(self) -> str:
         return f"~~{self.children_text()}~~"
 
+    def as_html(self) -> str:
+        return self.tag("del")
+
 
 class EmNode(ContainerNode):
     def as_text(self) -> str:
         return f"*{self.children_text()}*"
+
+    def as_html(self) -> str:
+        return self.tag("em")
 
 
 class Header1Node(ContainerNode):
     def as_text(self) -> str:
         return f"# {self.children_text()}\n\n"
 
+    def as_html(self) -> str:
+        return self.tag("h1")
+
 
 class Header2Node(ContainerNode):
     def as_text(self) -> str:
         return f"## {self.children_text()}\n\n"
 
+    def as_html(self) -> str:
+        return self.tag("h2")
 
 class Header3Node(ContainerNode):
     def as_text(self) -> str:
         return f"### {self.children_text()}\n\n"
 
+    def as_html(self) -> str:
+        return self.tag("h3")
 
 class Header4Node(ContainerNode):
     def as_text(self) -> str:
         return f"#### {self.children_text()}\n\n"
 
+    def as_html(self) -> str:
+        return self.tag("h4")
 
 class Header5Node(ContainerNode):
     def as_text(self) -> str:
         return f"##### {self.children_text()}\n\n"
 
+    def as_html(self) -> str:
+        return self.tag("h5")
 
 class Header6Node(ContainerNode):
     def as_text(self) -> str:
         return f"###### {self.children_text()}\n\n"
 
+    def as_html(self) -> str:
+        return self.tag("h6")
 
 class ListItemNode(ContainerNode):
     def as_html(self) -> str:
@@ -366,6 +388,8 @@ class OrderedListNode(ContainerNode):
             f"\n    {i}. " + c.as_text() for i, c in enumerate(self.children)
         )
 
+    def as_html(self) -> str:
+        return self.tag("ol")
 
 class ParagraphNode(ContainerNode):
     def as_text(self) -> str:
@@ -379,6 +403,8 @@ class StrongNode(ContainerNode):
     def as_text(self) -> str:
         return f"**{self.children_text()}**"
 
+    def as_html(self) -> str:
+        return self.tag("strong")
 
 class UnorderedListNode(ContainerNode):
     def as_text(self) -> str:
