@@ -117,6 +117,11 @@ class EmojiSpanNode(BaseNode):
         c = " ".join(chr(int(unicode, 16)) for unicode in self.unicodes)
         return f"{c} (:{self.title})"
 
+    def as_html(self) -> str:
+        title = self.title
+        unicode_suffix = "-".join(self.unicodes)
+        attrs = f'''aria-label="{title}" class="emoji emoji-{unicode_suffix}" role="img" title="{title}"'''
+        return f"""<span {attrs}>:{title.replace(" ", "_")}:</span>"""
 
 class InlineImageNode(BaseNode):
     href: str

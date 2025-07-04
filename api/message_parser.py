@@ -406,7 +406,7 @@ def _get_node(elem: etree._Element) -> BaseNode:
 
 
 def get_node(elem: etree._Element) -> BaseNode:
-    html = etree.tostring(elem).decode("utf8")
+    html = etree.tostring(elem, with_tail=False).decode("utf8")
     node = _get_node(elem)
     if not hasattr(node, "as_html"):
         print(node)
