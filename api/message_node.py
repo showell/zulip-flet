@@ -260,6 +260,9 @@ class BreakNode(BaseNode):
     def as_text(self) -> str:
         return "\n"
 
+    def as_html(self) -> str:
+        return "<br>"
+
 
 class HrNode(BaseNode):
     def as_text(self) -> str:
