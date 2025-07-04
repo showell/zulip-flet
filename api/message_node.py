@@ -241,14 +241,20 @@ class ContainerNode(BaseNode):
     def as_text(self) -> str:
         return self.children_text()
 
-    def tag(self, tag: str) -> str:
+    def inner(self) -> str:
         inner = ""
         for c in self.children:
             child = c.as_html()
             if inner and (not inner.endswith(">") or not child.startswith(".")):
-                inner += " "
+                if child.startswith("<p") or child.startswith("<blockquote"):
+                    inner += "\n"
+                else:
+                    inner += " "
             inner += child
-        return f"<{tag}>{inner}</{tag}>"
+        return inner
+
+    def tag(self, tag: str) -> str:
+        return f"<{tag}>{self.inner()}</{tag}>"
 
 
 """
@@ -267,6 +273,9 @@ class BlockQuoteNode(ContainerNode):
     def as_text(self) -> str:
         content = self.children_text()
         return f"\n-----\n{content}\n-----\n"
+
+    def as_html(self) -> str:
+        return f"<blockquote>\n{self.inner()}\n</blockquote>"
 
 
 class BodyNode(ContainerNode):
