@@ -245,7 +245,7 @@ class ContainerNode(BaseNode):
         inner = ""
         for c in self.children:
             child = c.as_html()
-            if inner and not inner.endswith(">"):
+            if inner and (not inner.endswith(">") or not child.startswith(".")):
                 inner += " "
             inner += child
         return f"<{tag}>{inner}</{tag}>"
@@ -277,6 +277,9 @@ class BodyNode(ContainerNode):
 class CodeNode(ContainerNode):
     def as_text(self) -> str:
         return f"`{self.children_text()}`"
+
+    def as_html(self) -> str:
+        return self.tag("code")
 
 
 class DelNode(ContainerNode):
