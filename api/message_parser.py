@@ -309,8 +309,6 @@ def get_child_nodes(elem: etree._Element) -> list[BaseNode]:
 
 
 def _get_node(elem: etree._Element) -> BaseNode:
-
-
     elem_class = elem.get("class") or ""
 
     if elem.tag == "a":
@@ -420,6 +418,7 @@ def get_node(elem: etree._Element) -> BaseNode:
         raise AssertionError("as_html is not precise")
 
     return node
+
 
 def get_message_node(html: str) -> BaseNode:
     root = etree.HTML("<body>" + html + "</body>")

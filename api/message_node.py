@@ -77,6 +77,7 @@ class TextNode(BaseNode):
     def as_html(self) -> str:
         return self.text
 
+
 """
 The following classes can be considered to be
 somewhat "custom" to Zulip. The incoming
@@ -238,6 +239,7 @@ class ContainerNode(BaseNode):
         inner = "".join(c.as_html() for c in self.children)
         return f"<{tag}>{inner}</{tag}>"
 
+
 """
 The various subclasses of ContainerNode are below.
 
@@ -257,7 +259,7 @@ class BlockQuoteNode(ContainerNode):
 
 
 class BodyNode(ContainerNode):
-    def as_html(self):
+    def as_html(self) -> str:
         return self.tag("body")
 
 
@@ -323,6 +325,7 @@ class ParagraphNode(ContainerNode):
 
     def as_html(self) -> str:
         return self.tag("p")
+
 
 class StrongNode(ContainerNode):
     def as_text(self) -> str:
