@@ -204,16 +204,20 @@ class SpoilerNode(BaseNode):
         return f"SPOILER: {header}\nHIDDEN:\n{content}\nENDHIDDEN\n"
 
 
-class StreamLinkNode(BaseNode):
+class StreamLinkNode(ContainerNode):
     href: str
     stream_id: str
-    children: list[BaseNode]
     has_topic: bool
 
     def as_text(self) -> str:
         text = " ".join(c.as_text() for c in self.children)
         return f"[{text}] ({self.href}) (stream id {self.stream_id}, has_topic: {self.has_topic})"
 
+    def as_html(self) -> str:
+        tag_class = "stream-topic" if self.has_topic else "stream"
+        stream_id = self.stream_id
+        href = self.href
+        return f"""<a class="{tag_class}" data-stream-id="{stream_id}" href="{href}">{self.inner()}</a>"""
 
 class TimeWidgetNode(BaseNode):
     datetime: str
