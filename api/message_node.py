@@ -203,19 +203,10 @@ class UserMentionNode(BaseNode):
 
 
 """
-We have nodes for things like the <a> and <br> tag
+We have nodes for things like the <br> and <hr> tags
 for cases where Zulip uses them in pretty generic
 ways.
 """
-
-
-class AnchorNode(BaseNode):
-    href: str
-    children: list[BaseNode]
-
-    def as_text(self) -> str:
-        content = "".join(c.as_text() for c in self.children)
-        return f"[{content}]({self.href})"
 
 
 class BreakNode(BaseNode):
@@ -229,9 +220,12 @@ class HrNode(BaseNode):
 
 
 """
-Subclasses of ContainerNode tend to be pretty vanilla,
+Most subclasses of ContainerNode tend to be pretty vanilla,
 and in the Zulip markdown you have no special
 attributes ("class" or otherwise) on the start tags.
+
+A few subclasses, such as AnchorNode, do have attributes,
+and they will have extra fields for those.
 """
 
 
@@ -248,7 +242,10 @@ class ContainerNode(BaseNode):
         inner = ""
         for c in self.children:
             child = c.as_html()
-            if inner and (not inner.endswith(">") or not child.startswith(".")):
+            if inner and (
+                not inner.endswith(">")
+                or not (child.startswith(".") or child.startswith(","))
+            ):
                 if child.startswith("<p") or child.startswith("<blockquote"):
                     inner += "\n"
                 else:
@@ -270,6 +267,18 @@ to build a UI to show a Zulip message, you can fall
 back to the as_text() methods and just stick the text
 into a text widget until you're ready to flesh out the UI.
 """
+
+
+class AnchorNode(ContainerNode):
+    href: str
+
+    def as_text(self) -> str:
+        content = "".join(c.as_text() for c in self.children)
+        return f"[{content}] ({self.href})"
+
+    def as_html(self) -> str:
+        href = self.href
+        return f"""<a href="{href}">{self.inner()}</a>"""
 
 
 class BlockQuoteNode(ContainerNode):
