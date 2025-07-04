@@ -123,6 +123,7 @@ class EmojiSpanNode(BaseNode):
         attrs = f'''aria-label="{title}" class="emoji emoji-{unicode_suffix}" role="img" title="{title}"'''
         return f"""<span {attrs}>:{title.replace(" ", "_")}:</span>"""
 
+
 class InlineImageNode(BaseNode):
     href: str
     title: str
