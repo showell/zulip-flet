@@ -86,6 +86,14 @@ the latter is clearly better for humans.
 """
 
 
+def escape_text(text: str) -> str:
+    special_chars = [c for c in text if ord(c) > 8000]
+    for c in special_chars:
+        text = text.replace(c, f"&#{ord(c)};")
+    text = text.replace(">", "&gt;")
+    return text
+
+
 class TextNode(BaseNode):
     text: str
 
@@ -93,9 +101,36 @@ class TextNode(BaseNode):
         return self.text
 
     def as_html(self) -> str:
-        text = self.text
-        text = text.replace(chr(8217), "&#8217;")
-        return text
+        return escape_text(self.text)
+
+
+"""
+Most subclasses of ContainerNode tend to be pretty vanilla,
+and in the Zulip markdown you have no special
+attributes ("class" or otherwise) on the start tags.
+
+A few subclasses, such as AnchorNode, do have attributes,
+and they will have extra fields for those.
+
+Also, some of the "special" Zulip classes inherit from
+ContainerNode
+"""
+
+
+class ContainerNode(BaseNode):
+    children: list[BaseNode]
+
+    def children_text(self) -> str:
+        return " ".join(c.as_text() for c in self.children)
+
+    def as_text(self) -> str:
+        return self.children_text()
+
+    def inner(self) -> str:
+        return "".join(c.as_html() for c in self.children)
+
+    def tag(self, tag: str) -> str:
+        return f"<{tag}>{self.inner()}</{tag}>"
 
 
 """
@@ -148,14 +183,16 @@ class InlineVideoNode(BaseNode):
         return f"INLINE VIDEO: {self.href}"
 
 
-class MessageLinkNode(BaseNode):
+class MessageLinkNode(ContainerNode):
     href: str
-    children: list[BaseNode]
 
     def as_text(self) -> str:
         text = " ".join(c.as_text() for c in self.children)
         return f"[{text} (MESSAGE LINK: {self.href})]"
 
+    def as_html(self) -> str:
+        href = self.href
+        return f"""<a class="message-link" href="{href}">{self.inner()}</a>"""
 
 class SpoilerNode(BaseNode):
     header: BaseNode
@@ -203,6 +240,10 @@ class UserMentionNode(BaseNode):
     def as_text(self) -> str:
         return f"[ {'_' if self.silent else ''}{self.name} {self.user_id} ]"
 
+    def as_html(self) -> str:
+        user_id = self.user_id
+        name = escape_text(self.name)
+        return f"""<span class="user-mention silent" data-user-id="{user_id}">{name}</span>"""
 
 """
 We have nodes for things like the <br> and <hr> tags
@@ -219,32 +260,6 @@ class BreakNode(BaseNode):
 class HrNode(BaseNode):
     def as_text(self) -> str:
         return "\n\n---\n\n"
-
-
-"""
-Most subclasses of ContainerNode tend to be pretty vanilla,
-and in the Zulip markdown you have no special
-attributes ("class" or otherwise) on the start tags.
-
-A few subclasses, such as AnchorNode, do have attributes,
-and they will have extra fields for those.
-"""
-
-
-class ContainerNode(BaseNode):
-    children: list[BaseNode]
-
-    def children_text(self) -> str:
-        return " ".join(c.as_text() for c in self.children)
-
-    def as_text(self) -> str:
-        return self.children_text()
-
-    def inner(self) -> str:
-        return "".join(c.as_html() for c in self.children)
-
-    def tag(self, tag: str) -> str:
-        return f"<{tag}>{self.inner()}</{tag}>"
 
 
 """
@@ -363,7 +378,7 @@ class UnorderedListNode(ContainerNode):
         return "".join("\n    - " + c.as_text() for c in self.children)
 
     def as_html(self) -> str:
-        return self.tag("ul")
+        return  self.tag("ul")
 
 
 """
