@@ -93,7 +93,9 @@ class TextNode(BaseNode):
         return self.text
 
     def as_html(self) -> str:
-        return self.text
+        text = self.text
+        text = text.replace(chr(8217), "&#8217;")
+        return text
 
 
 """
@@ -332,7 +334,8 @@ class Header6Node(ContainerNode):
 
 
 class ListItemNode(ContainerNode):
-    pass
+    def as_html(self) -> str:
+        return self.tag("li")
 
 
 class OrderedListNode(ContainerNode):
@@ -358,6 +361,9 @@ class StrongNode(ContainerNode):
 class UnorderedListNode(ContainerNode):
     def as_text(self) -> str:
         return "".join("\n    - " + c.as_text() for c in self.children)
+
+    def as_html(self) -> str:
+        return self.tag("ul")
 
 
 """
