@@ -218,6 +218,7 @@ class InlineImageNode(BaseNode):
 
 class InlineVideoNode(BaseNode):
     href: str
+    src: str
 
     def as_text(self) -> str:
         return f"INLINE VIDEO: {self.href}"
@@ -453,7 +454,7 @@ class OrderedListNode(ContainerNode):
 
     def as_text(self) -> str:
         return "".join(
-            f"\n    {i + (self.start)}. " + c.as_text()
+            f"\n    {i + (self.start or 1)}. " + c.as_text()
             for i, c in enumerate(self.children)
         )
 

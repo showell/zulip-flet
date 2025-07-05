@@ -44,6 +44,20 @@ from message_node import (
 )
 
 
+def assert_equal(s1: str, s2: str) -> None:
+    if s1 != s2:
+        print(repr(s1))
+        print(repr(s2))
+        raise AssertionError(f"{s1} != {s2}")
+
+def restrict_attributes(elem: etree._Element, *fields: str) -> None:
+    if not set(elem.attrib).issubset(set(fields)):
+        print(etree.tostring(elem, with_tail=False))
+        raise AssertionError(
+            f"{set(elem.attrib)} (actual attributes) > {set(fields)} (expected)"
+        )
+
+
 def text_content(elem: etree._Element) -> str:
     s = elem.text or ""
     for c in elem:
@@ -138,10 +152,10 @@ def get_inline_video_node(elem: etree._Element) -> InlineVideoNode:
     assert len(elem) == 1
     anchor = elem[0]
     assert anchor.tag == "a"
-    assert set(anchor.attrib) == {"href", "title"}
+    restrict_attributes(anchor, "href", "title")
     href = anchor.get("href") or ""
     title = anchor.get("title") or ""
-    assert href and title
+    assert href
     assert len(anchor) == 1
     assert anchor.text is None
     video = anchor[0]
@@ -149,9 +163,8 @@ def get_inline_video_node(elem: etree._Element) -> InlineVideoNode:
     assert set(video.attrib) == {"preload", "src"}
     assert video.get("preload") == "metadata"
     src = video.get("src") or ""
-    assert src == href
     assert video.text is None
-    return InlineVideoNode(href=href)
+    return InlineVideoNode(href=href, src=src)
 
 
 def get_ordered_list_node(elem: etree._Element) -> OrderedListNode:
@@ -357,6 +370,7 @@ def _get_node(elem: etree._Element) -> BaseNode:
             return get_emoji_image_node(elem)
 
     if elem.tag == "ol":
+        print(etree.tostring(elem))
         return get_ordered_list_node(elem)
 
     if elem.tag == "span":
@@ -400,9 +414,7 @@ def _get_node(elem: etree._Element) -> BaseNode:
     simple_nodes["del"] = DelNode
 
     if elem.tag in simple_nodes:
-        if len(elem.attrib.keys()) > 0:
-            print(etree.tostring(elem))
-            raise Exception("Unknown attributes")
+        restrict_attributes(elem)
         return simple_nodes[elem.tag](children=get_child_nodes(elem))
 
     print("UNHANDLED", elem.tag)
