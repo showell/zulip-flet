@@ -87,6 +87,7 @@ the latter is clearly better for humans.
 
 
 def escape_text(text: str) -> str:
+    text = text.replace("&", "&amp;")
     special_chars = [c for c in text if ord(c) > 128]
     for c in special_chars:
         text = text.replace(c, f"&#{ord(c)};")
@@ -306,7 +307,7 @@ class AnchorNode(ContainerNode):
         return f"[{content}] ({self.href})"
 
     def as_html(self) -> str:
-        href = self.href
+        href = escape_text(self.href)
         return f"""<a href="{href}">{self.inner()}</a>"""
 
 
