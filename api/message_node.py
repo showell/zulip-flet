@@ -132,7 +132,9 @@ class ContainerNode(BaseNode):
         return "".join(c.as_html() for c in self.children)
 
     def tag(self, tag: str, **attrs: str) -> str:
-        attr_suffix = "".join(f''' {attr}="{escape_text(value)}"''' for attr, value in attrs.items())
+        attr_suffix = "".join(
+            f''' {attr}="{escape_text(value)}"''' for attr, value in attrs.items()
+        )
         inner = self.inner()
         if inner == "":
             return f"<{tag}{attr_suffix}/>"
@@ -410,7 +412,8 @@ class OrderedListNode(ContainerNode):
 
     def as_text(self) -> str:
         return "".join(
-            f"\n    {i + self.start}. " + c.as_text() for i, c in enumerate(self.children)
+            f"\n    {i + self.start}. " + c.as_text()
+            for i, c in enumerate(self.children)
         )
 
     def as_html(self) -> str:
