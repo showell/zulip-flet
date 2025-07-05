@@ -7,17 +7,28 @@ First, we have some helpers to build HTML from the AST.
 """
 
 
-def build_tag(*, tag: str, inner: str, **attrs: str) -> str:
+class SafeHtml:
+    def __init__(self, text: str) -> None:
+        self.text = text
+
+    def __str__(self) -> str:
+        return self.text
+
+    def join(self, items: list["SafeHtml"]) -> "SafeHtml":
+        return SafeHtml(str(self.text).join(str(item) for item in items))
+
+
+def build_tag(*, tag: str, inner: SafeHtml, **attrs: str) -> SafeHtml:
     attr_suffix = "".join(
         f''' {attr.rstrip("_").replace("_", "-")}="{escape_text(value)}"'''
         for attr, value in attrs.items()
     )
-    if inner == "":
-        return f"<{tag}{attr_suffix}/>"
-    return f"<{tag}{attr_suffix}>{inner}</{tag}>"
+    if str(inner) == "":
+        return SafeHtml(f"<{tag}{attr_suffix}/>")
+    return SafeHtml(f"<{tag}{attr_suffix}>{inner}</{tag}>")
 
 
-def escape_text(text: str) -> str:
+def escape_text(text: str) -> SafeHtml:
     # This is very similar to html.escape, but we want to match the
     # current implementation of the Zulip markdown processor
     text = text.replace("&", "&amp;")
@@ -26,7 +37,7 @@ def escape_text(text: str) -> str:
         text = text.replace(c, f"&#{ord(c)};")
     text = text.replace(">", "&gt;")
     text = text.replace("<", "&lt;")
-    return text
+    return SafeHtml(text)
 
 
 """
@@ -40,7 +51,7 @@ class BaseNode(BaseModel, ABC):
         pass
 
     @abstractmethod
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         pass
 
 
@@ -76,8 +87,8 @@ class RawNode(BaseNode):
     def as_text(self) -> str:
         return self.html
 
-    def as_html(self) -> str:
-        return self.html
+    def as_html(self) -> SafeHtml:
+        return SafeHtml(self.html)
 
 
 class RawCodeBlockNode(RawNode):
@@ -127,7 +138,7 @@ class TextNode(BaseNode):
     def as_text(self) -> str:
         return self.text
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return escape_text(self.text)
 
 
@@ -153,10 +164,10 @@ class ContainerNode(BaseNode):
     def as_text(self) -> str:
         return self.children_text()
 
-    def inner(self) -> str:
-        return "".join(c.as_html() for c in self.children)
+    def inner(self) -> SafeHtml:
+        return SafeHtml("".join(str(c.as_html()) for c in self.children))
 
-    def tag(self, tag: str, **attrs: str) -> str:
+    def tag(self, tag: str, **attrs: str) -> SafeHtml:
         return build_tag(tag=tag, inner=self.inner(), **attrs)
 
 
@@ -175,10 +186,10 @@ class EmojiImageNode(BaseNode):
     def as_text(self) -> str:
         return f":{self.title}:"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return build_tag(
             tag="img",
-            inner="",
+            inner=SafeHtml(""),
             alt=f":{self.title.replace(' ', '_')}:",
             class_="emoji",
             src=self.src,
@@ -194,11 +205,17 @@ class EmojiSpanNode(BaseNode):
         c = " ".join(chr(int(unicode, 16)) for unicode in self.unicodes)
         return f"{c} (:{self.title})"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         title = self.title
         unicode_suffix = "-".join(self.unicodes)
-        attrs = f'''aria-label="{title}" class="emoji emoji-{unicode_suffix}" role="img" title="{title}"'''
-        return f"""<span {attrs}>:{title.replace(" ", "_")}:</span>"""
+        return build_tag(
+            tag="span",
+            inner=escape_text(f":{title.replace(' ', '_')}:"),
+            aria_label=title,
+            class_=f"emoji emoji-{unicode_suffix}",
+            role="img",
+            title=title,
+        )
 
 
 class InlineImageNode(BaseNode):
@@ -212,8 +229,8 @@ class InlineImageNode(BaseNode):
     def as_text(self) -> str:
         return f"INLINE IMAGE: {self.href}"
 
-    def as_html(self) -> str:
-        return "XXX"
+    def as_html(self) -> SafeHtml:
+        return SafeHtml("XXX")
 
 
 class InlineVideoNode(BaseNode):
@@ -223,8 +240,8 @@ class InlineVideoNode(BaseNode):
     def as_text(self) -> str:
         return f"INLINE VIDEO: {self.href}"
 
-    def as_html(self) -> str:
-        return "XXX"
+    def as_html(self) -> SafeHtml:
+        return SafeHtml("XXX")
 
 
 class MessageLinkNode(ContainerNode):
@@ -234,9 +251,9 @@ class MessageLinkNode(ContainerNode):
         text = " ".join(c.as_text() for c in self.children)
         return f"[{text} (MESSAGE LINK: {self.href})]"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         href = self.href
-        return f"""<a class="message-link" href="{href}">{self.inner()}</a>"""
+        return self.tag("a", class_="message-link", href=href)
 
 
 class SpoilerNode(BaseNode):
@@ -248,14 +265,16 @@ class SpoilerNode(BaseNode):
         content = self.content.as_text()
         return f"SPOILER: {header}\nHIDDEN:\n{content}\nENDHIDDEN\n"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         header = self.header.as_html()
         content = self.content.as_html()
         header_tag = f"""<div class="spoiler-header">\n{header}\n</div>"""
         content_tag = (
             f"""<div class="spoiler-content" aria-hidden="true">\n{content}\n</div>"""
         )
-        return f"""<div class="spoiler-block">{header_tag}{content_tag}</div>"""
+        return SafeHtml(
+            f"""<div class="spoiler-block">{header_tag}{content_tag}</div>"""
+        )
 
 
 class StreamLinkNode(ContainerNode):
@@ -267,11 +286,11 @@ class StreamLinkNode(ContainerNode):
         text = " ".join(c.as_text() for c in self.children)
         return f"[{text}] ({self.href}) (stream id {self.stream_id}, has_topic: {self.has_topic})"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         tag_class = "stream-topic" if self.has_topic else "stream"
-        stream_id = self.stream_id
-        href = self.href
-        return f"""<a class="{tag_class}" data-stream-id="{stream_id}" href="{href}">{self.inner()}</a>"""
+        return self.tag(
+            "a", class_=tag_class, data_stream_id=self.stream_id, href=self.href
+        )
 
 
 class TimeWidgetNode(BaseNode):
@@ -281,7 +300,7 @@ class TimeWidgetNode(BaseNode):
     def as_text(self) -> str:
         return self.text
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return build_tag(
             tag="time", inner=escape_text(self.text), datetime=self.datetime
         )
@@ -295,7 +314,7 @@ class UserGroupMentionNode(BaseNode):
     def as_text(self) -> str:
         return f"[ GROUP {'_' if self.silent else ''}{self.name} {self.group_id} ]"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         tag_class = "user-group-mention silent" if self.silent else "user-group-mention"
         return build_tag(
             tag="span",
@@ -313,7 +332,7 @@ class UserMentionNode(BaseNode):
     def as_text(self) -> str:
         return f"[ {'_' if self.silent else ''}{self.name} {self.user_id} ]"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         tag_class = "user-mention silent" if self.silent else "user-mention"
         return build_tag(
             tag="span",
@@ -334,16 +353,16 @@ class BreakNode(BaseNode):
     def as_text(self) -> str:
         return "\n"
 
-    def as_html(self) -> str:
-        return "<br/>"
+    def as_html(self) -> SafeHtml:
+        return SafeHtml("<br/>")
 
 
 class HrNode(BaseNode):
     def as_text(self) -> str:
         return "\n\n---\n\n"
 
-    def as_html(self) -> str:
-        return "<hr/>"
+    def as_html(self) -> SafeHtml:
+        return SafeHtml("<hr/>")
 
 
 """
@@ -365,7 +384,7 @@ class AnchorNode(ContainerNode):
         content = "".join(c.as_text() for c in self.children)
         return f"[{content}] ({self.href})"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("a", href=self.href)
 
 
@@ -374,12 +393,12 @@ class BlockQuoteNode(ContainerNode):
         content = self.children_text()
         return f"\n-----\n{content}\n-----\n"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("blockquote")
 
 
 class BodyNode(ContainerNode):
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("body")
 
 
@@ -387,7 +406,7 @@ class CodeNode(ContainerNode):
     def as_text(self) -> str:
         return f"`{self.children_text()}`"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("code")
 
 
@@ -395,7 +414,7 @@ class DelNode(ContainerNode):
     def as_text(self) -> str:
         return f"~~{self.children_text()}~~"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("del")
 
 
@@ -403,7 +422,7 @@ class EmNode(ContainerNode):
     def as_text(self) -> str:
         return f"*{self.children_text()}*"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("em")
 
 
@@ -411,7 +430,7 @@ class Header1Node(ContainerNode):
     def as_text(self) -> str:
         return f"# {self.children_text()}\n\n"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("h1")
 
 
@@ -419,7 +438,7 @@ class Header2Node(ContainerNode):
     def as_text(self) -> str:
         return f"## {self.children_text()}\n\n"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("h2")
 
 
@@ -427,7 +446,7 @@ class Header3Node(ContainerNode):
     def as_text(self) -> str:
         return f"### {self.children_text()}\n\n"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("h3")
 
 
@@ -435,7 +454,7 @@ class Header4Node(ContainerNode):
     def as_text(self) -> str:
         return f"#### {self.children_text()}\n\n"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("h4")
 
 
@@ -443,7 +462,7 @@ class Header5Node(ContainerNode):
     def as_text(self) -> str:
         return f"##### {self.children_text()}\n\n"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("h5")
 
 
@@ -451,12 +470,12 @@ class Header6Node(ContainerNode):
     def as_text(self) -> str:
         return f"###### {self.children_text()}\n\n"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("h6")
 
 
 class ListItemNode(ContainerNode):
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("li")
 
 
@@ -469,7 +488,7 @@ class OrderedListNode(ContainerNode):
             for i, c in enumerate(self.children)
         )
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         if self.start:
             return self.tag("ol", start=str(self.start))
         return self.tag("ol")
@@ -479,7 +498,7 @@ class ParagraphNode(ContainerNode):
     def as_text(self) -> str:
         return self.children_text() + "\n\n"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("p")
 
 
@@ -487,7 +506,7 @@ class StrongNode(ContainerNode):
     def as_text(self) -> str:
         return f"**{self.children_text()}**"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("strong")
 
 
@@ -495,7 +514,7 @@ class UnorderedListNode(ContainerNode):
     def as_text(self) -> str:
         return "".join("\n    - " + c.as_text() for c in self.children)
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("ul")
 
 
@@ -514,7 +533,7 @@ class ThNode(ContainerNode):
     def as_text(self) -> str:
         return f"    TH: {self.children_text()} ({self.text_align})\n"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("th")
 
 
@@ -524,7 +543,7 @@ class TdNode(ContainerNode):
     def as_text(self) -> str:
         return f"    TD: {self.children_text()} ({self.text_align})\n"
 
-    def as_html(self) -> str:
+    def as_html(self) -> SafeHtml:
         return self.tag("td")
 
 
@@ -538,9 +557,9 @@ class TrNode(BaseNode):
         s += "\n"
         return s
 
-    def as_html(self) -> str:
-        inner = "\n".join(td.as_html() for td in self.tds)
-        return f"<tr>\n{inner}\n</tr>"
+    def as_html(self) -> SafeHtml:
+        inner = SafeHtml("\n").join([td.as_html() for td in self.tds])
+        return SafeHtml(f"<tr>\n{inner}\n</tr>")
 
 
 class TBodyNode(BaseNode):
@@ -550,9 +569,9 @@ class TBodyNode(BaseNode):
         tr_text = "".join(tr.as_text() for tr in self.trs)
         return f"\n-----------\n{tr_text}"
 
-    def as_html(self) -> str:
-        inner = "\n".join(tr.as_html() for tr in self.trs)
-        return f"<tbody>\n{inner}\n</tbody>"
+    def as_html(self) -> SafeHtml:
+        inner = SafeHtml("\n").join([tr.as_html() for tr in self.trs])
+        return SafeHtml(f"<tbody>\n{inner}\n</tbody>")
 
 
 class THeadNode(BaseNode):
@@ -562,9 +581,9 @@ class THeadNode(BaseNode):
         th_text = "".join(th.as_text() for th in self.ths)
         return f"\n-----------\n{th_text}"
 
-    def as_html(self) -> str:
-        inner = "\n".join(th.as_html() for th in self.ths)
-        return f"<thead>\n<tr>\n{inner}\n</tr>\n</thead>"
+    def as_html(self) -> SafeHtml:
+        inner = SafeHtml("\n").join([th.as_html() for th in self.ths])
+        return SafeHtml(f"<thead>\n<tr>\n{inner}\n</tr>\n</thead>")
 
 
 class TableNode(BaseNode):
@@ -574,5 +593,7 @@ class TableNode(BaseNode):
     def as_text(self) -> str:
         return self.thead.as_text() + "\n" + self.tbody.as_text()
 
-    def as_html(self) -> str:
-        return f"<table>\n{self.thead.as_html()}\n{self.tbody.as_html()}\n</table>"
+    def as_html(self) -> SafeHtml:
+        return SafeHtml(
+            f"<table>\n{self.thead.as_html()}\n{self.tbody.as_html()}\n</table>"
+        )

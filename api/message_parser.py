@@ -434,11 +434,11 @@ def get_node(elem: etree._Element) -> BaseNode:
         print(node)
         raise AssertionError(f"need as_html for {type(node)}")
 
-    if node.as_html() != html:
+    if str(node.as_html()) != html:
         print("\n------- as_html MISMATCH\n")
-        print(repr(html[-300:]))
+        print(repr(html[:300]))
         print()
-        print(repr(node.as_html()[-300:]))
+        print(repr(str(node.as_html())[:300]))
         print()
         raise AssertionError("as_html is not precise")
 
