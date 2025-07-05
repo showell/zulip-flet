@@ -9,7 +9,7 @@ First, we have some helpers to build HTML from the AST.
 
 def build_tag(*, tag: str, inner: str, **attrs: str) -> str:
     attr_suffix = "".join(
-        f''' {attr.rstrip("_")}="{escape_text(value)}"'''
+        f''' {attr.rstrip("_").replace("_", "-")}="{escape_text(value)}"'''
         for attr, value in attrs.items()
     )
     if inner == "":
@@ -282,7 +282,7 @@ class TimeWidgetNode(BaseNode):
         return self.text
 
     def as_html(self) -> str:
-        return build_tag(tag="time", inner=self.text, datetime=self.datetime)
+        return build_tag(tag="time", inner=escape_text(self.text), datetime=self.datetime)
 
 
 class UserGroupMentionNode(BaseNode):
@@ -294,7 +294,8 @@ class UserGroupMentionNode(BaseNode):
         return f"[ GROUP {'_' if self.silent else ''}{self.name} {self.group_id} ]"
 
     def as_html(self) -> str:
-        return "XXX"
+        tag_class = "user-group-mention silent" if self.silent else "user-group-mention"
+        return build_tag(tag="span", inner=escape_text(self.name), class_=tag_class, data_user_group_id=self.group_id)
 
 
 class UserMentionNode(BaseNode):
@@ -307,9 +308,7 @@ class UserMentionNode(BaseNode):
 
     def as_html(self) -> str:
         tag_class = "user-mention silent" if self.silent else "user-mention"
-        user_id = escape_text(self.user_id)
-        name = escape_text(self.name)
-        return f"""<span class="{tag_class}" data-user-id="{user_id}">{name}</span>"""
+        return build_tag(tag="span", inner=escape_text(self.name), class_=tag_class, data_user_id=self.user_id)
 
 
 """
