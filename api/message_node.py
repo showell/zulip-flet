@@ -14,8 +14,10 @@ class SafeHtml:
     def __str__(self) -> str:
         return self.text
 
-    def join(self, items: list["SafeHtml"]) -> "SafeHtml":
-        return SafeHtml(str(self.text).join(str(item) for item in items))
+    @staticmethod
+    def join(s: str, items: list["SafeHtml"]) -> "SafeHtml":
+        assert s in ("", " ", "\n")
+        return SafeHtml(s.join(str(item) for item in items))
 
 
 def build_tag(*, tag: str, inner: SafeHtml, **attrs: str) -> SafeHtml:
@@ -165,7 +167,7 @@ class ContainerNode(BaseNode):
         return self.children_text()
 
     def inner(self) -> SafeHtml:
-        return SafeHtml("".join(str(c.as_html()) for c in self.children))
+        return SafeHtml.join("", [c.as_html() for c in self.children])
 
     def tag(self, tag: str, **attrs: str) -> SafeHtml:
         return build_tag(tag=tag, inner=self.inner(), **attrs)
@@ -558,7 +560,7 @@ class TrNode(BaseNode):
         return s
 
     def as_html(self) -> SafeHtml:
-        inner = SafeHtml("\n").join([td.as_html() for td in self.tds])
+        inner = SafeHtml.join("\n", [td.as_html() for td in self.tds])
         return SafeHtml(f"<tr>\n{inner}\n</tr>")
 
 
@@ -570,7 +572,7 @@ class TBodyNode(BaseNode):
         return f"\n-----------\n{tr_text}"
 
     def as_html(self) -> SafeHtml:
-        inner = SafeHtml("\n").join([tr.as_html() for tr in self.trs])
+        inner = SafeHtml.join("\n", [tr.as_html() for tr in self.trs])
         return SafeHtml(f"<tbody>\n{inner}\n</tbody>")
 
 
@@ -582,7 +584,7 @@ class THeadNode(BaseNode):
         return f"\n-----------\n{th_text}"
 
     def as_html(self) -> SafeHtml:
-        inner = SafeHtml("\n").join([th.as_html() for th in self.ths])
+        inner = SafeHtml.join("\n", [th.as_html() for th in self.ths])
         return SafeHtml(f"<thead>\n<tr>\n{inner}\n</tr>\n</thead>")
 
 
