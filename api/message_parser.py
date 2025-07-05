@@ -156,7 +156,8 @@ def get_inline_video_node(elem: etree._Element) -> InlineVideoNode:
 
 def get_ordered_list_node(elem: etree._Element) -> OrderedListNode:
     assert set(elem.attrib).issubset({"start"})
-    start = elem.get("start")
+    start_attr = elem.get("start")
+    start = int(start_attr) if start_attr else 0
     return OrderedListNode(children=get_child_nodes(elem), start=start)
 
 

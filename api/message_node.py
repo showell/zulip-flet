@@ -295,6 +295,7 @@ class HrNode(BaseNode):
     def as_html(self) -> str:
         return "<hr/>"
 
+
 """
 The mostly-vanilla subclasses of ContainerNode are below.
 
@@ -410,11 +411,11 @@ class ListItemNode(ContainerNode):
 
 
 class OrderedListNode(ContainerNode):
-    start: int | None
+    start: int
 
     def as_text(self) -> str:
         return "".join(
-            f"\n    {i + self.start}. " + c.as_text()
+            f"\n    {i + (self.start)}. " + c.as_text()
             for i, c in enumerate(self.children)
         )
 
@@ -466,6 +467,7 @@ class ThNode(ContainerNode):
     def as_html(self) -> str:
         return self.tag("th")
 
+
 class TdNode(ContainerNode):
     text_align: str | None
 
@@ -474,6 +476,7 @@ class TdNode(ContainerNode):
 
     def as_html(self) -> str:
         return self.tag("td")
+
 
 class TrNode(BaseNode):
     tds: list[TdNode]
@@ -488,6 +491,7 @@ class TrNode(BaseNode):
     def as_html(self) -> str:
         inner = "\n".join(td.as_html() for td in self.tds)
         return f"<tr>\n{inner}\n</tr>"
+
 
 class TBodyNode(BaseNode):
     trs: list[TrNode]
@@ -511,6 +515,7 @@ class THeadNode(BaseNode):
     def as_html(self) -> str:
         inner = "\n".join(th.as_html() for th in self.ths)
         return f"<thead>\n<tr>\n{inner}\n</tr>\n</thead>"
+
 
 class TableNode(BaseNode):
     thead: THeadNode
