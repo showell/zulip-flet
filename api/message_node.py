@@ -463,6 +463,8 @@ class ThNode(ContainerNode):
     def as_text(self) -> str:
         return f"    TH: {self.children_text()} ({self.text_align})\n"
 
+    def as_html(self) -> str:
+        return self.tag("th")
 
 class TdNode(ContainerNode):
     text_align: str | None
@@ -470,6 +472,8 @@ class TdNode(ContainerNode):
     def as_text(self) -> str:
         return f"    TD: {self.children_text()} ({self.text_align})\n"
 
+    def as_html(self) -> str:
+        return self.tag("td")
 
 class TrNode(BaseNode):
     tds: list[TdNode]
@@ -481,6 +485,9 @@ class TrNode(BaseNode):
         s += "\n"
         return s
 
+    def as_html(self) -> str:
+        inner = "\n".join(td.as_html() for td in self.tds)
+        return f"<tr>\n{inner}\n</tr>"
 
 class TBodyNode(BaseNode):
     trs: list[TrNode]
@@ -488,6 +495,10 @@ class TBodyNode(BaseNode):
     def as_text(self) -> str:
         tr_text = "".join(tr.as_text() for tr in self.trs)
         return f"\n-----------\n{tr_text}"
+
+    def as_html(self) -> str:
+        inner = "\n".join(tr.as_html() for tr in self.trs)
+        return f"<tbody>\n{inner}\n</tbody>"
 
 
 class THeadNode(BaseNode):
@@ -497,6 +508,9 @@ class THeadNode(BaseNode):
         th_text = "".join(th.as_text() for th in self.ths)
         return f"\n-----------\n{th_text}"
 
+    def as_html(self) -> str:
+        inner = "\n".join(th.as_html() for th in self.ths)
+        return f"<thead>\n<tr>\n{inner}\n</tr>\n</thead>"
 
 class TableNode(BaseNode):
     thead: THeadNode
@@ -504,3 +518,6 @@ class TableNode(BaseNode):
 
     def as_text(self) -> str:
         return self.thead.as_text() + "\n" + self.tbody.as_text()
+
+    def as_html(self) -> str:
+        return f"<table>\n{self.thead.as_html()}\n{self.tbody.as_html()}\n</table>"
