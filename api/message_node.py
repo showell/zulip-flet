@@ -132,7 +132,10 @@ class ContainerNode(BaseNode):
         return "".join(c.as_html() for c in self.children)
 
     def tag(self, tag: str) -> str:
-        return f"<{tag}>{self.inner()}</{tag}>"
+        inner = self.inner()
+        if inner == "":
+            return f"<{tag}/>"
+        return f"<{tag}>{inner}</{tag}>"
 
 
 """
@@ -178,7 +181,7 @@ class InlineImageNode(BaseNode):
         return f"INLINE IMAGE: {self.href}"
 
     def as_html(self) -> str:
-        return f""""""
+        return """"""
 
 
 class InlineVideoNode(BaseNode):
@@ -209,7 +212,7 @@ class SpoilerNode(BaseNode):
         content = self.content.as_text()
         return f"SPOILER: {header}\nHIDDEN:\n{content}\nENDHIDDEN\n"
 
-    def as_html(self):
+    def as_html(self) -> str:
         header = self.header.as_html()
         content = self.content.as_html()
         header_tag = f"""<div class="spoiler-header">\n{header}\n</div>"""
