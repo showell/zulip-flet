@@ -282,7 +282,9 @@ class TimeWidgetNode(BaseNode):
         return self.text
 
     def as_html(self) -> str:
-        return build_tag(tag="time", inner=escape_text(self.text), datetime=self.datetime)
+        return build_tag(
+            tag="time", inner=escape_text(self.text), datetime=self.datetime
+        )
 
 
 class UserGroupMentionNode(BaseNode):
@@ -295,7 +297,12 @@ class UserGroupMentionNode(BaseNode):
 
     def as_html(self) -> str:
         tag_class = "user-group-mention silent" if self.silent else "user-group-mention"
-        return build_tag(tag="span", inner=escape_text(self.name), class_=tag_class, data_user_group_id=self.group_id)
+        return build_tag(
+            tag="span",
+            inner=escape_text(self.name),
+            class_=tag_class,
+            data_user_group_id=self.group_id,
+        )
 
 
 class UserMentionNode(BaseNode):
@@ -308,7 +315,12 @@ class UserMentionNode(BaseNode):
 
     def as_html(self) -> str:
         tag_class = "user-mention silent" if self.silent else "user-mention"
-        return build_tag(tag="span", inner=escape_text(self.name), class_=tag_class, data_user_id=self.user_id)
+        return build_tag(
+            tag="span",
+            inner=escape_text(self.name),
+            class_=tag_class,
+            data_user_id=self.user_id,
+        )
 
 
 """

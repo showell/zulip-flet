@@ -50,6 +50,7 @@ def assert_equal(s1: str, s2: str) -> None:
         print(repr(s2))
         raise AssertionError(f"{s1} != {s2}")
 
+
 def restrict_attributes(elem: etree._Element, *fields: str) -> None:
     if not set(elem.attrib).issubset(set(fields)):
         print(etree.tostring(elem, with_tail=False))
@@ -154,7 +155,6 @@ def get_inline_video_node(elem: etree._Element) -> InlineVideoNode:
     assert anchor.tag == "a"
     restrict_attributes(anchor, "href", "title")
     href = anchor.get("href") or ""
-    title = anchor.get("title") or ""
     assert href
     assert len(anchor) == 1
     assert anchor.text is None
