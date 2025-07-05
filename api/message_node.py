@@ -3,6 +3,34 @@ from abc import ABC, abstractmethod
 from pydantic import BaseModel
 
 
+"""
+First, we have some helpers to build HTML from the AST.
+"""
+
+def build_tag(*, tag: str, inner: str, **attrs: str) -> str:
+    attr_suffix = "".join(
+        f''' {attr.rstrip("_")}="{escape_text(value)}"''' for attr, value in attrs.items()
+    )
+    if inner == "":
+        return f"<{tag}{attr_suffix}/>"
+    return f"<{tag}{attr_suffix}>{inner}</{tag}>"
+
+
+def escape_text(text: str) -> str:
+    # This is very similar to html.escape, but we want to match the
+    # current implementation of the Zulip markdown processor
+    text = text.replace("&", "&amp;")
+    special_chars = [c for c in text if ord(c) > 128]
+    for c in special_chars:
+        text = text.replace(c, f"&#{ord(c)};")
+    text = text.replace(">", "&gt;")
+    text = text.replace("<", "&lt;")
+    return text
+
+
+"""
+Our BaseNode class is abstract.
+"""
 class BaseNode(BaseModel, ABC):
     @abstractmethod
     def as_text(self) -> str:
@@ -86,16 +114,6 @@ the latter is clearly better for humans.
 """
 
 
-def escape_text(text: str) -> str:
-    text = text.replace("&", "&amp;")
-    special_chars = [c for c in text if ord(c) > 128]
-    for c in special_chars:
-        text = text.replace(c, f"&#{ord(c)};")
-    text = text.replace(">", "&gt;")
-    text = text.replace("<", "&lt;")
-    return text
-
-
 class TextNode(BaseNode):
     text: str
 
@@ -132,13 +150,7 @@ class ContainerNode(BaseNode):
         return "".join(c.as_html() for c in self.children)
 
     def tag(self, tag: str, **attrs: str) -> str:
-        attr_suffix = "".join(
-            f''' {attr}="{escape_text(value)}"''' for attr, value in attrs.items()
-        )
-        inner = self.inner()
-        if inner == "":
-            return f"<{tag}{attr_suffix}/>"
-        return f"<{tag}{attr_suffix}>{inner}</{tag}>"
+        return build_tag(tag=tag, inner=self.inner(), **attrs)
 
 
 """
@@ -155,6 +167,16 @@ class EmojiImageNode(BaseNode):
 
     def as_text(self) -> str:
         return f":{self.title}:"
+
+    def as_html(self) -> str:
+        return build_tag(
+            tag="img",
+            inner="",
+            alt=f":{self.title.replace(" ", "_")}:",
+            class_="emoji",
+            src=self.src,
+            title=self.title,
+        )
 
 
 class EmojiSpanNode(BaseNode):
