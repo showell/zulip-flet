@@ -2,14 +2,15 @@ from abc import ABC, abstractmethod
 
 from pydantic import BaseModel
 
-
 """
 First, we have some helpers to build HTML from the AST.
 """
 
+
 def build_tag(*, tag: str, inner: str, **attrs: str) -> str:
     attr_suffix = "".join(
-        f''' {attr.rstrip("_")}="{escape_text(value)}"''' for attr, value in attrs.items()
+        f''' {attr.rstrip("_")}="{escape_text(value)}"'''
+        for attr, value in attrs.items()
     )
     if inner == "":
         return f"<{tag}{attr_suffix}/>"
@@ -31,6 +32,8 @@ def escape_text(text: str) -> str:
 """
 Our BaseNode class is abstract.
 """
+
+
 class BaseNode(BaseModel, ABC):
     @abstractmethod
     def as_text(self) -> str:
@@ -172,7 +175,7 @@ class EmojiImageNode(BaseNode):
         return build_tag(
             tag="img",
             inner="",
-            alt=f":{self.title.replace(" ", "_")}:",
+            alt=f":{self.title.replace(' ', '_')}:",
             class_="emoji",
             src=self.src,
             title=self.title,
