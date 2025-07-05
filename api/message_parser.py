@@ -27,6 +27,8 @@ from message_node import (
     RawCodeBlockNode,
     RawKatexNode,
     RawNode,
+    SpoilerContentNode,
+    SpoilerHeaderNode,
     SpoilerNode,
     StreamLinkNode,
     StrongNode,
@@ -197,30 +199,19 @@ def get_raw_node(elem: etree._Element) -> RawNode:
     return RawNode(html=etree.tostring(elem, with_tail=False).decode("utf8"))
 
 
-def get_spoiler_header(elem: etree._Element) -> BaseNode:
-    assert set(elem.attrib) == {"class"}
-    assert elem.get("class") == "spoiler-header"
-    assert elem.text == "\n"
-    if len(elem) == 0:
-        return TextNode(text="")
-    assert len(elem) == 1
-    para = elem[0]
-    assert para.tag == "p"
-    assert para.tail == "\n"
-    para.tail = ""
-    return get_node(para)
-
-
-def get_spoiler_content(elem: etree._Element) -> BaseNode:
+def get_spoiler_content(elem: etree._Element) -> SpoilerContentNode:
     assert elem.tag == "div"
     assert set(elem.attrib) == {"class", "aria-hidden"}
     assert elem.get("class") == "spoiler-content"
     assert elem.get("aria-hidden") == "true"
-    assert elem.text == "\n"
-    content = elem[0]
-    assert content.tail == "\n"
-    content.tail = ""
-    return get_node(content)
+    return SpoilerContentNode(children=get_child_nodes(elem, ignore_newlines=True))
+
+
+def get_spoiler_header(elem: etree._Element) -> SpoilerHeaderNode:
+    assert elem.tag == "div"
+    assert set(elem.attrib) == {"class"}
+    assert elem.get("class") == "spoiler-header"
+    return SpoilerHeaderNode(children=get_child_nodes(elem, ignore_newlines=True))
 
 
 def get_spoiler_node(elem: etree._Element) -> SpoilerNode:
@@ -313,17 +304,19 @@ def get_user_mention_node(elem: etree._Element, silent: bool) -> UserMentionNode
     return UserMentionNode(name=name, user_id=user_id, silent=silent)
 
 
-def get_child_nodes(elem: etree._Element) -> list[BaseNode]:
+def get_child_nodes(
+    elem: etree._Element, ignore_newlines: bool = False
+) -> list[BaseNode]:
     children: list[BaseNode] = []
     if elem.text:
         text = elem.text
-        if text:
+        if text and not (ignore_newlines and text == "\n"):
             children.append(TextNode(text=text))
 
     for c in elem:
         tail_text = c.tail or ""
         children.append(get_node(c))
-        if tail_text:
+        if tail_text and not (ignore_newlines and tail_text == "\n"):
             children.append(TextNode(text=tail_text))
 
     return children

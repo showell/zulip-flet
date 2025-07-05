@@ -19,6 +19,12 @@ class SafeHtml:
         assert s in ("", " ", "\n")
         return SafeHtml(s.join(str(item) for item in items))
 
+    @staticmethod
+    def block_join(items: list["SafeHtml"]) -> "SafeHtml":
+        if not items:
+            return SafeHtml("\n")
+        return SafeHtml("\n" + "\n".join(str(item)for item in items) + "\n")
+
 
 def build_tag(*, tag: str, inner: SafeHtml, **attrs: str) -> SafeHtml:
     attr_suffix = "".join(
@@ -172,6 +178,10 @@ class ContainerNode(BaseNode):
     def tag(self, tag: str, **attrs: str) -> SafeHtml:
         return build_tag(tag=tag, inner=self.inner(), **attrs)
 
+    def block_tag(self, tag: str, **attrs: str) -> SafeHtml:
+        inner = SafeHtml.block_join([c.as_html() for c in self.children])
+        return build_tag(tag=tag, inner=inner, **attrs)
+
 
 """
 The following classes can be considered to be
@@ -258,9 +268,19 @@ class MessageLinkNode(ContainerNode):
         return self.tag("a", class_="message-link", href=href)
 
 
+class SpoilerContentNode(ContainerNode):
+    def as_html(self) -> SafeHtml:
+        return self.block_tag("div", class_="spoiler-content", aria_hidden="true")
+
+
+class SpoilerHeaderNode(ContainerNode):
+    def as_html(self) -> SafeHtml:
+        return self.block_tag("div", class_="spoiler-header")
+
+
 class SpoilerNode(BaseNode):
-    header: BaseNode
-    content: BaseNode
+    header: SpoilerHeaderNode
+    content: SpoilerContentNode
 
     def as_text(self) -> str:
         header = self.header.as_text()
@@ -270,13 +290,7 @@ class SpoilerNode(BaseNode):
     def as_html(self) -> SafeHtml:
         header = self.header.as_html()
         content = self.content.as_html()
-        header_tag = f"""<div class="spoiler-header">\n{header}\n</div>"""
-        content_tag = (
-            f"""<div class="spoiler-content" aria-hidden="true">\n{content}\n</div>"""
-        )
-        return SafeHtml(
-            f"""<div class="spoiler-block">{header_tag}{content_tag}</div>"""
-        )
+        return SafeHtml(f"""<div class="spoiler-block">{header}{content}</div>""")
 
 
 class StreamLinkNode(ContainerNode):
