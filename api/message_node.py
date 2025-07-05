@@ -39,6 +39,10 @@ class BaseNode(BaseModel, ABC):
     def as_text(self) -> str:
         pass
 
+    @abstractmethod
+    def as_html(self) -> str:
+        pass
+
 
 """
 The aim of this code is to define the structure of Zulip
@@ -209,7 +213,7 @@ class InlineImageNode(BaseNode):
         return f"INLINE IMAGE: {self.href}"
 
     def as_html(self) -> str:
-        return """"""
+        return "XXX"
 
 
 class InlineVideoNode(BaseNode):
@@ -217,6 +221,9 @@ class InlineVideoNode(BaseNode):
 
     def as_text(self) -> str:
         return f"INLINE VIDEO: {self.href}"
+
+    def as_html(self) -> str:
+        return "XXX"
 
 
 class MessageLinkNode(ContainerNode):
@@ -273,6 +280,9 @@ class TimeWidgetNode(BaseNode):
     def as_text(self) -> str:
         return self.text
 
+    def as_html(self) -> str:
+        return build_tag(tag="time", inner=self.text, datetime=self.datetime)
+
 
 class UserGroupMentionNode(BaseNode):
     name: str
@@ -281,6 +291,9 @@ class UserGroupMentionNode(BaseNode):
 
     def as_text(self) -> str:
         return f"[ GROUP {'_' if self.silent else ''}{self.name} {self.group_id} ]"
+
+    def as_html(self) -> str:
+        return "XXX"
 
 
 class UserMentionNode(BaseNode):
