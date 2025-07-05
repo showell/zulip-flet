@@ -292,6 +292,8 @@ class HrNode(BaseNode):
     def as_text(self) -> str:
         return "\n\n---\n\n"
 
+    def as_html(self) -> str:
+        return "<hr/>"
 
 """
 The mostly-vanilla subclasses of ContainerNode are below.
