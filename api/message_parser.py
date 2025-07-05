@@ -154,6 +154,12 @@ def get_inline_video_node(elem: etree._Element) -> InlineVideoNode:
     return InlineVideoNode(href=href)
 
 
+def get_ordered_list_node(elem: etree._Element) -> OrderedListNode:
+    assert set(elem.attrib).issubset({"start"})
+    start = elem.get("start")
+    return OrderedListNode(children=get_child_nodes(elem), start=start)
+
+
 def get_message_link_node(elem: etree._Element) -> MessageLinkNode:
     assert set(elem.attrib) == {"class", "href"}
     href = elem.get("href") or ""
@@ -349,6 +355,9 @@ def _get_node(elem: etree._Element) -> BaseNode:
         if elem_class == "emoji":
             return get_emoji_image_node(elem)
 
+    if elem.tag == "ol":
+        return get_ordered_list_node(elem)
+
     if elem.tag == "span":
         if elem_class.startswith("emoji "):
             return get_emoji_span_node(elem)
@@ -381,7 +390,6 @@ def _get_node(elem: etree._Element) -> BaseNode:
         h5=Header5Node,
         h6=Header6Node,
         li=ListItemNode,
-        ol=OrderedListNode,
         p=ParagraphNode,
         strong=StrongNode,
         ul=UnorderedListNode,
@@ -389,10 +397,6 @@ def _get_node(elem: etree._Element) -> BaseNode:
 
     # del is a keyword in Python
     simple_nodes["del"] = DelNode
-
-    # XXX
-    if elem.tag == "ol" and elem.get("start"):
-        del elem.attrib["start"]
 
     if elem.tag in simple_nodes:
         if len(elem.attrib.keys()) > 0:

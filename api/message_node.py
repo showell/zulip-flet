@@ -131,11 +131,12 @@ class ContainerNode(BaseNode):
     def inner(self) -> str:
         return "".join(c.as_html() for c in self.children)
 
-    def tag(self, tag: str) -> str:
+    def tag(self, tag: str, **attrs: str) -> str:
+        attr_suffix = "".join(f''' {attr}="{escape_text(value)}"''' for attr, value in attrs.items())
         inner = self.inner()
         if inner == "":
-            return f"<{tag}/>"
-        return f"<{tag}>{inner}</{tag}>"
+            return f"<{tag}{attr_suffix}/>"
+        return f"<{tag}{attr_suffix}>{inner}</{tag}>"
 
 
 """
@@ -265,7 +266,7 @@ class UserMentionNode(BaseNode):
 
     def as_html(self) -> str:
         tag_class = "user-mention silent" if self.silent else "user-mention"
-        user_id = self.user_id
+        user_id = escape_text(self.user_id)
         name = escape_text(self.name)
         return f"""<span class="{tag_class}" data-user-id="{user_id}">{name}</span>"""
 
@@ -310,8 +311,7 @@ class AnchorNode(ContainerNode):
         return f"[{content}] ({self.href})"
 
     def as_html(self) -> str:
-        href = escape_text(self.href)
-        return f"""<a href="{href}">{self.inner()}</a>"""
+        return self.tag("a", href=self.href)
 
 
 class BlockQuoteNode(ContainerNode):
@@ -406,12 +406,16 @@ class ListItemNode(ContainerNode):
 
 
 class OrderedListNode(ContainerNode):
+    start: int | None
+
     def as_text(self) -> str:
         return "".join(
-            f"\n    {i}. " + c.as_text() for i, c in enumerate(self.children)
+            f"\n    {i + self.start}. " + c.as_text() for i, c in enumerate(self.children)
         )
 
     def as_html(self) -> str:
+        if self.start:
+            return self.tag("ol", start=str(self.start))
         return self.tag("ol")
 
 
