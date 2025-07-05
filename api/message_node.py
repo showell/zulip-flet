@@ -23,7 +23,7 @@ class SafeHtml:
     def block_join(items: list["SafeHtml"]) -> "SafeHtml":
         if not items:
             return SafeHtml("\n")
-        return SafeHtml("\n" + "\n".join(str(item)for item in items) + "\n")
+        return SafeHtml("\n" + "\n".join(str(item) for item in items) + "\n")
 
 
 def build_tag(*, tag: str, inner: SafeHtml, **attrs: str) -> SafeHtml:
