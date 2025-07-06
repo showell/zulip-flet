@@ -13,9 +13,6 @@ num_successes = 0
 for message in database.message_table.get_rows():
     html = message.content
 
-    if "message_inline_video" in html:
-        continue
-
     try:
         node = get_message_node(html)
         node.as_text()

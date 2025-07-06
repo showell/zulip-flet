@@ -274,12 +274,29 @@ class InlineImageNode(BaseNode):
 class InlineVideoNode(BaseNode):
     href: str
     src: str
+    title: str | None
 
     def as_text(self) -> str:
         return f"INLINE VIDEO: {self.href}"
 
     def as_html(self) -> SafeHtml:
-        return SafeHtml("XXX")
+        video = build_tag(
+            tag="video",
+            inner=SafeHtml(""),
+            preload="metadata",
+            src=self.src,
+        )
+        anchor = build_tag(
+            tag="a",
+            inner=video,
+            href=self.href,
+            title=self.title,
+        )
+        return build_tag(
+            tag="div",
+            inner=anchor,
+            class_="message_inline_image message_inline_video",
+        )
 
 
 class MessageLinkNode(ContainerNode):

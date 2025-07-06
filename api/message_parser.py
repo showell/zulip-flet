@@ -169,6 +169,7 @@ def get_inline_video_node(elem: etree._Element) -> InlineVideoNode:
     assert anchor.tag == "a"
     restrict_attributes(anchor, "href", "title")
     href = anchor.get("href") or ""
+    title = anchor.get("title")
     assert href
     assert len(anchor) == 1
     assert anchor.text is None
@@ -178,7 +179,7 @@ def get_inline_video_node(elem: etree._Element) -> InlineVideoNode:
     assert video.get("preload") == "metadata"
     src = video.get("src") or ""
     assert video.text is None
-    return InlineVideoNode(href=href, src=src)
+    return InlineVideoNode(href=href, src=src, title=title)
 
 
 def get_ordered_list_node(elem: etree._Element) -> OrderedListNode:
