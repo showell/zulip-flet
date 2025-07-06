@@ -26,7 +26,6 @@ from message_node import (
     ParagraphNode,
     RawCodeBlockNode,
     RawKatexNode,
-    RawNode,
     SpoilerContentNode,
     SpoilerHeaderNode,
     SpoilerNode,
@@ -51,6 +50,12 @@ def assert_equal(s1: str, s2: str) -> None:
         print(repr(s1))
         print(repr(s2))
         raise AssertionError(f"{s1} != {s2}")
+
+
+def forbid_children(elem: etree._Element) -> None:
+    if len(elem) != 0:
+        print(etree.tostring(elem, with_tail=False))
+        raise AssertionError(f"{elem.tag} has unexpected children")
 
 
 def restrict_attributes(elem: etree._Element, *fields: str) -> None:
@@ -195,10 +200,6 @@ def get_raw_katex_node(elem: etree._Element) -> RawKatexNode:
     return RawKatexNode(html=html, tag_class=tag_class)
 
 
-def get_raw_node(elem: etree._Element) -> RawNode:
-    return RawNode(html=etree.tostring(elem, with_tail=False).decode("utf8"))
-
-
 def get_spoiler_content(elem: etree._Element) -> SpoilerContentNode:
     assert elem.tag == "div"
     assert set(elem.attrib) == {"class", "aria-hidden"}
@@ -340,7 +341,7 @@ def _get_node(elem: etree._Element) -> BaseNode:
 
     if elem.tag == "br":
         restrict_attributes(elem)
-        assert len(elem) == 0
+        forbid_children(elem)
         return BreakNode()
 
     if elem.tag == "div":
@@ -354,8 +355,8 @@ def _get_node(elem: etree._Element) -> BaseNode:
             return get_inline_video_node(elem)
 
     if elem.tag == "hr":
-        assert len(elem.attrib) == 0
-        assert len(elem) == 0
+        restrict_attributes(elem)
+        forbid_children(elem)
         return HrNode()
 
     if elem.tag == "img":
@@ -363,7 +364,6 @@ def _get_node(elem: etree._Element) -> BaseNode:
             return get_emoji_image_node(elem)
 
     if elem.tag == "ol":
-        print(etree.tostring(elem))
         return get_ordered_list_node(elem)
 
     if elem.tag == "span":
@@ -410,10 +410,7 @@ def _get_node(elem: etree._Element) -> BaseNode:
         restrict_attributes(elem)
         return simple_nodes[elem.tag](children=get_child_nodes(elem))
 
-    print("UNHANDLED", elem.tag)
-    print(etree.tostring(elem))
-    print()
-    return get_raw_node(elem)
+    raise Exception(f"Unsupported tag {elem.tag}")
 
 
 def get_node(elem: etree._Element) -> BaseNode:

@@ -83,18 +83,15 @@ to re-invent the wheel when it comes to producing HTML for that.
 
 Long story short, I only choose to represent LaTeX/KaTeX blocks
 as raw HTML.
-
-Also, during this stage of development, I use RawNode as a
-catch-all class for obscure corner cases that I haven't encountered
-yet, and then my demo app just spews out raw HTML as bare text.
 """
 
 
-class RawNode(BaseNode):
+class RawNode(BaseNode, ABC):
     html: str
 
+    @abstractmethod
     def as_text(self) -> str:
-        return self.html
+        pass
 
     def as_html(self) -> SafeHtml:
         return SafeHtml(self.html)
