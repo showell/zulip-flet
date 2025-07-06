@@ -73,8 +73,10 @@ def text_content(elem: etree._Element) -> str:
         s += c.tail or ""
     return s
 
+
 def get_html(elem: etree._Element) -> str:
     return etree.tostring(elem, with_tail=False).decode("utf-8")
+
 
 """
 Custom validators follow.
@@ -431,7 +433,6 @@ def get_node(elem: etree._Element) -> BaseNode:
 
 
 def get_message_node(html: str) -> BaseNode:
-    print(f"\nOUTER HMTL:\n{repr(html)}")
     root = etree.HTML("<body>" + html + "</body>")
     assert root.tag == "html"
     assert len(root) == 1

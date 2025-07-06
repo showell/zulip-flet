@@ -20,6 +20,7 @@ for message in database.message_table.get_rows():
         node.as_text()
         node.as_html()
     except AssertionError as e:
+        print(f"\nOUTER HMTL:\n{repr(html)}")
         print(f"\nERROR:\n{e}\n")
         break
 
