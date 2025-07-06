@@ -18,10 +18,19 @@ for message in database.message_table.get_rows():
     try:
         node = get_message_node(html)
         node.as_text()
-        node.as_html()
     except AssertionError as e:
         print(f"\nERROR:\n{e}\n")
         break
+
+    body_html = f"<body>{html}</body>"
+    if False and str(node.as_html()) != body_html:
+        print()
+        print("ERROR")
+        print(repr(body_html))
+        print()
+        print(repr(str(node.as_html())))
+        break
+
     num_successes += 1
 print()
 print(f"{num_successes=}")

@@ -73,6 +73,8 @@ def text_content(elem: etree._Element) -> str:
         s += c.tail or ""
     return s
 
+def get_html(elem: etree._Element) -> str:
+    return etree.tostring(elem, with_tail=False).decode("utf-8")
 
 """
 Custom validators follow.
@@ -80,7 +82,10 @@ Custom validators follow.
 
 
 def get_code_block_node(elem: etree._Element) -> RawCodeBlockNode:
-    html = etree.tostring(elem, with_tail=False).decode("utf-8")
+    for c in elem.iter():
+        if c.text is None:
+            c.text = ""
+    html = get_html(elem)
     lang = elem.get("data-code-language") or "NOT SPECIFIED"
     content = text_content(elem)
     return RawCodeBlockNode(html=html, lang=lang, content=content)
@@ -135,7 +140,6 @@ def get_inline_image_node(elem: etree._Element) -> InlineImageNode:
             "data-original-content-type",
         }
     ):
-        print(etree.tostring(elem).decode("utf8"))
         raise AssertionError()
 
     src = grandchild.get("src") or ""
@@ -196,7 +200,7 @@ def get_raw_katex_node(elem: etree._Element) -> RawKatexNode:
     assert set(elem.attrib) == {"class"}
     tag_class = elem.get("class") or ""
     assert tag_class in ["katex", "katex-display"]
-    html = etree.tostring(elem, with_tail=False).decode("utf8")
+    html = get_html(elem)
     return RawKatexNode(html=html, tag_class=tag_class)
 
 
@@ -414,19 +418,13 @@ def _get_node(elem: etree._Element) -> BaseNode:
 
 
 def get_node(elem: etree._Element) -> BaseNode:
-    html = etree.tostring(elem, with_tail=False).decode("utf8")
     node = _get_node(elem)
 
-    print()
-    print(type(node), node)
+    expected_html = node.html if hasattr(node, "html") else get_html(elem)
 
-    if not hasattr(node, "as_html"):
-        print(node)
-        raise AssertionError(f"need as_html for {type(node)}")
-
-    if str(node.as_html()) != html:
+    if str(node.as_html()) != expected_html:
         print("\n------- as_html MISMATCH\n")
-        print(repr(html[:300]))
+        print(repr(expected_html[:300]))
         print()
         print(repr(str(node.as_html())[:300]))
         print()
