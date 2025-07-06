@@ -428,7 +428,7 @@ def _get_node(elem: etree._Element) -> BaseNode:
 def get_node(elem: etree._Element) -> BaseNode:
     node = _get_node(elem)
 
-    expected_html = node.html if hasattr(node, "html") else get_html(elem)
+    expected_html = get_html(elem)
 
     if str(node.as_html()) != expected_html:
         print("\n------- as_html MISMATCH\n")
