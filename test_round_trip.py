@@ -17,6 +17,8 @@ for message in database.message_table.get_rows():
 
     try:
         node = get_message_node(html)
+        node.as_text()
+        node.as_html()
     except AssertionError as e:
         print(f"\nERROR:\n{e}\n")
         break

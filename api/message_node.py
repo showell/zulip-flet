@@ -26,10 +26,11 @@ class SafeHtml:
         return SafeHtml("\n" + "\n".join(str(item) for item in items) + "\n")
 
 
-def build_tag(*, tag: str, inner: SafeHtml, **attrs: str) -> SafeHtml:
+def build_tag(*, tag: str, inner: SafeHtml, **attrs: str | None) -> SafeHtml:
     attr_suffix = "".join(
         f''' {attr.rstrip("_").replace("_", "-")}="{escape_text(value)}"'''
         for attr, value in attrs.items()
+        if value is not None
     )
     if str(inner) == "":
         return SafeHtml(f"<{tag}{attr_suffix}/>")
@@ -175,10 +176,10 @@ class ContainerNode(BaseNode):
     def inner(self) -> SafeHtml:
         return SafeHtml.join("", [c.as_html() for c in self.children])
 
-    def tag(self, tag: str, **attrs: str) -> SafeHtml:
+    def tag(self, tag: str, **attrs: str | None) -> SafeHtml:
         return build_tag(tag=tag, inner=self.inner(), **attrs)
 
-    def block_tag(self, tag: str, **attrs: str) -> SafeHtml:
+    def block_tag(self, tag: str, **attrs: str | None) -> SafeHtml:
         inner = SafeHtml.block_join([c.as_html() for c in self.children])
         return build_tag(tag=tag, inner=inner, **attrs)
 
@@ -550,7 +551,8 @@ class ThNode(ContainerNode):
         return f"    TH: {self.children_text()} ({self.text_align})\n"
 
     def as_html(self) -> SafeHtml:
-        return self.tag("th")
+        style = f"text-align: {self.text_align};" if self.text_align else None
+        return self.tag("th", style=style)
 
 
 class TdNode(ContainerNode):
@@ -560,7 +562,8 @@ class TdNode(ContainerNode):
         return f"    TD: {self.children_text()} ({self.text_align})\n"
 
     def as_html(self) -> SafeHtml:
-        return self.tag("td")
+        style = f"text-align: {self.text_align};" if self.text_align else None
+        return self.tag("td", style=style)
 
 
 class TrNode(BaseNode):

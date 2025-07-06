@@ -327,7 +327,7 @@ def _get_node(elem: etree._Element) -> BaseNode:
 
     if elem.tag == "a":
         if not elem_class:
-            assert len(elem.attrib) == 1
+            restrict_attributes(elem, "href")
             href = elem.get("href")
             assert href is not None
             return AnchorNode(href=href, children=get_child_nodes(elem))
@@ -339,7 +339,7 @@ def _get_node(elem: etree._Element) -> BaseNode:
             return get_stream_link_node(elem)
 
     if elem.tag == "br":
-        assert len(elem.attrib) == 0
+        restrict_attributes(elem)
         assert len(elem) == 0
         return BreakNode()
 
