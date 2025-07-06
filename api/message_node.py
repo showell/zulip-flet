@@ -8,6 +8,18 @@ First, we have some helpers to build HTML from the AST.
 
 
 class SafeHtml:
+    """
+    The SafeHtml class doesn't magically prevent you from
+    creating unsafe HTML, but it prevents a lot of obvious
+    errors with the help of mypy.
+
+    You should only directly instantiate SafeHtml objects
+    from strings that you either trust or that you have
+    properly escaped.
+
+    The SafeHtml protocol also prevents you from accidentally
+    double-escaping strings (but again, not completely fool-proof).
+    """
     def __init__(self, text: str) -> None:
         self.text = text
 
@@ -15,16 +27,14 @@ class SafeHtml:
         return self.text
 
     @staticmethod
-    def join(s: str, items: list["SafeHtml"]) -> "SafeHtml":
-        assert s in ("", " ", "\n")
-        return SafeHtml(s.join(str(item) for item in items))
+    def combine(items: list["SafeHtml"]) -> "SafeHtml":
+        return SafeHtml("".join(str(item) for item in items))
 
     @staticmethod
     def block_join(items: list["SafeHtml"]) -> "SafeHtml":
         if not items:
             return SafeHtml("\n")
         return SafeHtml("\n" + "\n".join(str(item) for item in items) + "\n")
-
 
 def build_tag(*, tag: str, inner: SafeHtml, **attrs: str | None) -> SafeHtml:
     attr_suffix = "".join(
@@ -84,6 +94,8 @@ to re-invent the wheel when it comes to producing HTML for that.
 
 Long story short, I only choose to represent LaTeX/KaTeX blocks
 as raw HTML.
+
+I also do the same for pygments.
 """
 
 
@@ -99,13 +111,6 @@ class RawNode(BaseNode, ABC):
 
 
 class RawCodeBlockNode(RawNode):
-    # Note that we treat code blocks as completely
-    # opaque things, and we don't want to deal with
-    # all the pygments markup at this layer of the
-    # software.  We assume our callers may have their
-    # own alternative to pygments to render code, or
-    # maybe they are even just fine with vanilla
-    # code blocks.
     lang: str
     content: str
 
@@ -172,7 +177,7 @@ class ContainerNode(BaseNode):
         return self.children_text()
 
     def inner(self) -> SafeHtml:
-        return SafeHtml.join("", [c.as_html() for c in self.children])
+        return SafeHtml.combine([c.as_html() for c in self.children])
 
     def tag(self, tag: str, **attrs: str | None) -> SafeHtml:
         return build_tag(tag=tag, inner=self.inner(), **attrs)
@@ -338,7 +343,12 @@ class SpoilerNode(BaseNode):
     def as_html(self) -> SafeHtml:
         header = self.header.as_html()
         content = self.content.as_html()
-        return SafeHtml(f"""<div class="spoiler-block">{header}{content}</div>""")
+        return build_tag(
+            tag="div",
+            inner=SafeHtml.combine([header, content]),
+            class_="spoiler-block",
+
+        )
 
 
 class StreamLinkNode(ContainerNode):
@@ -624,8 +634,8 @@ class TrNode(BaseNode):
         return s
 
     def as_html(self) -> SafeHtml:
-        inner = SafeHtml.join("\n", [td.as_html() for td in self.tds])
-        return SafeHtml(f"<tr>\n{inner}\n</tr>")
+        inner = SafeHtml.block_join([td.as_html() for td in self.tds])
+        return build_tag(tag="tr", inner=inner)
 
 
 class TBodyNode(BaseNode):
@@ -636,8 +646,8 @@ class TBodyNode(BaseNode):
         return f"\n-----------\n{tr_text}"
 
     def as_html(self) -> SafeHtml:
-        inner = SafeHtml.join("\n", [tr.as_html() for tr in self.trs])
-        return SafeHtml(f"<tbody>\n{inner}\n</tbody>")
+        inner = SafeHtml.block_join([tr.as_html() for tr in self.trs])
+        return build_tag(tag="tbody", inner=inner)
 
 
 class THeadNode(BaseNode):
@@ -648,8 +658,9 @@ class THeadNode(BaseNode):
         return f"\n-----------\n{th_text}"
 
     def as_html(self) -> SafeHtml:
-        inner = SafeHtml.join("\n", [th.as_html() for th in self.ths])
-        return SafeHtml(f"<thead>\n<tr>\n{inner}\n</tr>\n</thead>")
+        ths = SafeHtml.block_join([th.as_html() for th in self.ths])
+        tr = build_tag(tag="tr", inner=ths)
+        return build_tag(tag="thead", inner=SafeHtml.block_join([tr]))
 
 
 class TableNode(BaseNode):
@@ -660,6 +671,7 @@ class TableNode(BaseNode):
         return self.thead.as_text() + "\n" + self.tbody.as_text()
 
     def as_html(self) -> SafeHtml:
-        return SafeHtml(
-            f"<table>\n{self.thead.as_html()}\n{self.tbody.as_html()}\n</table>"
-        )
+        thead = self.thead.as_html()
+        tbody = self.tbody.as_html()
+        inner = SafeHtml.block_join([thead, tbody])
+        return build_tag(tag="table", inner=inner)
