@@ -45,8 +45,10 @@ from message_node import (
     UserMentionNode,
 )
 
+Element = etree._Element
 
-def assert_class(elem: etree._Element, expected: str) -> None:
+
+def assert_class(elem: Element, expected: str) -> None:
     assert_equal(get_string(elem, "class"), expected)
 
 
@@ -57,44 +59,44 @@ def assert_equal(s1: str, s2: str) -> None:
         raise AssertionError(f"{s1} != {s2}")
 
 
-def assert_num_children(elem: etree._Element, count: int) -> None:
+def assert_num_children(elem: Element, count: int) -> None:
     if len(elem) != count:
         raise AssertionError("bad count")
 
 
-def forbid_children(elem: etree._Element) -> None:
+def forbid_children(elem: Element) -> None:
     if len(elem) != 0:
         print(etree.tostring(elem, with_tail=False))
         raise AssertionError(f"{elem.tag} has unexpected children")
 
 
-def get_bool(elem: etree._Element, field: str) -> bool:
+def get_bool(elem: Element, field: str) -> bool:
     return (elem.get(field) or "") == "true"
 
 
-def get_html(elem: etree._Element) -> str:
+def get_html(elem: Element) -> str:
     return etree.tostring(elem, with_tail=False).decode("utf-8")
 
 
-def get_only_child(elem: etree._Element, tag_name: str) -> etree._Element:
+def get_only_child(elem: Element, tag_name: str) -> Element:
     assert_num_children(elem, 1)
     child = elem[0]
     assert_equal(child.tag, tag_name)
     return child
 
 
-def get_string(elem: etree._Element, field: str) -> str:
+def get_string(elem: Element, field: str) -> str:
     s = elem.get(field)
     if s is None:
         raise AssertionError(f"{field} is missing")
     return s
 
 
-def require_tag(elem: etree._Element, tag: str) -> None:
+def require_tag(elem: Element, tag: str) -> None:
     assert_equal(elem.tag or "", tag)
 
 
-def restrict_attributes(elem: etree._Element, *fields: str) -> None:
+def restrict_attributes(elem: Element, *fields: str) -> None:
     if not set(elem.attrib).issubset(set(fields)):
         print(etree.tostring(elem, with_tail=False))
         raise AssertionError(
@@ -102,7 +104,7 @@ def restrict_attributes(elem: etree._Element, *fields: str) -> None:
         )
 
 
-def text_content(elem: etree._Element) -> str:
+def text_content(elem: Element) -> str:
     s = elem.text or ""
     for c in elem:
         s += text_content(c)
@@ -115,14 +117,14 @@ Custom validators follow.
 """
 
 
-def get_code_block_node(elem: etree._Element) -> RawCodeBlockNode:
+def get_code_block_node(elem: Element) -> RawCodeBlockNode:
     html = get_html(elem)
     lang = elem.get("data-code-language") or "NOT SPECIFIED"
     content = text_content(elem)
     return RawCodeBlockNode(html=html, lang=lang, content=content)
 
 
-def get_emoji_image_node(elem: etree._Element) -> EmojiImageNode:
+def get_emoji_image_node(elem: Element) -> EmojiImageNode:
     restrict_attributes(elem, "alt", "class", "src", "title")
     alt = get_string(elem, "alt")
     src = get_string(elem, "src")
@@ -131,7 +133,7 @@ def get_emoji_image_node(elem: etree._Element) -> EmojiImageNode:
     return EmojiImageNode(src=src, title=title)
 
 
-def get_emoji_span_node(elem: etree._Element) -> EmojiSpanNode:
+def get_emoji_span_node(elem: Element) -> EmojiSpanNode:
     restrict_attributes(elem, "aria-label", "class", "role", "title")
     title = get_string(elem, "title")
     assert_equal(get_string(elem, "role"), "img")
@@ -147,7 +149,7 @@ def get_emoji_span_node(elem: etree._Element) -> EmojiSpanNode:
     return EmojiSpanNode(title=title, unicodes=unicodes)
 
 
-def get_img_node(elem: etree._Element) -> ImgNode:
+def get_img_node(elem: Element) -> ImgNode:
     require_tag(elem, "img")
     restrict_attributes(
         elem,
@@ -169,7 +171,7 @@ def get_img_node(elem: etree._Element) -> ImgNode:
     )
 
 
-def get_inline_image_node(elem: etree._Element) -> InlineImageNode:
+def get_inline_image_node(elem: Element) -> InlineImageNode:
     restrict_attributes(elem, "class")
     assert_class(elem, "message_inline_image")
     anchor = get_only_child(elem, "a")
@@ -185,7 +187,7 @@ def get_inline_image_node(elem: etree._Element) -> InlineImageNode:
     )
 
 
-def get_inline_video_node(elem: etree._Element) -> InlineVideoNode:
+def get_inline_video_node(elem: Element) -> InlineVideoNode:
     assert set(elem.attrib) == {"class"}
     assert elem.get("class") == "message_inline_image message_inline_video"
     assert elem.text is None
@@ -207,14 +209,14 @@ def get_inline_video_node(elem: etree._Element) -> InlineVideoNode:
     return InlineVideoNode(href=href, src=src, title=title)
 
 
-def get_ordered_list_node(elem: etree._Element) -> OrderedListNode:
+def get_ordered_list_node(elem: Element) -> OrderedListNode:
     assert set(elem.attrib).issubset({"start"})
     start_attr = elem.get("start")
     start = int(start_attr) if start_attr else 0
     return OrderedListNode(children=get_child_nodes(elem), start=start)
 
 
-def get_message_link_node(elem: etree._Element) -> MessageLinkNode:
+def get_message_link_node(elem: Element) -> MessageLinkNode:
     assert set(elem.attrib) == {"class", "href"}
     href = elem.get("href") or ""
     assert href
@@ -225,7 +227,7 @@ def get_message_link_node(elem: etree._Element) -> MessageLinkNode:
     )
 
 
-def get_raw_katex_node(elem: etree._Element) -> RawKatexNode:
+def get_raw_katex_node(elem: Element) -> RawKatexNode:
     assert set(elem.attrib) == {"class"}
     tag_class = elem.get("class") or ""
     assert tag_class in ["katex", "katex-display"]
@@ -233,7 +235,7 @@ def get_raw_katex_node(elem: etree._Element) -> RawKatexNode:
     return RawKatexNode(html=html, tag_class=tag_class)
 
 
-def get_spoiler_content(elem: etree._Element) -> SpoilerContentNode:
+def get_spoiler_content(elem: Element) -> SpoilerContentNode:
     assert elem.tag == "div"
     assert set(elem.attrib) == {"class", "aria-hidden"}
     assert elem.get("class") == "spoiler-content"
@@ -245,14 +247,14 @@ def get_spoiler_content(elem: etree._Element) -> SpoilerContentNode:
     )
 
 
-def get_spoiler_header(elem: etree._Element) -> SpoilerHeaderNode:
+def get_spoiler_header(elem: Element) -> SpoilerHeaderNode:
     assert elem.tag == "div"
     assert set(elem.attrib) == {"class"}
     assert elem.get("class") == "spoiler-header"
     return SpoilerHeaderNode(children=get_child_nodes(elem, ignore_newlines=True))
 
 
-def get_spoiler_node(elem: etree._Element) -> SpoilerNode:
+def get_spoiler_node(elem: Element) -> SpoilerNode:
     children = list(elem.iterchildren())
     assert len(children) == 2
     header = get_spoiler_header(children[0])
@@ -260,7 +262,7 @@ def get_spoiler_node(elem: etree._Element) -> SpoilerNode:
     return SpoilerNode(header=header, content=content)
 
 
-def get_stream_link_node(elem: etree._Element) -> StreamLinkNode:
+def get_stream_link_node(elem: Element) -> StreamLinkNode:
     has_topic = elem.get("class") == "stream-topic"
     assert set(elem.attrib) == {"class", "data-stream-id", "href"}
     stream_id = elem.get("data-stream-id") or ""
@@ -272,7 +274,7 @@ def get_stream_link_node(elem: etree._Element) -> StreamLinkNode:
     )
 
 
-def table_cell_alignment(elem: etree._Element) -> str | None:
+def table_cell_alignment(elem: Element) -> str | None:
     assert set(elem.attrib).issubset({"style"})
     style = elem.get("style")
     if style is None:
@@ -283,9 +285,9 @@ def table_cell_alignment(elem: etree._Element) -> str | None:
     return value
 
 
-def get_table_node(elem: etree._Element) -> TableNode:
-    def get_thead_node(thead: etree._Element) -> THeadNode:
-        def get_th_node(th: etree._Element) -> ThNode:
+def get_table_node(elem: Element) -> TableNode:
+    def get_thead_node(thead: Element) -> THeadNode:
+        def get_th_node(th: Element) -> ThNode:
             text_align = table_cell_alignment(th)
             children = get_child_nodes(th)
             return ThNode(text_align=text_align, children=children)
@@ -296,9 +298,9 @@ def get_table_node(elem: etree._Element) -> TableNode:
         ths = [get_th_node(th) for th in tr.iterchildren()]
         return THeadNode(ths=ths)
 
-    def get_tbody_node(tbody: etree._Element) -> TBodyNode:
-        def get_tr_node(tr: etree._Element) -> TrNode:
-            def get_td_node(td: etree._Element) -> TdNode:
+    def get_tbody_node(tbody: Element) -> TBodyNode:
+        def get_tr_node(tr: Element) -> TrNode:
+            def get_td_node(td: Element) -> TdNode:
                 text_align = table_cell_alignment(td)
                 children = get_child_nodes(td)
                 return TdNode(text_align=text_align, children=children)
@@ -314,7 +316,7 @@ def get_table_node(elem: etree._Element) -> TableNode:
     return TableNode(thead=thead, tbody=tbody)
 
 
-def get_time_widget_node(elem: etree._Element) -> TimeWidgetNode:
+def get_time_widget_node(elem: Element) -> TimeWidgetNode:
     assert set(elem.attrib) == {"datetime"}
     datetime = elem.get("datetime") or ""
     assert datetime
@@ -324,9 +326,7 @@ def get_time_widget_node(elem: etree._Element) -> TimeWidgetNode:
     return TimeWidgetNode(datetime=datetime, text=text)
 
 
-def get_user_group_mention_node(
-    elem: etree._Element, silent: bool
-) -> UserGroupMentionNode:
+def get_user_group_mention_node(elem: Element, silent: bool) -> UserGroupMentionNode:
     name = elem.text or ""
     assert set(elem.attrib) == {"class", "data-user-group-id"}
     group_id = elem.get("data-user-group-id") or ""
@@ -334,7 +334,7 @@ def get_user_group_mention_node(
     return UserGroupMentionNode(name=name, group_id=group_id, silent=silent)
 
 
-def get_user_mention_node(elem: etree._Element, silent: bool) -> UserMentionNode:
+def get_user_mention_node(elem: Element, silent: bool) -> UserMentionNode:
     name = elem.text or ""
     assert set(elem.attrib) == {"class", "data-user-id"}
     user_id = elem.get("data-user-id") or ""
@@ -342,9 +342,7 @@ def get_user_mention_node(elem: etree._Element, silent: bool) -> UserMentionNode
     return UserMentionNode(name=name, user_id=user_id, silent=silent)
 
 
-def get_child_nodes(
-    elem: etree._Element, ignore_newlines: bool = False
-) -> list[BaseNode]:
+def get_child_nodes(elem: Element, ignore_newlines: bool = False) -> list[BaseNode]:
     children: list[BaseNode] = []
     if elem.text:
         text = elem.text
@@ -360,7 +358,7 @@ def get_child_nodes(
     return children
 
 
-def _get_node(elem: etree._Element) -> BaseNode:
+def _get_node(elem: Element) -> BaseNode:
     elem_class = elem.get("class") or ""
 
     if elem.tag == "a":
@@ -450,7 +448,7 @@ def _get_node(elem: etree._Element) -> BaseNode:
     raise Exception(f"Unsupported tag {elem.tag}")
 
 
-def get_node(elem: etree._Element) -> BaseNode:
+def get_node(elem: Element) -> BaseNode:
     node = _get_node(elem)
 
     expected_html = get_html(elem)
