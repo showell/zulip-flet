@@ -39,7 +39,8 @@ def build_tag(*, tag: str, inner: SafeHtml, **attrs: str | None) -> SafeHtml:
 
 def escape_text(text: str) -> SafeHtml:
     # This is very similar to html.escape, but we want to match the
-    # current implementation of the Zulip markdown processor
+    # lxml output for now.  The lxml parser is annoying in that
+    # it doesn't easily round trip the original HTML.
     text = text.replace("&", "&amp;")
     special_chars = [c for c in text if ord(c) > 128]
     for c in special_chars:

@@ -82,9 +82,6 @@ Custom validators follow.
 
 
 def get_code_block_node(elem: etree._Element) -> RawCodeBlockNode:
-    for c in elem.iter():
-        if c.text is None:
-            c.text = ""
     html = get_html(elem)
     lang = elem.get("data-code-language") or "NOT SPECIFIED"
     content = text_content(elem)
