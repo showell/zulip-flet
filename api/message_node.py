@@ -204,12 +204,15 @@ class EmojiImageNode(BaseNode):
     def as_text(self) -> str:
         return f":{self.title}:"
 
+    def zulip_class(self) -> str:
+        return "emoji"
+
     def as_html(self) -> SafeHtml:
         return build_tag(
             tag="img",
             inner=SafeHtml(""),
             alt=f":{self.title.replace(' ', '_')}:",
-            class_="emoji",
+            class_=self.zulip_class(),
             src=self.src,
             title=self.title,
         )
@@ -223,14 +226,17 @@ class EmojiSpanNode(BaseNode):
         c = " ".join(chr(int(unicode, 16)) for unicode in self.unicodes)
         return f"{c} (:{self.title})"
 
+    def zulip_class(self) -> str:
+        unicode_suffix = "-".join(self.unicodes)
+        return f"emoji emoji-{unicode_suffix}"
+
     def as_html(self) -> SafeHtml:
         title = self.title
-        unicode_suffix = "-".join(self.unicodes)
         return build_tag(
             tag="span",
             inner=escape_text(f":{title.replace(' ', '_')}:"),
             aria_label=title,
-            class_=f"emoji emoji-{unicode_suffix}",
+            class_=self.zulip_class(),
             role="img",
             title=title,
         )
@@ -264,6 +270,9 @@ class InlineImageNode(BaseNode):
     def as_text(self) -> str:
         return f"INLINE IMAGE: {self.href}"
 
+    def zulip_class(self) -> str:
+        return "message_inline_image"
+
     def as_html(self) -> SafeHtml:
         anchor = build_tag(
             tag="a",
@@ -274,7 +283,7 @@ class InlineImageNode(BaseNode):
         return build_tag(
             tag="div",
             inner=anchor,
-            class_="message_inline_image",
+            class_=self.zulip_class(),
         )
 
 
@@ -285,6 +294,9 @@ class InlineVideoNode(BaseNode):
 
     def as_text(self) -> str:
         return f"INLINE VIDEO: {self.href}"
+
+    def zulip_class(self) -> str:
+        return "message_inline_image message_inline_video"
 
     def as_html(self) -> SafeHtml:
         video = build_tag(
@@ -302,7 +314,7 @@ class InlineVideoNode(BaseNode):
         return build_tag(
             tag="div",
             inner=anchor,
-            class_="message_inline_image message_inline_video",
+            class_=self.zulip_class()
         )
 
 
@@ -313,9 +325,12 @@ class MessageLinkNode(ContainerNode):
         text = " ".join(c.as_text() for c in self.children)
         return f"[{text} (MESSAGE LINK: {self.href})]"
 
+    def zulip_class(self) -> str:
+        return "message-link"
+
     def as_html(self) -> SafeHtml:
         href = self.href
-        return self.tag("a", class_="message-link", href=href)
+        return self.tag("a", class_=self.zulip_class(), href=href)
 
 
 class SpoilerContentNode(ContainerNode):
@@ -323,16 +338,23 @@ class SpoilerContentNode(ContainerNode):
     # do round trip testing
     aria_attribute_comes_first: bool
 
+    def zulip_class(self) -> str:
+        return "spoiler_content"
+
     def as_html(self) -> SafeHtml:
+        class_ = self.zulip_class()
         if self.aria_attribute_comes_first:
-            return self.block_tag("div", aria_hidden="true", class_="spoiler-content")
+            return self.block_tag("div", aria_hidden="true", class_=class_)
         else:
-            return self.block_tag("div", class_="spoiler-content", aria_hidden="true")
+            return self.block_tag("div", class_=class_, aria_hidden="true")
 
 
 class SpoilerHeaderNode(ContainerNode):
+    def zulip_class(self) -> str:
+        return "spoiler_header"
+
     def as_html(self) -> SafeHtml:
-        return self.block_tag("div", class_="spoiler-header")
+        return self.block_tag("div", class_=self.zulip_class())
 
 
 class SpoilerNode(BaseNode):
@@ -344,13 +366,16 @@ class SpoilerNode(BaseNode):
         content = self.content.as_text()
         return f"SPOILER: {header}\nHIDDEN:\n{content}\nENDHIDDEN\n"
 
+    def zulip_class(self) -> str:
+        return "spoiler-block"
+
     def as_html(self) -> SafeHtml:
         header = self.header.as_html()
         content = self.content.as_html()
         return build_tag(
             tag="div",
             inner=SafeHtml.combine([header, content]),
-            class_="spoiler-block",
+            class_=self.zulip_class(),
         )
 
 
