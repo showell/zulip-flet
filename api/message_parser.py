@@ -59,6 +59,17 @@ def forbid_children(elem: etree._Element) -> None:
         raise AssertionError(f"{elem.tag} has unexpected children")
 
 
+def get_html(elem: etree._Element) -> str:
+    return etree.tostring(elem, with_tail=False).decode("utf-8")
+
+
+def get_string(elem: etree._Element, field: str) -> str:
+    s = elem.get(field)
+    if s is None:
+        raise AssertionError(f"{field} is missing")
+    return s
+
+
 def restrict_attributes(elem: etree._Element, *fields: str) -> None:
     if not set(elem.attrib).issubset(set(fields)):
         print(etree.tostring(elem, with_tail=False))
@@ -75,10 +86,6 @@ def text_content(elem: etree._Element) -> str:
     return s
 
 
-def get_html(elem: etree._Element) -> str:
-    return etree.tostring(elem, with_tail=False).decode("utf-8")
-
-
 """
 Custom validators follow.
 """
@@ -92,29 +99,28 @@ def get_code_block_node(elem: etree._Element) -> RawCodeBlockNode:
 
 
 def get_emoji_image_node(elem: etree._Element) -> EmojiImageNode:
-    assert set(elem.attrib) == {"alt", "class", "src", "title"}
+    restrict_attributes(elem, "alt", "class", "src", "title")
     alt = elem.get("alt")
     src = elem.get("src")
     title = elem.get("title")
     assert alt and src and title
-    assert alt == f":{title.replace(' ', '_')}:"
+    assert_equal(alt, f":{title.replace(' ', '_')}:")
     return EmojiImageNode(src=src, title=title)
 
 
 def get_emoji_span_node(elem: etree._Element) -> EmojiSpanNode:
-    assert set(elem.attrib) == {"aria-label", "class", "role", "title"}
-    title = elem.get("title") or ""
-    assert title
-    assert elem.get("role") == "img"
-    assert elem.get("aria-label") == title
+    restrict_attributes(elem, "aria-label", "class", "role", "title")
+    title = get_string(elem, "title")
+    assert_equal(get_string(elem, "role"), "img")
+    assert_equal(get_string(elem, "aria-label"), title)
     elem_class = elem.get("class") or ""
     assert elem_class.startswith("emoji ")
     _, emoji_unicode_class = elem_class.split(" ")
     emoji_prefix, *unicodes = emoji_unicode_class.split("-")
-    assert emoji_prefix == "emoji"
+    assert_equal(emoji_prefix, "emoji")
     assert unicodes
-    assert elem.text == f":{title.replace(' ', '_')}:"
-    assert len(list(elem.iterchildren())) == 0
+    assert_equal(elem.text or "", f":{title.replace(' ', '_')}:")
+    forbid_children(elem)
     return EmojiSpanNode(title=title, unicodes=unicodes)
 
 
