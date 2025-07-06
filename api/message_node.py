@@ -20,6 +20,7 @@ class SafeHtml:
     The SafeHtml protocol also prevents you from accidentally
     double-escaping strings (but again, not completely fool-proof).
     """
+
     def __init__(self, text: str) -> None:
         self.text = text
 
@@ -35,6 +36,7 @@ class SafeHtml:
         if not items:
             return SafeHtml("\n")
         return SafeHtml("\n" + "\n".join(str(item) for item in items) + "\n")
+
 
 def build_tag(*, tag: str, inner: SafeHtml, **attrs: str | None) -> SafeHtml:
     attr_suffix = "".join(
@@ -347,7 +349,6 @@ class SpoilerNode(BaseNode):
             tag="div",
             inner=SafeHtml.combine([header, content]),
             class_="spoiler-block",
-
         )
 
 
