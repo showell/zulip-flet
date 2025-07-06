@@ -229,19 +229,46 @@ class EmojiSpanNode(BaseNode):
         )
 
 
-class InlineImageNode(BaseNode):
-    href: str
-    title: str
-    src: str
+class ImgNode(BaseNode):
     animated: bool
-    original_dimensions: str
-    original_content_type: str
+    src: str
+    original_dimensions: str | None
+    original_content_type: str | None
+
+    def as_text(self) -> str:
+        return f"(img {self.src})"
+
+    def as_html(self) -> SafeHtml:
+        return build_tag(
+            tag="img",
+            inner=SafeHtml(""),
+            data_animated="true" if self.animated else None,
+            data_original_content_type=self.original_content_type,
+            data_original_dimensions=self.original_dimensions,
+            src=self.src,
+        )
+
+
+class InlineImageNode(BaseNode):
+    img: ImgNode
+    href: str
+    title: str | None
 
     def as_text(self) -> str:
         return f"INLINE IMAGE: {self.href}"
 
     def as_html(self) -> SafeHtml:
-        return SafeHtml("XXX")
+        anchor = build_tag(
+            tag="a",
+            inner=self.img.as_html(),
+            href=self.href,
+            title=self.title,
+        )
+        return build_tag(
+            tag="div",
+            inner=anchor,
+            class_="message_inline_image",
+        )
 
 
 class InlineVideoNode(BaseNode):

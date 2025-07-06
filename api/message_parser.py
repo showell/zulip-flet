@@ -18,6 +18,7 @@ from message_node import (
     Header5Node,
     Header6Node,
     HrNode,
+    ImgNode,
     InlineImageNode,
     InlineVideoNode,
     ListItemNode,
@@ -117,6 +118,28 @@ def get_emoji_span_node(elem: etree._Element) -> EmojiSpanNode:
     return EmojiSpanNode(title=title, unicodes=unicodes)
 
 
+def get_img_node(elem: etree._Element) -> ImgNode:
+    assert elem.tag == "img"
+    restrict_attributes(
+        elem,
+        "src",
+        "data-animated",
+        "data-original-dimensions",
+        "data-original-content-type",
+    )
+    src = elem.get("src") or ""
+    animated = (elem.get("data-animated") or "") == "true"
+    original_dimensions = elem.get("data-original-dimensions")
+    original_content_type = elem.get("data-original-content-type")
+    assert src
+    return ImgNode(
+        src=src,
+        animated=animated,
+        original_dimensions=original_dimensions,
+        original_content_type=original_content_type,
+    )
+
+
 def get_inline_image_node(elem: etree._Element) -> InlineImageNode:
     assert set(elem.attrib) == {"class"}
     assert elem.get("class") == "message_inline_image"
@@ -125,34 +148,15 @@ def get_inline_image_node(elem: etree._Element) -> InlineImageNode:
     assert child.tag == "a"
     assert set(child.attrib).issubset({"href", "title"})
     href = child.get("href") or ""
-    title = child.get("title") or ""
+    title = child.get("title")
     assert href
     assert len(child) == 1
-    grandchild = child[0]
-    assert grandchild.tag == "img"
+    img = get_img_node(child[0])
 
-    if not set(grandchild.attrib).issubset(
-        {
-            "src",
-            "data-animated",
-            "data-original-dimensions",
-            "data-original-content-type",
-        }
-    ):
-        raise AssertionError()
-
-    src = grandchild.get("src") or ""
-    animated = (grandchild.get("data-animated") or "") == "true"
-    original_dimensions = grandchild.get("data-original-dimensions") or ""
-    original_content_type = grandchild.get("data-original-content-type") or ""
-    assert src
     return InlineImageNode(
+        img=img,
         href=href,
         title=title,
-        src=src,
-        animated=animated,
-        original_dimensions=original_dimensions,
-        original_content_type=original_content_type,
     )
 
 
@@ -423,9 +427,9 @@ def get_node(elem: etree._Element) -> BaseNode:
 
     if str(node.as_html()) != expected_html:
         print("\n------- as_html MISMATCH\n")
-        print(repr(expected_html[:300]))
+        print(repr(expected_html))
         print()
-        print(repr(str(node.as_html())[:300]))
+        print(repr(str(node.as_html())))
         print()
         raise AssertionError("as_html is not precise")
 
