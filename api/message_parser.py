@@ -213,7 +213,11 @@ def get_spoiler_content(elem: etree._Element) -> SpoilerContentNode:
     assert set(elem.attrib) == {"class", "aria-hidden"}
     assert elem.get("class") == "spoiler-content"
     assert elem.get("aria-hidden") == "true"
-    return SpoilerContentNode(children=get_child_nodes(elem, ignore_newlines=True))
+    aria_attribute_comes_first = list(elem.attrib.keys())[0] == "aria-hidden"
+    return SpoilerContentNode(
+        children=get_child_nodes(elem, ignore_newlines=True),
+        aria_attribute_comes_first=aria_attribute_comes_first,
+    )
 
 
 def get_spoiler_header(elem: etree._Element) -> SpoilerHeaderNode:

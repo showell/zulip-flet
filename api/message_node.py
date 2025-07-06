@@ -319,13 +319,15 @@ class MessageLinkNode(ContainerNode):
 
 
 class SpoilerContentNode(ContainerNode):
-    def as_html(self) -> SafeHtml:
-        # The gruesome hack below is to enable round trip testing.
-        # Either Zulip or lxml randomly orders the attributes.
-        if ">diff --git a/app/renderer/css/main.css" in str(self.inner()):
-            return self.block_tag("div", aria_hidden="true", class_="spoiler-content")
+    # we only need this silly field in order to
+    # do round trip testing
+    aria_attribute_comes_first: bool
 
-        return self.block_tag("div", class_="spoiler-content", aria_hidden="true")
+    def as_html(self) -> SafeHtml:
+        if self.aria_attribute_comes_first:
+            return self.block_tag("div", aria_hidden="true", class_="spoiler-content")
+        else:
+            return self.block_tag("div", class_="spoiler-content", aria_hidden="true")
 
 
 class SpoilerHeaderNode(ContainerNode):
