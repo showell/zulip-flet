@@ -76,6 +76,13 @@ def get_html(elem: etree._Element) -> str:
     return etree.tostring(elem, with_tail=False).decode("utf-8")
 
 
+def get_only_child(elem: etree._Element, tag_name: str) -> etree._Element:
+    assert_num_children(elem, 1)
+    child = elem[0]
+    assert_equal(child.tag, tag_name)
+    return child
+
+
 def get_string(elem: etree._Element, field: str) -> str:
     s = elem.get(field)
     if s is None:
@@ -165,17 +172,14 @@ def get_img_node(elem: etree._Element) -> ImgNode:
 def get_inline_image_node(elem: etree._Element) -> InlineImageNode:
     restrict_attributes(elem, "class")
     assert_class(elem, "message_inline_image")
-    assert_num_children(elem, 1)
-    child = elem[0]
-    require_tag(child, "a")
-    restrict_attributes(child, "href", "title")
-    href = get_string(child, "href")
-    title = child.get("title")
-    assert_num_children(child, 1)
-    img = get_img_node(child[0])
+    anchor = get_only_child(elem, "a")
+    restrict_attributes(anchor, "href", "title")
+    href = get_string(anchor, "href")
+    title = anchor.get("title")
+    img = get_only_child(anchor, "img")
 
     return InlineImageNode(
-        img=img,
+        img=get_img_node(img),
         href=href,
         title=title,
     )
