@@ -46,11 +46,20 @@ from message_node import (
 )
 
 
+def assert_class(elem: etree._Element, expected: str) -> None:
+    assert_equal(get_string(elem, "class"), expected)
+
+
 def assert_equal(s1: str, s2: str) -> None:
     if s1 != s2:
         print(repr(s1))
         print(repr(s2))
         raise AssertionError(f"{s1} != {s2}")
+
+
+def assert_num_children(elem: etree._Element, count: int) -> None:
+    if len(elem) != count:
+        raise AssertionError("bad count")
 
 
 def forbid_children(elem: etree._Element) -> None:
@@ -154,16 +163,15 @@ def get_img_node(elem: etree._Element) -> ImgNode:
 
 
 def get_inline_image_node(elem: etree._Element) -> InlineImageNode:
-    assert set(elem.attrib) == {"class"}
-    assert elem.get("class") == "message_inline_image"
-    assert len(elem) == 1
+    restrict_attributes(elem, "class")
+    assert_class(elem, "message_inline_image")
+    assert_num_children(elem, 1)
     child = elem[0]
-    assert child.tag == "a"
-    assert set(child.attrib).issubset({"href", "title"})
-    href = child.get("href") or ""
+    require_tag(child, "a")
+    restrict_attributes(child, "href", "title")
+    href = get_string(child, "href")
     title = child.get("title")
-    assert href
-    assert len(child) == 1
+    assert_num_children(child, 1)
     img = get_img_node(child[0])
 
     return InlineImageNode(
