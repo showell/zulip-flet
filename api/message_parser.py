@@ -59,6 +59,10 @@ def forbid_children(elem: etree._Element) -> None:
         raise AssertionError(f"{elem.tag} has unexpected children")
 
 
+def get_bool(elem: etree._Element, field: str) -> bool:
+    return (elem.get(field) or "") == "true"
+
+
 def get_html(elem: etree._Element) -> str:
     return etree.tostring(elem, with_tail=False).decode("utf-8")
 
@@ -68,6 +72,10 @@ def get_string(elem: etree._Element, field: str) -> str:
     if s is None:
         raise AssertionError(f"{field} is missing")
     return s
+
+
+def require_tag(elem: etree._Element, tag: str) -> None:
+    assert_equal(elem.tag or "", tag)
 
 
 def restrict_attributes(elem: etree._Element, *fields: str) -> None:
@@ -100,10 +108,9 @@ def get_code_block_node(elem: etree._Element) -> RawCodeBlockNode:
 
 def get_emoji_image_node(elem: etree._Element) -> EmojiImageNode:
     restrict_attributes(elem, "alt", "class", "src", "title")
-    alt = elem.get("alt")
-    src = elem.get("src")
-    title = elem.get("title")
-    assert alt and src and title
+    alt = get_string(elem, "alt")
+    src = get_string(elem, "src")
+    title = get_string(elem, "title")
     assert_equal(alt, f":{title.replace(' ', '_')}:")
     return EmojiImageNode(src=src, title=title)
 
@@ -113,7 +120,7 @@ def get_emoji_span_node(elem: etree._Element) -> EmojiSpanNode:
     title = get_string(elem, "title")
     assert_equal(get_string(elem, "role"), "img")
     assert_equal(get_string(elem, "aria-label"), title)
-    elem_class = elem.get("class") or ""
+    elem_class = get_string(elem, "class")
     assert elem_class.startswith("emoji ")
     _, emoji_unicode_class = elem_class.split(" ")
     emoji_prefix, *unicodes = emoji_unicode_class.split("-")
@@ -125,7 +132,7 @@ def get_emoji_span_node(elem: etree._Element) -> EmojiSpanNode:
 
 
 def get_img_node(elem: etree._Element) -> ImgNode:
-    assert elem.tag == "img"
+    require_tag(elem, "img")
     restrict_attributes(
         elem,
         "src",
@@ -133,8 +140,8 @@ def get_img_node(elem: etree._Element) -> ImgNode:
         "data-original-dimensions",
         "data-original-content-type",
     )
-    src = elem.get("src") or ""
-    animated = (elem.get("data-animated") or "") == "true"
+    src = get_string(elem, "src")
+    animated = get_bool(elem, "data-animated")
     original_dimensions = elem.get("data-original-dimensions")
     original_content_type = elem.get("data-original-content-type")
     assert src
