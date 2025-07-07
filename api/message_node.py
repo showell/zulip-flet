@@ -51,6 +51,9 @@ class TextNode(BaseNode):
 We generally conform to mdast conventions for naming.
 
 The <br> and <hr> tags are handled super generically by us.
+
+    * BreakNode == <br>
+    * ThematicBreakNode == <hr>
 """
 
 
@@ -71,18 +74,15 @@ class ThematicBreakNode(BaseNode):
 
 
 """
-Here we define a ContainerNode class. Containers
-have children.
+Here we define a ContainerNode class. Essentially, containers
+have arbitrary children.
 
-Most subclasses of ContainerNode tend to be pretty vanilla,
-which means that in the Zulip markdown you have no special
-attributes ("class" or otherwise) on the start tags.
+Note that there are some classes in our AST that do have
+children but don't inherit from ContainerNode.  This means
+that they are something like tables or lists, in which their
+child nodes are way more constrained.
 
-A few subclasses, such as AnchorNode, do have attributes,
-and they will have extra fields for those.
-
-Also, some of the "special" Zulip classes inherit from
-ContainerNode, just to get all the child-walking goodness.
+We eventually want more refinement here.
 """
 
 
