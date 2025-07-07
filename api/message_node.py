@@ -634,18 +634,18 @@ the security/performance/accuracy considerations to them.
 
 
 class KatexNode(BaseNode):
-    html: str
+    html: SafeHtml
     tag_class: str
 
     def as_text(self) -> str:
         return f"<<<some katex html (not shown) with {self.tag_class} class>>>"
 
     def as_html(self) -> SafeHtml:
-        return SafeHtml.trust(self.html)
+        return self.html
 
 
 class PygmentsCodeBlockNode(BaseNode):
-    html: str
+    html: SafeHtml
     lang: str
     content: str
 
@@ -653,4 +653,4 @@ class PygmentsCodeBlockNode(BaseNode):
         return f"\n~~~~~~~~ lang: {self.lang}\n{self.content}~~~~~~~~\n"
 
     def as_html(self) -> SafeHtml:
-        return SafeHtml.trust(self.html)
+        return self.html

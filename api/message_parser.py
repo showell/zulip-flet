@@ -1,4 +1,5 @@
 from lxml import etree
+from html_helpers import SafeHtml
 from message_node import (
     AnchorNode,
     BaseNode,
@@ -121,7 +122,7 @@ def get_code_block_node(elem: Element) -> PygmentsCodeBlockNode:
     html = get_html(elem)
     lang = elem.get("data-code-language") or "NOT SPECIFIED"
     content = text_content(elem)
-    return PygmentsCodeBlockNode(html=html, lang=lang, content=content)
+    return PygmentsCodeBlockNode(html=SafeHtml.trust(html), lang=lang, content=content)
 
 
 def get_emoji_image_node(elem: Element) -> EmojiImageNode:
@@ -169,6 +170,14 @@ def get_img_node(elem: Element) -> InlineImageChildImgNode:
         original_dimensions=original_dimensions,
         original_content_type=original_content_type,
     )
+
+
+def get_katex_node(elem: Element) -> KatexNode:
+    assert set(elem.attrib) == {"class"}
+    tag_class = elem.get("class") or ""
+    assert tag_class in ["katex", "katex-display"]
+    html = get_html(elem)
+    return KatexNode(html=SafeHtml.trust(html), tag_class=tag_class)
 
 
 def get_inline_image_node(elem: Element) -> InlineImageNode:
@@ -241,14 +250,6 @@ def get_message_link_node(elem: Element) -> MessageLinkNode:
         href=href,
         children=children,
     )
-
-
-def get_raw_katex_node(elem: Element) -> KatexNode:
-    assert set(elem.attrib) == {"class"}
-    tag_class = elem.get("class") or ""
-    assert tag_class in ["katex", "katex-display"]
-    html = get_html(elem)
-    return KatexNode(html=html, tag_class=tag_class)
 
 
 def get_spoiler_content(elem: Element) -> SpoilerContentNode:
@@ -445,7 +446,7 @@ def _get_node(elem: Element) -> BaseNode:
         if elem_class.startswith("emoji "):
             return get_emoji_span_node(elem)
         if elem_class in ["katex", "katex-display"]:
-            return get_raw_katex_node(elem)
+            return get_katex_node(elem)
         if elem_class == "user-group-mention":
             return get_user_group_mention_node(elem, silent=False)
         if elem_class == "user-group-mention silent":
