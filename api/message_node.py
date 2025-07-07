@@ -19,56 +19,6 @@ class BaseNode(BaseModel, ABC):
 
 
 """
-The aim of this code is to define the structure of Zulip
-messages in a semantic way, and I don't want to box myself
-into particular implementation details when it comes to how
-the server renders it.  In particular, I am hoping that decades
-down the road, we don't even use HTML as the over-the-wire
-format for telling clients what to render.  Maybe that's a bit
-extreme.
-
-Having said all that, I live in the real world in 2025.  Certain
-things are very baked into HTML at this point.  And I mostly
-like HTML.
-
-In particular, we use HTML to render LaTeX via KaTeX for mathematical
-typesetting, and there is no way in the near future that I want
-to re-invent the wheel when it comes to producing HTML for that.
-
-Long story short, I only choose to represent LaTeX/KaTeX blocks
-as raw HTML.
-
-I also do the same for pygments.
-"""
-
-
-class RawNode(BaseNode, ABC):
-    html: str
-
-    @abstractmethod
-    def as_text(self) -> str:
-        pass
-
-    def as_html(self) -> SafeHtml:
-        return SafeHtml(self.html)
-
-
-class RawCodeBlockNode(RawNode):
-    lang: str
-    content: str
-
-    def as_text(self) -> str:
-        return f"\n~~~~~~~~ lang: {self.lang}\n{self.content}~~~~~~~~\n"
-
-
-class RawKatexNode(RawNode):
-    tag_class: str
-
-    def as_text(self) -> str:
-        return f"<<<some katex html (not shown) with {self.tag_class} class>>>"
-
-
-"""
 Even though HTML doesn't require you to surround
 text with a text node, we model it that way in our
 AST.
@@ -674,3 +624,33 @@ class TimeWidgetNode(BaseNode):
             inner=escape_text(self.text),
             datetime=self.datetime,
         )
+
+
+"""
+For the two major third-party plugins (pygments and katex),
+we just have the caller pass us in the raw html, and we defer all
+the security/performance/accuracy considerations to them.
+"""
+
+
+class RawCodeBlockNode(BaseNode):
+    html: str
+    lang: str
+    content: str
+
+    def as_text(self) -> str:
+        return f"\n~~~~~~~~ lang: {self.lang}\n{self.content}~~~~~~~~\n"
+
+    def as_html(self) -> SafeHtml:
+        return SafeHtml(self.html)
+
+
+class RawKatexNode(BaseNode):
+    html: str
+    tag_class: str
+
+    def as_text(self) -> str:
+        return f"<<<some katex html (not shown) with {self.tag_class} class>>>"
+
+    def as_html(self) -> SafeHtml:
+        return SafeHtml(self.html)
