@@ -286,7 +286,7 @@ class CodeNode(ContainerNode):
         return self.tag("code")
 
 
-class DelNode(ContainerNode):
+class DeleteNode(ContainerNode):
     def as_text(self) -> str:
         return f"~~{self.children_text()}~~"
 

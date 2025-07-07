@@ -7,7 +7,7 @@ from message_node import (
     BreakNode,
     CodeNode,
     ContainerNode,
-    DelNode,
+    DeleteNode,
     EmojiImageNode,
     EmojiSpanNode,
     EmphasisNode,
@@ -446,7 +446,7 @@ def _get_node(elem: Element) -> BaseNode:
     )
 
     # del is a keyword in Python
-    simple_nodes["del"] = DelNode
+    simple_nodes["del"] = DeleteNode
 
     if elem.tag in simple_nodes:
         restrict_attributes(elem)
