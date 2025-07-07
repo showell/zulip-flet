@@ -580,7 +580,7 @@ class EmphasisNode(ContainerNode):
         return self.tag("em")
 
 
-class ListItEmphasisNode(ContainerNode):
+class ListItemNode(ContainerNode):
     def as_html(self) -> SafeHtml:
         return self.tag("li")
 
