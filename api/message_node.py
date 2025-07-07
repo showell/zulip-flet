@@ -308,7 +308,7 @@ class ListItemNode(ContainerNode):
 
 
 class OrderedListNode(ContainerNode):
-    start: int
+    start: int | None
 
     def as_text(self) -> str:
         return "".join(
@@ -317,9 +317,8 @@ class OrderedListNode(ContainerNode):
         )
 
     def as_html(self) -> SafeHtml:
-        if self.start:
-            return self.tag("ol", start=str(self.start))
-        return self.tag("ol")
+        start_attr: str | None = str(self.start) if self.start else None
+        return self.tag("ol", start=start_attr)
 
 
 class ParagraphNode(ContainerNode):

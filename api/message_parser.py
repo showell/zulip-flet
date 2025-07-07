@@ -205,9 +205,9 @@ def get_inline_video_node(elem: Element) -> InlineVideoNode:
 
 
 def get_ordered_list_node(elem: Element) -> OrderedListNode:
-    assert set(elem.attrib).issubset({"start"})
+    restrict_attributes(elem, "start")
     start_attr = elem.get("start")
-    start = int(start_attr) if start_attr else 0
+    start = int(start_attr) if start_attr else None
     return OrderedListNode(children=get_child_nodes(elem), start=start)
 
 
