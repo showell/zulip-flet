@@ -250,6 +250,43 @@ for debugging and convenience.  For example, if you try
 to build a UI to show a Zulip message, you can fall
 back to the as_text() methods and just stick the text
 into a text widget until you're ready to flesh out the UI.
+
+---
+
+We'll start with simple markup:
+
+    Delete == StrikeThrough == <del>foo</del> == ~~foo~~
+    Emphasis == <em>foo</em> == *foo*
+    Strong == <strong>foo</strong> == **foo* 
+"""
+
+
+class DeleteNode(ContainerNode):
+    def as_text(self) -> str:
+        return f"~~{self.children_text()}~~"
+
+    def as_html(self) -> SafeHtml:
+        return self.tag("del")
+
+
+class EmphasisNode(ContainerNode):
+    def as_text(self) -> str:
+        return f"*{self.children_text()}*"
+
+    def as_html(self) -> SafeHtml:
+        return self.tag("em")
+
+
+class StrongNode(ContainerNode):
+    def as_text(self) -> str:
+        return f"**{self.children_text()}**"
+
+    def as_html(self) -> SafeHtml:
+        return self.tag("strong")
+
+
+"""
+And then some more basic classes follow.
 """
 
 
@@ -286,36 +323,12 @@ class CodeNode(ContainerNode):
         return self.tag("code")
 
 
-class DeleteNode(ContainerNode):
-    def as_text(self) -> str:
-        return f"~~{self.children_text()}~~"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("del")
-
-
-class EmphasisNode(ContainerNode):
-    def as_text(self) -> str:
-        return f"*{self.children_text()}*"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("em")
-
-
 class ParagraphNode(ContainerNode):
     def as_text(self) -> str:
         return self.children_text() + "\n\n"
 
     def as_html(self) -> SafeHtml:
         return self.tag("p")
-
-
-class StrongNode(ContainerNode):
-    def as_text(self) -> str:
-        return f"**{self.children_text()}**"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("strong")
 
 
 """
