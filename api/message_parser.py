@@ -80,6 +80,11 @@ def get_only_child(elem: Element, tag_name: str) -> Element:
     return child
 
 
+def get_optional_int(elem: Element, field: str) -> int | None:
+    val = elem.get(field)
+    return int(val) if val else None
+
+
 def get_string(elem: Element, field: str) -> str:
     s = elem.get(field)
     if s is None:
@@ -206,8 +211,7 @@ def get_inline_video_node(elem: Element) -> InlineVideoNode:
 
 def get_ordered_list_node(elem: Element) -> OrderedListNode:
     restrict_attributes(elem, "start")
-    start_attr = elem.get("start")
-    start = int(start_attr) if start_attr else None
+    start = get_optional_int(elem, "start")
     return OrderedListNode(children=get_child_nodes(elem), start=start)
 
 
