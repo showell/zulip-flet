@@ -180,17 +180,18 @@ class ThematicBreakNode(BaseNode):
 
 
 """
-Here we define a ContainerNode class.
+Here we define a ContainerNode class. Containers
+have children.
 
 Most subclasses of ContainerNode tend to be pretty vanilla,
-and in the Zulip markdown you have no special
+which means that in the Zulip markdown you have no special
 attributes ("class" or otherwise) on the start tags.
 
 A few subclasses, such as AnchorNode, do have attributes,
 and they will have extra fields for those.
 
 Also, some of the "special" Zulip classes inherit from
-ContainerNode
+ContainerNode, just to get all the child-walking goodness.
 """
 
 
