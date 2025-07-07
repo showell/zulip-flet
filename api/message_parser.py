@@ -1,5 +1,5 @@
-from lxml import etree
 from html_helpers import SafeHtml
+from lxml import etree
 from message_node import (
     AnchorNode,
     BaseNode,
