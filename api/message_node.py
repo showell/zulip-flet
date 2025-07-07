@@ -572,7 +572,7 @@ class DelNode(ContainerNode):
         return self.tag("del")
 
 
-class EmNode(ContainerNode):
+class EmphasisNode(ContainerNode):
     def as_text(self) -> str:
         return f"*{self.children_text()}*"
 
@@ -580,7 +580,7 @@ class EmNode(ContainerNode):
         return self.tag("em")
 
 
-class ListItemNode(ContainerNode):
+class ListItEmphasisNode(ContainerNode):
     def as_html(self) -> SafeHtml:
         return self.tag("li")
 
