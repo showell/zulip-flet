@@ -11,12 +11,7 @@ from message_node import (
     EmNode,
     EmojiImageNode,
     EmojiSpanNode,
-    Header1Node,
-    Header2Node,
-    Header3Node,
-    Header4Node,
-    Header5Node,
-    Header6Node,
+    HeadingNode,
     HrNode,
     ImgNode,
     InlineImageNode,
@@ -389,6 +384,24 @@ def _get_node(elem: Element) -> BaseNode:
         if elem_class == "message_inline_image message_inline_video":
             return get_inline_video_node(elem)
 
+    if elem.tag == "h1":
+        return HeadingNode(depth=1, children=get_child_nodes(elem))
+
+    if elem.tag == "h2":
+        return HeadingNode(depth=2, children=get_child_nodes(elem))
+
+    if elem.tag == "h3":
+        return HeadingNode(depth=3, children=get_child_nodes(elem))
+
+    if elem.tag == "h4":
+        return HeadingNode(depth=4, children=get_child_nodes(elem))
+
+    if elem.tag == "h5":
+        return HeadingNode(depth=5, children=get_child_nodes(elem))
+
+    if elem.tag == "h6":
+        return HeadingNode(depth=6, children=get_child_nodes(elem))
+
     if elem.tag == "hr":
         restrict_attributes(elem)
         forbid_children(elem)
@@ -426,12 +439,6 @@ def _get_node(elem: Element) -> BaseNode:
         blockquote=BlockQuoteNode,
         code=CodeNode,
         em=EmNode,
-        h1=Header1Node,
-        h2=Header2Node,
-        h3=Header3Node,
-        h4=Header4Node,
-        h5=Header5Node,
-        h6=Header6Node,
         li=ListItemNode,
         p=ParagraphNode,
         strong=StrongNode,

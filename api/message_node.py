@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 """
 First, we have some helpers to build HTML from the AST.
@@ -494,6 +494,32 @@ class HrNode(BaseNode):
 
 
 """
+Whenever practical, I try to stay at the same layer of
+abstraction as the mdast project.
+
+See https://github.com/syntax-tree/mdast?tab=readme-ov-file#heading
+as an example.  Instead of concretely having <h1>, <h2>, etc.
+in my AST, I use a Heading concept with depth.
+
+The mdast project revolves around markdown, but I use their AST
+more at the layer of "this is what I mean to say" than thinking
+about actual syntax.
+
+This is still a work in progress.
+"""
+
+
+class HeadingNode(ContainerNode):
+    depth: int = Field(ge=1, le=6)
+
+    def as_text(self) -> str:
+        return f"{'#' * self.depth} {self.children_text()}\n\n"
+
+    def as_html(self) -> SafeHtml:
+        return self.tag(f"h{self.depth}")
+
+
+"""
 The mostly-vanilla subclasses of ContainerNode are below.
 
 Generally it's up to the calling code to map these into some
@@ -552,54 +578,6 @@ class EmNode(ContainerNode):
 
     def as_html(self) -> SafeHtml:
         return self.tag("em")
-
-
-class Header1Node(ContainerNode):
-    def as_text(self) -> str:
-        return f"# {self.children_text()}\n\n"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("h1")
-
-
-class Header2Node(ContainerNode):
-    def as_text(self) -> str:
-        return f"## {self.children_text()}\n\n"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("h2")
-
-
-class Header3Node(ContainerNode):
-    def as_text(self) -> str:
-        return f"### {self.children_text()}\n\n"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("h3")
-
-
-class Header4Node(ContainerNode):
-    def as_text(self) -> str:
-        return f"#### {self.children_text()}\n\n"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("h4")
-
-
-class Header5Node(ContainerNode):
-    def as_text(self) -> str:
-        return f"##### {self.children_text()}\n\n"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("h5")
-
-
-class Header6Node(ContainerNode):
-    def as_text(self) -> str:
-        return f"###### {self.children_text()}\n\n"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("h6")
 
 
 class ListItemNode(ContainerNode):
