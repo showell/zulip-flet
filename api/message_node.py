@@ -339,7 +339,7 @@ class SpoilerContentNode(ContainerNode):
     aria_attribute_comes_first: bool
 
     def zulip_class(self) -> str:
-        return "spoiler_content"
+        return "spoiler-content"
 
     def as_html(self) -> SafeHtml:
         class_ = self.zulip_class()
@@ -351,7 +351,7 @@ class SpoilerContentNode(ContainerNode):
 
 class SpoilerHeaderNode(ContainerNode):
     def zulip_class(self) -> str:
-        return "spoiler_header"
+        return "spoiler-header"
 
     def as_html(self) -> SafeHtml:
         return self.block_tag("div", class_=self.zulip_class())
