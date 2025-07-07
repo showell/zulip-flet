@@ -342,6 +342,12 @@ def get_time_widget_node(elem: Element) -> TimeWidgetNode:
     return TimeWidgetNode(datetime=datetime, text=text)
 
 
+def get_unordered_list_node(elem: Element) -> UnorderedListNode:
+    restrict_attributes(elem)
+    children = get_list_item_nodes(elem)
+    return UnorderedListNode(children=children)
+
+
 def get_user_group_mention_node(elem: Element, silent: bool) -> UserGroupMentionNode:
     name = elem.text or ""
     assert set(elem.attrib) == {"class", "data-user-group-id"}
@@ -455,15 +461,16 @@ def _get_node(elem: Element) -> BaseNode:
     if elem.tag == "time":
         return get_time_widget_node(elem)
 
+    if elem.tag == "ul":
+        return get_unordered_list_node(elem)
+
     simple_nodes: dict[str, type[ContainerNode]] = dict(
         body=BodyNode,
         blockquote=BlockQuoteNode,
         code=CodeNode,
         em=EmphasisNode,
-        li=ListItemNode,
         p=ParagraphNode,
         strong=StrongNode,
-        ul=UnorderedListNode,
     )
 
     # del is a keyword in Python

@@ -348,12 +348,18 @@ class OrderedListNode(BaseNode):
         )
 
 
-class UnorderedListNode(ContainerNode):
+class UnorderedListNode(BaseNode):
+    children: list[ListItemNode]
+
     def as_text(self) -> str:
         return "".join("\n    - " + c.as_text() for c in self.children)
 
     def as_html(self) -> SafeHtml:
-        return self.tag("ul")
+        list_items = SafeHtml.block_join([c.as_html() for c in self.children])
+        return build_tag(
+            tag="ul",
+            inner=list_items,
+        )
 
 
 """
