@@ -12,7 +12,7 @@ from message_node import (
     EmojiSpanNode,
     EmphasisNode,
     HeadingNode,
-    ImgNode,
+    InlineImageChildImgNode,
     InlineImageNode,
     InlineVideoNode,
     ListItemNode,
@@ -149,7 +149,7 @@ def get_emoji_span_node(elem: Element) -> EmojiSpanNode:
     return EmojiSpanNode(title=title, unicodes=unicodes)
 
 
-def get_img_node(elem: Element) -> ImgNode:
+def get_img_node(elem: Element) -> InlineImageChildImgNode:
     require_tag(elem, "img")
     restrict_attributes(
         elem,
@@ -163,7 +163,7 @@ def get_img_node(elem: Element) -> ImgNode:
     original_dimensions = elem.get("data-original-dimensions")
     original_content_type = elem.get("data-original-content-type")
     assert src
-    return ImgNode(
+    return InlineImageChildImgNode(
         src=src,
         animated=animated,
         original_dimensions=original_dimensions,

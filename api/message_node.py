@@ -353,7 +353,7 @@ of custom Zulip widgets.
 """
 
 
-class ImgNode(BaseNode):
+class InlineImageChildImgNode(BaseNode):
     animated: bool
     src: str
     original_dimensions: str | None
@@ -427,7 +427,7 @@ class EmojiSpanNode(BaseNode):
 
 
 class InlineImageNode(BaseNode):
-    img: ImgNode
+    img: InlineImageChildImgNode
     href: str
     title: str | None
 
