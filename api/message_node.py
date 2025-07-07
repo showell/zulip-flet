@@ -147,13 +147,13 @@ the latter is clearly better for humans.
 
 
 class TextNode(BaseNode):
-    text: str
+    value: str
 
     def as_text(self) -> str:
-        return self.text
+        return self.value
 
     def as_html(self) -> SafeHtml:
-        return escape_text(self.text)
+        return escape_text(self.value)
 
 
 """

@@ -342,13 +342,13 @@ def get_child_nodes(elem: Element, ignore_newlines: bool = False) -> list[BaseNo
     if elem.text:
         text = elem.text
         if text and not (ignore_newlines and text == "\n"):
-            children.append(TextNode(text=text))
+            children.append(TextNode(value=text))
 
     for c in elem:
         tail_text = c.tail or ""
         children.append(get_node(c))
         if tail_text and not (ignore_newlines and tail_text == "\n"):
-            children.append(TextNode(text=tail_text))
+            children.append(TextNode(value=tail_text))
 
     return children
 
