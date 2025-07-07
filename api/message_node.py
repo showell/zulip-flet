@@ -633,24 +633,24 @@ the security/performance/accuracy considerations to them.
 """
 
 
-class RawCodeBlockNode(BaseNode):
+class KatexNode(BaseNode):
+    html: str
+    tag_class: str
+
+    def as_text(self) -> str:
+        return f"<<<some katex html (not shown) with {self.tag_class} class>>>"
+
+    def as_html(self) -> SafeHtml:
+        return SafeHtml(self.html)
+
+
+class PygmentsCodeBlockNode(BaseNode):
     html: str
     lang: str
     content: str
 
     def as_text(self) -> str:
         return f"\n~~~~~~~~ lang: {self.lang}\n{self.content}~~~~~~~~\n"
-
-    def as_html(self) -> SafeHtml:
-        return SafeHtml(self.html)
-
-
-class RawKatexNode(BaseNode):
-    html: str
-    tag_class: str
-
-    def as_text(self) -> str:
-        return f"<<<some katex html (not shown) with {self.tag_class} class>>>"
 
     def as_html(self) -> SafeHtml:
         return SafeHtml(self.html)

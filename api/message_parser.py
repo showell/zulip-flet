@@ -15,12 +15,12 @@ from message_node import (
     InlineImageChildImgNode,
     InlineImageNode,
     InlineVideoNode,
+    KatexNode,
     ListItemNode,
     MessageLinkNode,
     OrderedListNode,
     ParagraphNode,
-    RawCodeBlockNode,
-    RawKatexNode,
+    PygmentsCodeBlockNode,
     SpoilerContentNode,
     SpoilerHeaderNode,
     SpoilerNode,
@@ -117,11 +117,11 @@ Custom validators follow.
 """
 
 
-def get_code_block_node(elem: Element) -> RawCodeBlockNode:
+def get_code_block_node(elem: Element) -> PygmentsCodeBlockNode:
     html = get_html(elem)
     lang = elem.get("data-code-language") or "NOT SPECIFIED"
     content = text_content(elem)
-    return RawCodeBlockNode(html=html, lang=lang, content=content)
+    return PygmentsCodeBlockNode(html=html, lang=lang, content=content)
 
 
 def get_emoji_image_node(elem: Element) -> EmojiImageNode:
@@ -243,12 +243,12 @@ def get_message_link_node(elem: Element) -> MessageLinkNode:
     )
 
 
-def get_raw_katex_node(elem: Element) -> RawKatexNode:
+def get_raw_katex_node(elem: Element) -> KatexNode:
     assert set(elem.attrib) == {"class"}
     tag_class = elem.get("class") or ""
     assert tag_class in ["katex", "katex-display"]
     html = get_html(elem)
-    return RawKatexNode(html=html, tag_class=tag_class)
+    return KatexNode(html=html, tag_class=tag_class)
 
 
 def get_spoiler_content(elem: Element) -> SpoilerContentNode:
