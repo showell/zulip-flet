@@ -12,7 +12,6 @@ from message_node import (
     EmojiSpanNode,
     EmphasisNode,
     HeadingNode,
-    HrNode,
     ImgNode,
     InlineImageNode,
     InlineVideoNode,
@@ -32,6 +31,7 @@ from message_node import (
     TdNode,
     TextNode,
     THeadNode,
+    ThematicBreakNode,
     ThNode,
     TimeWidgetNode,
     TrNode,
@@ -405,7 +405,7 @@ def _get_node(elem: Element) -> BaseNode:
     if elem.tag == "hr":
         restrict_attributes(elem)
         forbid_children(elem)
-        return HrNode()
+        return ThematicBreakNode()
 
     if elem.tag == "img":
         if elem_class == "emoji":

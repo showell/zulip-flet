@@ -485,7 +485,7 @@ class BreakNode(BaseNode):
         return SafeHtml("<br/>")
 
 
-class HrNode(BaseNode):
+class ThematicBreakNode(BaseNode):
     def as_text(self) -> str:
         return "\n\n---\n\n"
 
