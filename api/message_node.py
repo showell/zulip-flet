@@ -302,25 +302,6 @@ class EmphasisNode(ContainerNode):
         return self.tag("em")
 
 
-class ListItemNode(ContainerNode):
-    def as_html(self) -> SafeHtml:
-        return self.tag("li")
-
-
-class OrderedListNode(ContainerNode):
-    start: int | None
-
-    def as_text(self) -> str:
-        return "".join(
-            f"\n    {i + (self.start or 1)}. " + c.as_text()
-            for i, c in enumerate(self.children)
-        )
-
-    def as_html(self) -> SafeHtml:
-        start_attr: str | None = str(self.start) if self.start else None
-        return self.tag("ol", start=start_attr)
-
-
 class ParagraphNode(ContainerNode):
     def as_text(self) -> str:
         return self.children_text() + "\n\n"
@@ -335,6 +316,36 @@ class StrongNode(ContainerNode):
 
     def as_html(self) -> SafeHtml:
         return self.tag("strong")
+
+
+"""
+Lists
+"""
+
+
+class ListItemNode(ContainerNode):
+    def as_html(self) -> SafeHtml:
+        return self.tag("li")
+
+
+class OrderedListNode(BaseNode):
+    children: list[ListItemNode]
+    start: int | None
+
+    def as_text(self) -> str:
+        return "".join(
+            f"\n    {i + (self.start or 1)}. " + c.as_text()
+            for i, c in enumerate(self.children)
+        )
+
+    def as_html(self) -> SafeHtml:
+        start_attr: str | None = str(self.start) if self.start else None
+        list_items = SafeHtml.block_join([c.as_html() for c in self.children])
+        return build_tag(
+            tag="ol",
+            inner=list_items,
+            start=start_attr,
+        )
 
 
 class UnorderedListNode(ContainerNode):

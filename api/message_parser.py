@@ -209,10 +209,27 @@ def get_inline_video_node(elem: Element) -> InlineVideoNode:
     return InlineVideoNode(href=href, src=src, title=title)
 
 
+def get_list_item_node(elem: Element) -> ListItemNode:
+    require_tag(elem, "li")
+    return ListItemNode(children=get_child_nodes(elem))
+
+
+def get_list_item_nodes(elem: Element) -> list[ListItemNode]:
+    children: list[ListItemNode] = []
+    assert elem.text == "\n"
+
+    for c in elem:
+        assert c.tail in (None, "\n")
+        children.append(get_list_item_node(c))
+
+    return children
+
+
 def get_ordered_list_node(elem: Element) -> OrderedListNode:
     restrict_attributes(elem, "start")
     start = get_optional_int(elem, "start")
-    return OrderedListNode(children=get_child_nodes(elem), start=start)
+    children = get_list_item_nodes(elem)
+    return OrderedListNode(children=children, start=start)
 
 
 def get_message_link_node(elem: Element) -> MessageLinkNode:
