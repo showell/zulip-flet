@@ -311,11 +311,7 @@ class InlineVideoNode(BaseNode):
             href=self.href,
             title=self.title,
         )
-        return build_tag(
-            tag="div",
-            inner=anchor,
-            class_=self.zulip_class()
-        )
+        return build_tag(tag="div", inner=anchor, class_=self.zulip_class())
 
 
 class MessageLinkNode(ContainerNode):
@@ -388,10 +384,15 @@ class StreamLinkNode(ContainerNode):
         text = " ".join(c.as_text() for c in self.children)
         return f"[{text}] ({self.href}) (stream id {self.stream_id}, has_topic: {self.has_topic})"
 
+    def zulip_class(self) -> str:
+        return "stream-topic" if self.has_topic else "stream"
+
     def as_html(self) -> SafeHtml:
-        tag_class = "stream-topic" if self.has_topic else "stream"
         return self.tag(
-            "a", class_=tag_class, data_stream_id=self.stream_id, href=self.href
+            "a",
+            class_=self.zulip_class(),
+            data_stream_id=self.stream_id,
+            href=self.href,
         )
 
 
@@ -416,12 +417,14 @@ class UserGroupMentionNode(BaseNode):
     def as_text(self) -> str:
         return f"[ GROUP {'_' if self.silent else ''}{self.name} {self.group_id} ]"
 
+    def zulip_class(self) -> str:
+        return "user-group-mention silent" if self.silent else "user-group-mention"
+
     def as_html(self) -> SafeHtml:
-        tag_class = "user-group-mention silent" if self.silent else "user-group-mention"
         return build_tag(
             tag="span",
             inner=escape_text(self.name),
-            class_=tag_class,
+            class_=self.zulip_class(),
             data_user_group_id=self.group_id,
         )
 
@@ -434,12 +437,14 @@ class UserMentionNode(BaseNode):
     def as_text(self) -> str:
         return f"[ {'_' if self.silent else ''}{self.name} {self.user_id} ]"
 
+    def zulip_class(self) -> str:
+        return "user-mention silent" if self.silent else "user-mention"
+
     def as_html(self) -> SafeHtml:
-        tag_class = "user-mention silent" if self.silent else "user-mention"
         return build_tag(
             tag="span",
             inner=escape_text(self.name),
-            class_=tag_class,
+            class_=self.zulip_class(),
             data_user_id=self.user_id,
         )
 
