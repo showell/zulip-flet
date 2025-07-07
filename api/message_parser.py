@@ -291,7 +291,7 @@ def get_stream_link_node(elem: Element) -> StreamLinkNode:
     )
 
 
-def table_cell_alignment(elem: Element) -> str | None:
+def get_table_cell_alignment(elem: Element) -> str | None:
     assert set(elem.attrib).issubset({"style"})
     style = elem.get("style")
     if style is None:
@@ -305,7 +305,7 @@ def table_cell_alignment(elem: Element) -> str | None:
 def get_table_node(elem: Element) -> TableNode:
     def get_thead_node(thead: Element) -> THeadNode:
         def get_th_node(th: Element) -> ThNode:
-            text_align = table_cell_alignment(th)
+            text_align = get_table_cell_alignment(th)
             children = get_child_nodes(th)
             return ThNode(text_align=text_align, children=children)
 
@@ -318,7 +318,7 @@ def get_table_node(elem: Element) -> TableNode:
     def get_tbody_node(tbody: Element) -> TBodyNode:
         def get_tr_node(tr: Element) -> TrNode:
             def get_td_node(td: Element) -> TdNode:
-                text_align = table_cell_alignment(td)
+                text_align = get_table_cell_alignment(td)
                 children = get_child_nodes(td)
                 return TdNode(text_align=text_align, children=children)
 
