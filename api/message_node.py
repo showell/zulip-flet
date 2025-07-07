@@ -190,6 +190,34 @@ class ContainerNode(BaseNode):
 
 
 """
+We use some helper classes for custom Zulip widgets.
+
+Some of these should possibly be used outside the context
+of custom Zulip widgets.
+"""
+
+
+class ImgNode(BaseNode):
+    animated: bool
+    src: str
+    original_dimensions: str | None
+    original_content_type: str | None
+
+    def as_text(self) -> str:
+        return f"(img {self.src})"
+
+    def as_html(self) -> SafeHtml:
+        return build_tag(
+            tag="img",
+            inner=SafeHtml(""),
+            data_animated="true" if self.animated else None,
+            data_original_content_type=self.original_content_type,
+            data_original_dimensions=self.original_dimensions,
+            src=self.src,
+        )
+
+
+"""
 The following classes can be considered to be
 somewhat "custom" to Zulip. The incoming
 markup generally uses class attributes to denote the
@@ -239,26 +267,6 @@ class EmojiSpanNode(BaseNode):
             class_=self.zulip_class(),
             role="img",
             title=title,
-        )
-
-
-class ImgNode(BaseNode):
-    animated: bool
-    src: str
-    original_dimensions: str | None
-    original_content_type: str | None
-
-    def as_text(self) -> str:
-        return f"(img {self.src})"
-
-    def as_html(self) -> SafeHtml:
-        return build_tag(
-            tag="img",
-            inner=SafeHtml(""),
-            data_animated="true" if self.animated else None,
-            data_original_content_type=self.original_content_type,
-            data_original_dimensions=self.original_dimensions,
-            src=self.src,
         )
 
 
