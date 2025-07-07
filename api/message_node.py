@@ -62,7 +62,7 @@ class BreakNode(BaseNode):
         return "\n"
 
     def as_html(self) -> SafeHtml:
-        return SafeHtml("<br/>")
+        return SafeHtml.trust("<br/>")
 
 
 class ThematicBreakNode(BaseNode):
@@ -70,7 +70,7 @@ class ThematicBreakNode(BaseNode):
         return "\n\n---\n\n"
 
     def as_html(self) -> SafeHtml:
-        return SafeHtml("<hr/>")
+        return SafeHtml.trust("<hr/>")
 
 
 """
@@ -365,7 +365,7 @@ class InlineImageChildImgNode(BaseNode):
     def as_html(self) -> SafeHtml:
         return build_tag(
             tag="img",
-            inner=SafeHtml(""),
+            inner=SafeHtml.trust(""),
             data_animated="true" if self.animated else None,
             data_original_content_type=self.original_content_type,
             data_original_dimensions=self.original_dimensions,
@@ -394,7 +394,7 @@ class EmojiImageNode(BaseNode):
     def as_html(self) -> SafeHtml:
         return build_tag(
             tag="img",
-            inner=SafeHtml(""),
+            inner=SafeHtml.trust(""),
             alt=f":{self.title.replace(' ', '_')}:",
             class_=self.zulip_class(),
             src=self.src,
@@ -465,7 +465,7 @@ class InlineVideoNode(BaseNode):
     def as_html(self) -> SafeHtml:
         video = build_tag(
             tag="video",
-            inner=SafeHtml(""),
+            inner=SafeHtml.trust(""),
             preload="metadata",
             src=self.src,
         )
@@ -641,7 +641,7 @@ class KatexNode(BaseNode):
         return f"<<<some katex html (not shown) with {self.tag_class} class>>>"
 
     def as_html(self) -> SafeHtml:
-        return SafeHtml(self.html)
+        return SafeHtml.trust(self.html)
 
 
 class PygmentsCodeBlockNode(BaseNode):
@@ -653,4 +653,4 @@ class PygmentsCodeBlockNode(BaseNode):
         return f"\n~~~~~~~~ lang: {self.lang}\n{self.content}~~~~~~~~\n"
 
     def as_html(self) -> SafeHtml:
-        return SafeHtml(self.html)
+        return SafeHtml.trust(self.html)

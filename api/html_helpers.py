@@ -1,32 +1,42 @@
-class SafeHtml:
+from pydantic import BaseModel
+
+
+class SafeHtml(BaseModel):
     """
     The SafeHtml class doesn't magically prevent you from
     creating unsafe HTML, but it prevents a lot of obvious
     errors with the help of mypy.
 
-    You should only directly instantiate SafeHtml objects
-    from strings that you either trust or that you have
-    properly escaped.
+    You should never directly instantiate SafeHtml objects.
+
+    Only call SafeHtml.trust for strings that you either trust
+    or that you have properly escaped.
 
     The SafeHtml protocol also prevents you from accidentally
     double-escaping strings (but again, not completely fool-proof).
     """
 
-    def __init__(self, text: str) -> None:
-        self.text = text
+    presumably_escaped_text: str
+
+    def __post_init__(self) -> None:
+        assert "<" not in self.presumably_escaped_text
 
     def __str__(self) -> str:
-        return self.text
+        return self.presumably_escaped_text
+
+    @staticmethod
+    def trust(s: str) -> "SafeHtml":
+        return SafeHtml(presumably_escaped_text=s)
 
     @staticmethod
     def combine(items: list["SafeHtml"]) -> "SafeHtml":
-        return SafeHtml("".join(str(item) for item in items))
+        return SafeHtml.trust("".join(str(item) for item in items))
 
     @staticmethod
     def block_join(items: list["SafeHtml"]) -> "SafeHtml":
         if not items:
-            return SafeHtml("\n")
-        return SafeHtml("\n" + "\n".join(str(item) for item in items) + "\n")
+            return SafeHtml.trust("\n")
+        return SafeHtml.trust("\n" + "\n".join(str(item) for item in items) + "\n")
 
 
 def build_tag(*, tag: str, inner: SafeHtml, **attrs: str | None) -> SafeHtml:
@@ -36,8 +46,8 @@ def build_tag(*, tag: str, inner: SafeHtml, **attrs: str | None) -> SafeHtml:
         if value is not None
     )
     if str(inner) == "":
-        return SafeHtml(f"<{tag}{attr_suffix}/>")
-    return SafeHtml(f"<{tag}{attr_suffix}>{inner}</{tag}>")
+        return SafeHtml.trust(f"<{tag}{attr_suffix}/>")
+    return SafeHtml.trust(f"<{tag}{attr_suffix}>{inner}</{tag}>")
 
 
 def escape_text(text: str) -> SafeHtml:
@@ -50,4 +60,4 @@ def escape_text(text: str) -> SafeHtml:
         text = text.replace(c, f"&#{ord(c)};")
     text = text.replace(">", "&gt;")
     text = text.replace("<", "&lt;")
-    return SafeHtml(text)
+    return SafeHtml.trust(text)
