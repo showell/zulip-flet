@@ -16,17 +16,14 @@ class SafeHtml(BaseModel):
     double-escaping strings (but again, not completely fool-proof).
     """
 
-    presumably_escaped_text: str
-
-    def __post_init__(self) -> None:
-        assert "<" not in self.presumably_escaped_text
+    html_that_we_trust: str
 
     def __str__(self) -> str:
-        return self.presumably_escaped_text
+        return self.html_that_we_trust
 
     @staticmethod
     def trust(s: str) -> "SafeHtml":
-        return SafeHtml(presumably_escaped_text=s)
+        return SafeHtml(html_that_we_trust=s)
 
     @staticmethod
     def combine(items: list["SafeHtml"]) -> "SafeHtml":
