@@ -157,6 +157,31 @@ class TextNode(BaseNode):
 
 
 """
+We generally conform to mdast conventions for naming.
+
+The <br> and <hr> tags are handled super generically by us.
+"""
+
+
+class BreakNode(BaseNode):
+    def as_text(self) -> str:
+        return "\n"
+
+    def as_html(self) -> SafeHtml:
+        return SafeHtml("<br/>")
+
+
+class ThematicBreakNode(BaseNode):
+    def as_text(self) -> str:
+        return "\n\n---\n\n"
+
+    def as_html(self) -> SafeHtml:
+        return SafeHtml("<hr/>")
+
+
+"""
+Here we define a ContainerNode class.
+
 Most subclasses of ContainerNode tend to be pretty vanilla,
 and in the Zulip markdown you have no special
 attributes ("class" or otherwise) on the start tags.
@@ -187,6 +212,222 @@ class ContainerNode(BaseNode):
     def block_tag(self, tag: str, **attrs: str | None) -> SafeHtml:
         inner = SafeHtml.block_join([c.as_html() for c in self.children])
         return build_tag(tag=tag, inner=inner, **attrs)
+
+
+"""
+Whenever practical, I try to stay at the same layer of
+abstraction as the mdast project.
+
+See https://github.com/syntax-tree/mdast?tab=readme-ov-file#heading
+as an example.  Instead of concretely having <h1>, <h2>, etc.
+in my AST, I use a Heading concept with depth.
+
+The mdast project revolves around markdown, but I use their AST
+more at the layer of "this is what I mean to say" than thinking
+about actual syntax.
+
+This is still a work in progress.
+"""
+
+
+class HeadingNode(ContainerNode):
+    depth: int = Field(ge=1, le=6)
+
+    def as_text(self) -> str:
+        return f"{'#' * self.depth} {self.children_text()}\n\n"
+
+    def as_html(self) -> SafeHtml:
+        return self.tag(f"h{self.depth}")
+
+
+"""
+The mostly-vanilla subclasses of ContainerNode are below.
+
+Generally it's up to the calling code to map these into some
+kind of UI paradigm.  The as_text methods are basically
+for debugging and convenience.  For example, if you try
+to build a UI to show a Zulip message, you can fall
+back to the as_text() methods and just stick the text
+into a text widget until you're ready to flesh out the UI.
+"""
+
+
+class AnchorNode(ContainerNode):
+    href: str
+
+    def as_text(self) -> str:
+        content = "".join(c.as_text() for c in self.children)
+        return f"[{content}] ({self.href})"
+
+    def as_html(self) -> SafeHtml:
+        return self.tag("a", href=self.href)
+
+
+class BlockQuoteNode(ContainerNode):
+    def as_text(self) -> str:
+        content = self.children_text()
+        return f"\n-----\n{content}\n-----\n"
+
+    def as_html(self) -> SafeHtml:
+        return self.tag("blockquote")
+
+
+class BodyNode(ContainerNode):
+    def as_html(self) -> SafeHtml:
+        return self.tag("body")
+
+
+class CodeNode(ContainerNode):
+    def as_text(self) -> str:
+        return f"`{self.children_text()}`"
+
+    def as_html(self) -> SafeHtml:
+        return self.tag("code")
+
+
+class DelNode(ContainerNode):
+    def as_text(self) -> str:
+        return f"~~{self.children_text()}~~"
+
+    def as_html(self) -> SafeHtml:
+        return self.tag("del")
+
+
+class EmphasisNode(ContainerNode):
+    def as_text(self) -> str:
+        return f"*{self.children_text()}*"
+
+    def as_html(self) -> SafeHtml:
+        return self.tag("em")
+
+
+class ListItemNode(ContainerNode):
+    def as_html(self) -> SafeHtml:
+        return self.tag("li")
+
+
+class OrderedListNode(ContainerNode):
+    start: int
+
+    def as_text(self) -> str:
+        return "".join(
+            f"\n    {i + (self.start or 1)}. " + c.as_text()
+            for i, c in enumerate(self.children)
+        )
+
+    def as_html(self) -> SafeHtml:
+        if self.start:
+            return self.tag("ol", start=str(self.start))
+        return self.tag("ol")
+
+
+class ParagraphNode(ContainerNode):
+    def as_text(self) -> str:
+        return self.children_text() + "\n\n"
+
+    def as_html(self) -> SafeHtml:
+        return self.tag("p")
+
+
+class StrongNode(ContainerNode):
+    def as_text(self) -> str:
+        return f"**{self.children_text()}**"
+
+    def as_html(self) -> SafeHtml:
+        return self.tag("strong")
+
+
+class UnorderedListNode(ContainerNode):
+    def as_text(self) -> str:
+        return "".join("\n    - " + c.as_text() for c in self.children)
+
+    def as_html(self) -> SafeHtml:
+        return self.tag("ul")
+
+
+"""
+Zulip tables are their own special beast.  Zulip, to my knowledge,
+doesn't do anything custom with the actual conversion of Markdown
+tables into HTML tables, but we need to get granular on the description
+of tables, since the headers and cells of Zulip tables **can**
+include custom thingies.
+"""
+
+
+class ThNode(ContainerNode):
+    text_align: str | None
+
+    def as_text(self) -> str:
+        return f"    TH: {self.children_text()} ({self.text_align})\n"
+
+    def as_html(self) -> SafeHtml:
+        style = f"text-align: {self.text_align};" if self.text_align else None
+        return self.tag("th", style=style)
+
+
+class TdNode(ContainerNode):
+    text_align: str | None
+
+    def as_text(self) -> str:
+        return f"    TD: {self.children_text()} ({self.text_align})\n"
+
+    def as_html(self) -> SafeHtml:
+        style = f"text-align: {self.text_align};" if self.text_align else None
+        return self.tag("td", style=style)
+
+
+class TrNode(BaseNode):
+    tds: list[TdNode]
+
+    def as_text(self) -> str:
+        s = "TR\n"
+        for td in self.tds:
+            s += td.as_text()
+        s += "\n"
+        return s
+
+    def as_html(self) -> SafeHtml:
+        inner = SafeHtml.block_join([td.as_html() for td in self.tds])
+        return build_tag(tag="tr", inner=inner)
+
+
+class TBodyNode(BaseNode):
+    trs: list[TrNode]
+
+    def as_text(self) -> str:
+        tr_text = "".join(tr.as_text() for tr in self.trs)
+        return f"\n-----------\n{tr_text}"
+
+    def as_html(self) -> SafeHtml:
+        inner = SafeHtml.block_join([tr.as_html() for tr in self.trs])
+        return build_tag(tag="tbody", inner=inner)
+
+
+class THeadNode(BaseNode):
+    ths: list[ThNode]
+
+    def as_text(self) -> str:
+        th_text = "".join(th.as_text() for th in self.ths)
+        return f"\n-----------\n{th_text}"
+
+    def as_html(self) -> SafeHtml:
+        ths = SafeHtml.block_join([th.as_html() for th in self.ths])
+        tr = build_tag(tag="tr", inner=ths)
+        return build_tag(tag="thead", inner=SafeHtml.block_join([tr]))
+
+
+class TableNode(BaseNode):
+    thead: THeadNode
+    tbody: TBodyNode
+
+    def as_text(self) -> str:
+        return self.thead.as_text() + "\n" + self.tbody.as_text()
+
+    def as_html(self) -> SafeHtml:
+        thead = self.thead.as_html()
+        tbody = self.tbody.as_html()
+        inner = SafeHtml.block_join([thead, tbody])
+        return build_tag(tag="table", inner=inner)
 
 
 """
@@ -468,242 +709,3 @@ class TimeWidgetNode(BaseNode):
             inner=escape_text(self.text),
             datetime=self.datetime,
         )
-
-
-"""
-We have nodes for things like the <br> and <hr> tags
-for cases where Zulip uses them in pretty generic
-ways.
-"""
-
-
-class BreakNode(BaseNode):
-    def as_text(self) -> str:
-        return "\n"
-
-    def as_html(self) -> SafeHtml:
-        return SafeHtml("<br/>")
-
-
-class ThematicBreakNode(BaseNode):
-    def as_text(self) -> str:
-        return "\n\n---\n\n"
-
-    def as_html(self) -> SafeHtml:
-        return SafeHtml("<hr/>")
-
-
-"""
-Whenever practical, I try to stay at the same layer of
-abstraction as the mdast project.
-
-See https://github.com/syntax-tree/mdast?tab=readme-ov-file#heading
-as an example.  Instead of concretely having <h1>, <h2>, etc.
-in my AST, I use a Heading concept with depth.
-
-The mdast project revolves around markdown, but I use their AST
-more at the layer of "this is what I mean to say" than thinking
-about actual syntax.
-
-This is still a work in progress.
-"""
-
-
-class HeadingNode(ContainerNode):
-    depth: int = Field(ge=1, le=6)
-
-    def as_text(self) -> str:
-        return f"{'#' * self.depth} {self.children_text()}\n\n"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag(f"h{self.depth}")
-
-
-"""
-The mostly-vanilla subclasses of ContainerNode are below.
-
-Generally it's up to the calling code to map these into some
-kind of UI paradigm.  The as_text methods are basically
-for debugging and convenience.  For example, if you try
-to build a UI to show a Zulip message, you can fall
-back to the as_text() methods and just stick the text
-into a text widget until you're ready to flesh out the UI.
-"""
-
-
-class AnchorNode(ContainerNode):
-    href: str
-
-    def as_text(self) -> str:
-        content = "".join(c.as_text() for c in self.children)
-        return f"[{content}] ({self.href})"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("a", href=self.href)
-
-
-class BlockQuoteNode(ContainerNode):
-    def as_text(self) -> str:
-        content = self.children_text()
-        return f"\n-----\n{content}\n-----\n"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("blockquote")
-
-
-class BodyNode(ContainerNode):
-    def as_html(self) -> SafeHtml:
-        return self.tag("body")
-
-
-class CodeNode(ContainerNode):
-    def as_text(self) -> str:
-        return f"`{self.children_text()}`"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("code")
-
-
-class DelNode(ContainerNode):
-    def as_text(self) -> str:
-        return f"~~{self.children_text()}~~"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("del")
-
-
-class EmphasisNode(ContainerNode):
-    def as_text(self) -> str:
-        return f"*{self.children_text()}*"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("em")
-
-
-class ListItemNode(ContainerNode):
-    def as_html(self) -> SafeHtml:
-        return self.tag("li")
-
-
-class OrderedListNode(ContainerNode):
-    start: int
-
-    def as_text(self) -> str:
-        return "".join(
-            f"\n    {i + (self.start or 1)}. " + c.as_text()
-            for i, c in enumerate(self.children)
-        )
-
-    def as_html(self) -> SafeHtml:
-        if self.start:
-            return self.tag("ol", start=str(self.start))
-        return self.tag("ol")
-
-
-class ParagraphNode(ContainerNode):
-    def as_text(self) -> str:
-        return self.children_text() + "\n\n"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("p")
-
-
-class StrongNode(ContainerNode):
-    def as_text(self) -> str:
-        return f"**{self.children_text()}**"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("strong")
-
-
-class UnorderedListNode(ContainerNode):
-    def as_text(self) -> str:
-        return "".join("\n    - " + c.as_text() for c in self.children)
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("ul")
-
-
-"""
-Zulip tables are their own special beast.  Zulip, to my knowledge,
-doesn't do anything custom with the actual conversion of Markdown
-tables into HTML tables, but we need to get granular on the description
-of tables, since the headers and cells of Zulip tables **can**
-include custom thingies.
-"""
-
-
-class ThNode(ContainerNode):
-    text_align: str | None
-
-    def as_text(self) -> str:
-        return f"    TH: {self.children_text()} ({self.text_align})\n"
-
-    def as_html(self) -> SafeHtml:
-        style = f"text-align: {self.text_align};" if self.text_align else None
-        return self.tag("th", style=style)
-
-
-class TdNode(ContainerNode):
-    text_align: str | None
-
-    def as_text(self) -> str:
-        return f"    TD: {self.children_text()} ({self.text_align})\n"
-
-    def as_html(self) -> SafeHtml:
-        style = f"text-align: {self.text_align};" if self.text_align else None
-        return self.tag("td", style=style)
-
-
-class TrNode(BaseNode):
-    tds: list[TdNode]
-
-    def as_text(self) -> str:
-        s = "TR\n"
-        for td in self.tds:
-            s += td.as_text()
-        s += "\n"
-        return s
-
-    def as_html(self) -> SafeHtml:
-        inner = SafeHtml.block_join([td.as_html() for td in self.tds])
-        return build_tag(tag="tr", inner=inner)
-
-
-class TBodyNode(BaseNode):
-    trs: list[TrNode]
-
-    def as_text(self) -> str:
-        tr_text = "".join(tr.as_text() for tr in self.trs)
-        return f"\n-----------\n{tr_text}"
-
-    def as_html(self) -> SafeHtml:
-        inner = SafeHtml.block_join([tr.as_html() for tr in self.trs])
-        return build_tag(tag="tbody", inner=inner)
-
-
-class THeadNode(BaseNode):
-    ths: list[ThNode]
-
-    def as_text(self) -> str:
-        th_text = "".join(th.as_text() for th in self.ths)
-        return f"\n-----------\n{th_text}"
-
-    def as_html(self) -> SafeHtml:
-        ths = SafeHtml.block_join([th.as_html() for th in self.ths])
-        tr = build_tag(tag="tr", inner=ths)
-        return build_tag(tag="thead", inner=SafeHtml.block_join([tr]))
-
-
-class TableNode(BaseNode):
-    thead: THeadNode
-    tbody: TBodyNode
-
-    def as_text(self) -> str:
-        return self.thead.as_text() + "\n" + self.tbody.as_text()
-
-    def as_html(self) -> SafeHtml:
-        thead = self.thead.as_html()
-        tbody = self.tbody.as_html()
-        inner = SafeHtml.block_join([thead, tbody])
-        return build_tag(tag="table", inner=inner)
