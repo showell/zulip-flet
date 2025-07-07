@@ -396,19 +396,6 @@ class StreamLinkNode(ContainerNode):
         )
 
 
-class TimeWidgetNode(BaseNode):
-    datetime: str
-    text: str
-
-    def as_text(self) -> str:
-        return self.text
-
-    def as_html(self) -> SafeHtml:
-        return build_tag(
-            tag="time", inner=escape_text(self.text), datetime=self.datetime
-        )
-
-
 class UserGroupMentionNode(BaseNode):
     name: str
     group_id: str
@@ -446,6 +433,32 @@ class UserMentionNode(BaseNode):
             inner=escape_text(self.name),
             class_=self.zulip_class(),
             data_user_id=self.user_id,
+        )
+
+
+"""
+I'm actually a bit unclear on whether Zulip's time widget
+should be considered a custom control or not.
+
+The HTML that gets rendered has no special
+HTML class attached to the <time> tag.
+
+Typical markdown is <time:2025-07-16T20:00:00-04:00>
+"""
+
+
+class TimeWidgetNode(BaseNode):
+    datetime: str
+    text: str
+
+    def as_text(self) -> str:
+        return self.text
+
+    def as_html(self) -> SafeHtml:
+        return build_tag(
+            tag="time",
+            inner=escape_text(self.text),
+            datetime=self.datetime,
         )
 
 
