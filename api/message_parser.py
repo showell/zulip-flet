@@ -51,6 +51,13 @@ def assert_class(elem: Element, expected: str) -> None:
     assert_equal(get_string(elem, "class"), expected)
 
 
+def assert_contains_text(elem: Element, expected: str) -> None:
+    assert_equal(elem.text or "", expected)
+    if len(elem) != 0:
+        print(etree.tostring(elem, with_tail=False))
+        raise AssertionError(f"{elem.tag} has unexpected non-text children")
+
+
 def assert_empty(elem: Element) -> None:
     if elem.text or len(elem) > 0:
         raise AssertionError(f"{elem} is not empty")
@@ -69,6 +76,7 @@ def assert_num_children(elem: Element, count: int) -> None:
 
 
 def forbid_children(elem: Element) -> None:
+    assert elem.text is None
     if len(elem) != 0:
         print(etree.tostring(elem, with_tail=False))
         raise AssertionError(f"{elem.tag} has unexpected children")
@@ -164,16 +172,15 @@ def get_emoji_image_node(elem: Element) -> EmojiImageNode:
 def get_emoji_span_node(elem: Element) -> EmojiSpanNode:
     restrict(elem, "span", "aria-label", "class", "role", "title")
     title = get_string(elem, "title")
-    assert_equal(get_string(elem, "role"), "img")
-    assert_equal(get_string(elem, "aria-label"), title)
+    assert_attribute(elem, "role", "img")
+    assert_attribute(elem, "aria-label", title)
     elem_class = get_string(elem, "class")
     assert elem_class.startswith("emoji ")
     _, emoji_unicode_class = elem_class.split(" ")
     emoji_prefix, *unicodes = emoji_unicode_class.split("-")
     assert_equal(emoji_prefix, "emoji")
     assert unicodes
-    assert_equal(elem.text or "", f":{title.replace(' ', '_')}:")
-    forbid_children(elem)
+    assert_contains_text(elem, f":{title.replace(' ', '_')}:")
     return EmojiSpanNode(title=title, unicodes=unicodes)
 
 
