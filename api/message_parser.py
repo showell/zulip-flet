@@ -477,22 +477,6 @@ def verify_round_trip(
     return new_f
 
 
-def get_child_nodes(elem: Element, ignore_newlines: bool = False) -> list[BaseNode]:
-    children: list[BaseNode] = []
-    if elem.text:
-        text = elem.text
-        if text and not (ignore_newlines and text == "\n"):
-            children.append(TextNode(value=text))
-
-    for c in elem:
-        tail_text = c.tail or ""
-        children.append(get_node(c))
-        if tail_text and not (ignore_newlines and tail_text == "\n"):
-            children.append(TextNode(value=tail_text))
-
-    return children
-
-
 TextFormattingNode = Union[
     CodeNode, DeleteNode, EmphasisNode, StrongNode, TimeWidgetNode
 ]
@@ -593,6 +577,22 @@ def maybe_get_phrasing_node(elem: Element) -> PhrasingNode | None:
         return get_span_node(elem)
 
     return None
+
+
+def get_child_nodes(elem: Element, ignore_newlines: bool = False) -> list[BaseNode]:
+    children: list[BaseNode] = []
+    if elem.text:
+        text = elem.text
+        if text and not (ignore_newlines and text == "\n"):
+            children.append(TextNode(value=text))
+
+    for c in elem:
+        children.append(get_node(c))
+        tail_text = c.tail or ""
+        if tail_text and not (ignore_newlines and tail_text == "\n"):
+            children.append(TextNode(value=tail_text))
+
+    return children
 
 
 @verify_round_trip
