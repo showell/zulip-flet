@@ -574,15 +574,34 @@ def get_span_node(elem: Element) -> SpanNode:
     raise IllegalMessage("unexpected span tag")
 
 
-@verify_round_trip
-def get_node(elem: Element) -> BaseNode:
-    elem_class = maybe_get_string(elem, "class")
+PhrasingNode = Union[BreakNode, TextFormattingNode, LinkNode, SpanNode]
 
+
+def maybe_get_phrasing_node(elem: Element) -> PhrasingNode | None:
     if elem.tag in ["code", "del", "em", "strong", "time"]:
         return get_text_formatting_node(elem)
 
     if elem.tag in ["a", "img"]:
         return get_link_node(elem)
+
+    if elem.tag == "br":
+        restrict_attributes(elem)
+        forbid_children(elem)
+        return BreakNode()
+
+    if elem.tag == "span":
+        return get_span_node(elem)
+
+    return None
+
+
+@verify_round_trip
+def get_node(elem: Element) -> BaseNode:
+    elem_class = maybe_get_string(elem, "class")
+
+    node = maybe_get_phrasing_node(elem)
+    if node is not None:
+        return node
 
     if elem.tag == "blockquote":
         restrict_attributes(elem)
@@ -591,11 +610,6 @@ def get_node(elem: Element) -> BaseNode:
     if elem.tag == "body":
         restrict_attributes(elem)
         return BodyNode(children=get_child_nodes(elem))
-
-    if elem.tag == "br":
-        restrict_attributes(elem)
-        forbid_children(elem)
-        return BreakNode()
 
     if elem.tag == "div":
         if elem_class == "codehilite":
@@ -638,9 +652,6 @@ def get_node(elem: Element) -> BaseNode:
     if elem.tag == "p":
         restrict_attributes(elem)
         return ParagraphNode(children=get_child_nodes(elem))
-
-    if elem.tag == "span":
-        return get_span_node(elem)
 
     if elem.tag == "table":
         return get_table_node(elem)
