@@ -43,43 +43,47 @@ from message_node import (
 Element = etree._Element
 
 
-def assert_attribute(elem: Element, field: str, expected: str) -> None:
-    assert_equal(elem.get(field) or "", expected)
+class IllegalMessage(Exception):
+    pass
 
 
-def assert_class(elem: Element, expected: str) -> None:
-    assert_equal(get_string(elem, "class"), expected)
+def ensure_attribute(elem: Element, field: str, expected: str) -> None:
+    ensure_equal(get_string(elem, field), expected)
 
 
-def assert_contains_text(elem: Element, expected: str) -> None:
-    assert_equal(elem.text or "", expected)
+def ensure_class(elem: Element, expected: str) -> None:
+    ensure_equal(get_string(elem, "class"), expected)
+
+
+def ensure_contains_text(elem: Element, expected: str) -> None:
+    ensure_equal(elem.text or "", expected)
     if len(elem) != 0:
         print(etree.tostring(elem, with_tail=False))
-        raise AssertionError(f"{elem.tag} has unexpected non-text children")
+        raise IllegalMessage(f"{elem.tag} has unexpected non-text children")
 
 
-def assert_empty(elem: Element) -> None:
+def ensure_empty(elem: Element) -> None:
     if elem.text or len(elem) > 0:
-        raise AssertionError(f"{elem} is not empty")
+        raise IllegalMessage(f"{elem} is not empty")
 
 
-def assert_equal(s1: str, s2: str) -> None:
+def ensure_equal(s1: str, s2: str) -> None:
     if s1 != s2:
         print(repr(s1))
         print(repr(s2))
-        raise AssertionError(f"{s1} != {s2}")
+        raise IllegalMessage(f"{s1} != {s2}")
 
 
-def assert_num_children(elem: Element, count: int) -> None:
+def ensure_num_children(elem: Element, count: int) -> None:
     if len(elem) != count:
-        raise AssertionError("bad count")
+        raise IllegalMessage("bad count")
 
 
 def forbid_children(elem: Element) -> None:
     assert elem.text is None
     if len(elem) != 0:
         print(etree.tostring(elem, with_tail=False))
-        raise AssertionError(f"{elem.tag} has unexpected children")
+        raise IllegalMessage(f"{elem.tag} has unexpected children")
 
 
 def get_bool(elem: Element, field: str) -> bool:
@@ -89,7 +93,7 @@ def get_bool(elem: Element, field: str) -> bool:
 def get_class(elem: Element, *expected: str) -> str:
     tag_class = get_string(elem, "class")
     if tag_class not in expected:
-        raise AssertionError(f"unknown class {tag_class}")
+        raise IllegalMessage(f"unknown class {tag_class}")
     return tag_class
 
 
@@ -98,11 +102,11 @@ def get_html(elem: Element) -> str:
 
 
 def get_only_child(elem: Element, tag_name: str) -> Element:
-    assert_num_children(elem, 1)
+    ensure_num_children(elem, 1)
     assert elem.text is None
     child = elem[0]
     assert child.tail is None
-    assert_equal(child.tag, tag_name)
+    ensure_equal(child.tag, tag_name)
     return child
 
 
@@ -114,12 +118,12 @@ def get_optional_int(elem: Element, field: str) -> int | None:
 def get_string(elem: Element, field: str) -> str:
     s = elem.get(field)
     if s is None:
-        raise AssertionError(f"{field} is missing")
+        raise IllegalMessage(f"{field} is missing")
     return s
 
 
 def get_two_children(elem: Element) -> tuple[Element, Element]:
-    assert_num_children(elem, 2)
+    ensure_num_children(elem, 2)
     assert elem.text is None
     for c in elem:
         assert c.tail is None
@@ -127,14 +131,14 @@ def get_two_children(elem: Element) -> tuple[Element, Element]:
 
 
 def restrict(elem: Element, tag: str, *fields: str) -> None:
-    assert_equal(elem.tag or "", tag)
+    ensure_equal(elem.tag or "", tag)
     restrict_attributes(elem, *fields)
 
 
 def restrict_attributes(elem: Element, *fields: str) -> None:
     if not set(elem.attrib).issubset(set(fields)):
         print(etree.tostring(elem, with_tail=False))
-        raise AssertionError(
+        raise IllegalMessage(
             f"{set(elem.attrib)} (actual attributes) > {set(fields)} (expected)"
         )
 
@@ -165,22 +169,22 @@ def get_emoji_image_node(elem: Element) -> EmojiImageNode:
     alt = get_string(elem, "alt")
     src = get_string(elem, "src")
     title = get_string(elem, "title")
-    assert_equal(alt, f":{title.replace(' ', '_')}:")
+    ensure_equal(alt, f":{title.replace(' ', '_')}:")
     return EmojiImageNode(src=src, title=title)
 
 
 def get_emoji_span_node(elem: Element) -> EmojiSpanNode:
     restrict(elem, "span", "aria-label", "class", "role", "title")
     title = get_string(elem, "title")
-    assert_attribute(elem, "role", "img")
-    assert_attribute(elem, "aria-label", title)
+    ensure_attribute(elem, "role", "img")
+    ensure_attribute(elem, "aria-label", title)
     elem_class = get_string(elem, "class")
     assert elem_class.startswith("emoji ")
     _, emoji_unicode_class = elem_class.split(" ")
     emoji_prefix, *unicodes = emoji_unicode_class.split("-")
-    assert_equal(emoji_prefix, "emoji")
+    ensure_equal(emoji_prefix, "emoji")
     assert unicodes
-    assert_contains_text(elem, f":{title.replace(' ', '_')}:")
+    ensure_contains_text(elem, f":{title.replace(' ', '_')}:")
     return EmojiSpanNode(title=title, unicodes=unicodes)
 
 
@@ -214,7 +218,7 @@ def get_katex_node(elem: Element) -> KatexNode:
 
 def get_inline_image_node(elem: Element) -> InlineImageNode:
     restrict(elem, "div", "class")
-    assert_class(elem, "message_inline_image")
+    ensure_class(elem, "message_inline_image")
     anchor = get_only_child(elem, "a")
     restrict(anchor, "a", "href", "title")
     href = get_string(anchor, "href")
@@ -230,7 +234,7 @@ def get_inline_image_node(elem: Element) -> InlineImageNode:
 
 def get_inline_video_node(elem: Element) -> InlineVideoNode:
     restrict(elem, "div", "class")
-    assert_class(elem, "message_inline_image message_inline_video")
+    ensure_class(elem, "message_inline_image message_inline_video")
 
     anchor = get_only_child(elem, "a")
 
@@ -241,9 +245,9 @@ def get_inline_video_node(elem: Element) -> InlineVideoNode:
     video = get_only_child(anchor, "video")
 
     restrict(video, "video", "preload", "src")
-    assert_attribute(video, "preload", "metadata")
+    ensure_attribute(video, "preload", "metadata")
     src = get_string(video, "src")
-    assert_empty(video)
+    ensure_empty(video)
 
     return InlineVideoNode(href=href, src=src, title=title)
 
@@ -283,8 +287,8 @@ def get_message_link_node(elem: Element) -> MessageLinkNode:
 
 def get_spoiler_content(elem: Element) -> SpoilerContentNode:
     restrict(elem, "div", "class", "aria-hidden")
-    assert_class(elem, "spoiler-content")
-    assert_attribute(elem, "aria-hidden", "true")
+    ensure_class(elem, "spoiler-content")
+    ensure_attribute(elem, "aria-hidden", "true")
     aria_attribute_comes_first = list(elem.attrib.keys())[0] == "aria-hidden"
     return SpoilerContentNode(
         children=get_child_nodes(elem, ignore_newlines=True),
@@ -294,13 +298,13 @@ def get_spoiler_content(elem: Element) -> SpoilerContentNode:
 
 def get_spoiler_header(elem: Element) -> SpoilerHeaderNode:
     restrict(elem, "div", "class")
-    assert_class(elem, "spoiler-header")
+    ensure_class(elem, "spoiler-header")
     return SpoilerHeaderNode(children=get_child_nodes(elem, ignore_newlines=True))
 
 
 def get_spoiler_node(elem: Element) -> SpoilerNode:
     restrict(elem, "div", "class")
-    assert_class(elem, "spoiler-block")
+    ensure_class(elem, "spoiler-block")
     header_elem, content_elem = get_two_children(elem)
     header = get_spoiler_header(header_elem)
     content = get_spoiler_content(content_elem)
@@ -454,7 +458,7 @@ def _get_node(elem: Element) -> BaseNode:
         if elem_class == "message_inline_image message_inline_video":
             return get_inline_video_node(elem)
 
-        raise AssertionError("unexpected class for div")
+        raise IllegalMessage("unexpected class for div")
 
     if elem.tag == "em":
         restrict_attributes(elem)
@@ -508,7 +512,7 @@ def _get_node(elem: Element) -> BaseNode:
         if elem_class == "user-mention silent":
             return get_user_mention_node(elem, silent=True)
 
-        raise AssertionError("unexpected class for span")
+        raise IllegalMessage("unexpected class for span")
 
     if elem.tag == "strong":
         restrict_attributes(elem)
@@ -523,7 +527,7 @@ def _get_node(elem: Element) -> BaseNode:
     if elem.tag == "ul":
         return get_unordered_list_node(elem)
 
-    raise Exception(f"Unsupported tag {elem.tag}")
+    raise IllegalMessage(f"Unsupported tag {elem.tag}")
 
 
 def get_node(elem: Element) -> BaseNode:
@@ -537,7 +541,7 @@ def get_node(elem: Element) -> BaseNode:
         print()
         print(repr(str(node.as_html())))
         print()
-        raise AssertionError("as_html is not precise")
+        raise IllegalMessage("as_html does not round trip")
 
     return node
 

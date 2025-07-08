@@ -4,7 +4,7 @@ import time
 sys.path.append("api")
 from api.database import Database
 from api.message_node import BaseNode
-from api.message_parser import get_message_node
+from api.message_parser import IllegalMessage, get_message_node
 
 fn = "database.json"
 with open(fn, encoding="utf8") as database_file:
@@ -20,10 +20,10 @@ for message in database.message_table.get_rows():
         node = get_message_node(html)
         node.as_text()
         node.as_html()
-    except AssertionError as e:
+    except IllegalMessage as e:
         print(f"\nOUTER HMTL:\n{repr(html)}")
         print(f"\nERROR:\n{e}\n")
-        break
+        raise
 
     nodes.append(node)
     num_successes += 1
