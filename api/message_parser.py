@@ -145,10 +145,12 @@ def get_optional_int(elem: Element, field: str) -> int | None:
     return int(val)
 
 
-def get_string(elem: Element, field: str) -> str:
+def get_string(elem: Element, field: str, allow_empty: bool=False) -> str:
     s = maybe_get_string(elem, field)
     if s is None:
         raise IllegalMessage(f"{field} is missing")
+    if s == "" and not allow_empty:
+        raise IllegalMessage(f"{field} is empty string")
     return s
 
 
@@ -462,7 +464,7 @@ def _get_node(elem: Element) -> BaseNode:
             return get_stream_link_node(elem, has_topic=True)
 
         restrict_attributes(elem, "href")
-        href = get_string(elem, "href")
+        href = get_string(elem, "href", allow_empty=True)
         return AnchorNode(href=href, children=get_child_nodes(elem))
 
     if elem.tag == "blockquote":
