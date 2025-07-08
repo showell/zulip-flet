@@ -7,7 +7,6 @@ from message_node import (
     BodyNode,
     BreakNode,
     CodeNode,
-    ContainerNode,
     DeleteNode,
     EmojiImageNode,
     EmojiSpanNode,
@@ -397,22 +396,36 @@ def _get_node(elem: Element) -> BaseNode:
     elem_class = elem.get("class") or ""
 
     if elem.tag == "a":
-        if not elem_class:
-            restrict_attributes(elem, "href")
-            href = elem.get("href")
-            assert href is not None
-            return AnchorNode(href=href, children=get_child_nodes(elem))
-
         if elem_class == "message-link":
             return get_message_link_node(elem)
 
         if elem_class in ["stream", "stream-topic"]:
             return get_stream_link_node(elem)
 
+        restrict_attributes(elem, "href")
+        href = get_string(elem, "href")
+        return AnchorNode(href=href, children=get_child_nodes(elem))
+
+    if elem.tag == "blockquote":
+        restrict_attributes(elem)
+        return BlockQuoteNode(children=get_child_nodes(elem))
+
+    if elem.tag == "body":
+        restrict_attributes(elem)
+        return BodyNode(children=get_child_nodes(elem))
+
     if elem.tag == "br":
         restrict_attributes(elem)
         forbid_children(elem)
         return BreakNode()
+
+    if elem.tag == "code":
+        restrict_attributes(elem)
+        return CodeNode(children=get_child_nodes(elem))
+
+    if elem.tag == "del":
+        restrict_attributes(elem)
+        return DeleteNode(children=get_child_nodes(elem))
 
     if elem.tag == "div":
         if elem_class == "codehilite":
@@ -423,6 +436,12 @@ def _get_node(elem: Element) -> BaseNode:
             return get_inline_image_node(elem)
         if elem_class == "message_inline_image message_inline_video":
             return get_inline_video_node(elem)
+
+        raise AssertionError("unexpected class for div")
+
+    if elem.tag == "em":
+        restrict_attributes(elem)
+        return EmphasisNode(children=get_child_nodes(elem))
 
     if elem.tag == "h1":
         return HeadingNode(depth=1, children=get_child_nodes(elem))
@@ -454,6 +473,10 @@ def _get_node(elem: Element) -> BaseNode:
     if elem.tag == "ol":
         return get_ordered_list_node(elem)
 
+    if elem.tag == "p":
+        restrict_attributes(elem)
+        return ParagraphNode(children=get_child_nodes(elem))
+
     if elem.tag == "span":
         if elem_class.startswith("emoji "):
             return get_emoji_span_node(elem)
@@ -468,6 +491,12 @@ def _get_node(elem: Element) -> BaseNode:
         if elem_class == "user-mention silent":
             return get_user_mention_node(elem, silent=True)
 
+        raise AssertionError("unexpected class for span")
+
+    if elem.tag == "strong":
+        restrict_attributes(elem)
+        return StrongNode(children=get_child_nodes(elem))
+
     if elem.tag == "table":
         return get_table_node(elem)
 
@@ -476,22 +505,6 @@ def _get_node(elem: Element) -> BaseNode:
 
     if elem.tag == "ul":
         return get_unordered_list_node(elem)
-
-    simple_nodes: dict[str, type[ContainerNode]] = dict(
-        body=BodyNode,
-        blockquote=BlockQuoteNode,
-        code=CodeNode,
-        em=EmphasisNode,
-        p=ParagraphNode,
-        strong=StrongNode,
-    )
-
-    # del is a keyword in Python
-    simple_nodes["del"] = DeleteNode
-
-    if elem.tag in simple_nodes:
-        restrict_attributes(elem)
-        return simple_nodes[elem.tag](children=get_child_nodes(elem))
 
     raise Exception(f"Unsupported tag {elem.tag}")
 
