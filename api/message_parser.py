@@ -311,12 +311,10 @@ def get_spoiler_node(elem: Element) -> SpoilerNode:
     return SpoilerNode(header=header, content=content)
 
 
-def get_stream_link_node(elem: Element) -> StreamLinkNode:
-    has_topic = elem.get("class") == "stream-topic"
-    assert set(elem.attrib) == {"class", "data-stream-id", "href"}
-    stream_id = elem.get("data-stream-id") or ""
-    href = elem.get("href") or ""
-    assert href and stream_id
+def get_stream_link_node(elem: Element, *, has_topic: bool) -> StreamLinkNode:
+    restrict(elem, "a", "class", "data-stream-id", "href")
+    stream_id = get_string(elem, "data-stream-id")
+    href = get_string(elem, "href")
     children = get_child_nodes(elem)
     return StreamLinkNode(
         href=href, stream_id=stream_id, children=children, has_topic=has_topic
@@ -420,8 +418,11 @@ def _get_node(elem: Element) -> BaseNode:
         if elem_class == "message-link":
             return get_message_link_node(elem)
 
-        if elem_class in ["stream", "stream-topic"]:
-            return get_stream_link_node(elem)
+        if elem_class == "stream":
+            return get_stream_link_node(elem, has_topic=False)
+
+        if elem_class == "stream-topic":
+            return get_stream_link_node(elem, has_topic=True)
 
         restrict_attributes(elem, "href")
         href = get_string(elem, "href")
