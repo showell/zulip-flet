@@ -79,10 +79,18 @@ def ensure_num_children(elem: Element, count: int) -> None:
         raise IllegalMessage("bad count")
 
 
-def forbid_children(elem: Element) -> None:
-    assert elem.text is None
+def ensure_only_text(elem: Element) -> str:
     if len(elem) != 0:
-        print(etree.tostring(elem, with_tail=False))
+        raise IllegalMessage(f"{elem.tag} has unexpected children")
+    if elem.text is None:
+        raise IllegalMessage("text is missing")
+    return elem.text
+
+
+def forbid_children(elem: Element) -> None:
+    if elem.text:
+        raise IllegalMessage("unexpected text")
+    if len(elem) != 0:
         raise IllegalMessage(f"{elem.tag} has unexpected children")
 
 
@@ -114,6 +122,15 @@ def get_only_child(elem: Element, tag_name: str) -> Element:
     assert elem.text is None
     child = elem[0]
     assert child.tail is None
+    ensure_equal(child.tag, tag_name)
+    return child
+
+
+def get_only_block_child(elem: Element, tag_name: str) -> Element:
+    ensure_num_children(elem, 1)
+    assert elem.text == "\n"
+    child = elem[0]
+    assert child.tail == "\n"
     ensure_equal(child.tag, tag_name)
     return child
 
@@ -330,13 +347,14 @@ def get_stream_link_node(elem: Element, *, has_topic: bool) -> StreamLinkNode:
 
 
 def get_table_cell_alignment(elem: Element) -> str | None:
-    assert set(elem.attrib).issubset({"style"})
+    restrict_attributes(elem, "style")
     style = elem.get("style")
     if style is None:
         return None
     label, value = style.strip(";").split(": ")
-    assert label == "text-align"
-    assert value in ("center", "left", "right")
+    ensure_equal(label, "text-align")
+    if value not in ("center", "left", "right"):
+        raise IllegalMessage("bad alignment value")
     return value
 
 
@@ -347,9 +365,7 @@ def get_table_node(elem: Element) -> TableNode:
             children = get_child_nodes(th)
             return ThNode(text_align=text_align, children=children)
 
-        assert len(thead) == 1
-        tr = thead[0]
-        assert tr.tag == "tr"
+        tr = get_only_block_child(thead, "tr")
         ths = [get_th_node(th) for th in tr.iterchildren()]
         return THeadNode(ths=ths)
 
@@ -372,12 +388,9 @@ def get_table_node(elem: Element) -> TableNode:
 
 
 def get_time_widget_node(elem: Element) -> TimeWidgetNode:
-    assert set(elem.attrib) == {"datetime"}
-    datetime = elem.get("datetime") or ""
-    assert datetime
-    assert len(elem) == 0
-    text = elem.text
-    assert text
+    restrict(elem, "time", "datetime")
+    datetime = get_string(elem, "datetime")
+    text = ensure_only_text(elem)
     return TimeWidgetNode(datetime=datetime, text=text)
 
 
