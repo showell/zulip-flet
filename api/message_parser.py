@@ -74,6 +74,10 @@ def ensure_equal(s1: str, s2: str) -> None:
         raise IllegalMessage(f"{s1} != {s2}")
 
 
+def ensure_newline(s: str | None) -> None:
+    if s != "\n":
+        raise IllegalMessage("expected newline for pretty HTML")
+
 def ensure_num_children(elem: Element, count: int) -> None:
     if len(elem) != count:
         raise IllegalMessage("bad count")
@@ -131,9 +135,9 @@ def get_only_child(elem: Element, tag_name: str) -> Element:
 
 def get_only_block_child(elem: Element, tag_name: str) -> Element:
     ensure_num_children(elem, 1)
-    assert elem.text == "\n"
+    ensure_newline(elem.text)
     child = elem[0]
-    assert child.tail == "\n"
+    ensure_newline(child.tail)
     ensure_equal(child.tag, tag_name)
     return child
 
@@ -164,9 +168,9 @@ def get_two_children(elem: Element) -> tuple[Element, Element]:
 
 def get_two_block_children(elem: Element) -> tuple[Element, Element]:
     ensure_num_children(elem, 2)
-    assert elem.text == "\n"
+    ensure_newline(elem.text)
     for c in elem:
-        assert c.tail == "\n"
+        ensure_newline(c.tail)
     return elem[0], elem[1]
 
 
