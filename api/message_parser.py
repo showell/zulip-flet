@@ -76,6 +76,7 @@ def get_class(elem: Element, *expected: str) -> str:
         raise AssertionError(f"unknown class {tag_class}")
     return tag_class
 
+
 def get_html(elem: Element) -> str:
     return etree.tostring(elem, with_tail=False).decode("utf-8")
 
@@ -134,7 +135,7 @@ def get_code_block_node(elem: Element) -> PygmentsCodeBlockNode:
 
 
 def get_emoji_image_node(elem: Element) -> EmojiImageNode:
-    restrict(elem, "img","alt", "class", "src", "title")
+    restrict(elem, "img", "alt", "class", "src", "title")
     alt = get_string(elem, "alt")
     src = get_string(elem, "src")
     title = get_string(elem, "title")
@@ -180,8 +181,8 @@ def get_img_node(elem: Element) -> InlineImageChildImgNode:
 
 
 def get_katex_node(elem: Element) -> KatexNode:
-    restrict(elem,"span", "class")
-    tag_class = get_class(elem,"katex", "katex-display")
+    restrict(elem, "span", "class")
+    tag_class = get_class(elem, "katex", "katex-display")
     html = get_html(elem)
     return KatexNode(html=SafeHtml.trust(html), tag_class=tag_class)
 
