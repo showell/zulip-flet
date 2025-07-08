@@ -579,18 +579,28 @@ def maybe_get_phrasing_node(elem: Element) -> PhrasingNode | None:
     return None
 
 
+def maybe_get_text_node(
+    text: str | None, ignore_newlines: bool = False
+) -> TextNode | None:
+    if text is None:
+        return None
+    if text == "\n" and ignore_newlines:
+        return None
+    return TextNode(value=text)
+
+
 def get_child_nodes(elem: Element, ignore_newlines: bool = False) -> list[BaseNode]:
     children: list[BaseNode] = []
-    if elem.text:
-        text = elem.text
-        if text and not (ignore_newlines and text == "\n"):
-            children.append(TextNode(value=text))
+
+    maybe_text_node = maybe_get_text_node(elem.text, ignore_newlines=ignore_newlines)
+    if maybe_text_node is not None:
+        children.append(maybe_text_node)
 
     for c in elem:
         children.append(get_node(c))
-        tail_text = c.tail or ""
-        if tail_text and not (ignore_newlines and tail_text == "\n"):
-            children.append(TextNode(value=tail_text))
+        maybe_text_node = maybe_get_text_node(c.tail, ignore_newlines=ignore_newlines)
+        if maybe_text_node is not None:
+            children.append(maybe_text_node)
 
     return children
 
