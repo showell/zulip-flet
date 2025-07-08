@@ -93,8 +93,9 @@ def get_string(elem: Element, field: str) -> str:
     return s
 
 
-def require_tag(elem: Element, tag: str) -> None:
+def restrict(elem: Element, tag: str, *fields: str) -> None:
     assert_equal(elem.tag or "", tag)
+    restrict_attributes(elem, *fields)
 
 
 def restrict_attributes(elem: Element, *fields: str) -> None:
@@ -119,8 +120,9 @@ Custom validators follow.
 
 
 def get_code_block_node(elem: Element) -> PygmentsCodeBlockNode:
+    restrict(elem, "div", "class", "data-code-language")
     html = get_html(elem)
-    lang = elem.get("data-code-language") or "NOT SPECIFIED"
+    lang = elem.get("data-code-language")
     content = text_content(elem)
     return PygmentsCodeBlockNode(html=SafeHtml.trust(html), lang=lang, content=content)
 
@@ -151,9 +153,9 @@ def get_emoji_span_node(elem: Element) -> EmojiSpanNode:
 
 
 def get_img_node(elem: Element) -> InlineImageChildImgNode:
-    require_tag(elem, "img")
-    restrict_attributes(
+    restrict(
         elem,
+        "img",
         "src",
         "data-animated",
         "data-original-dimensions",
@@ -219,7 +221,7 @@ def get_inline_video_node(elem: Element) -> InlineVideoNode:
 
 
 def get_list_item_node(elem: Element) -> ListItemNode:
-    require_tag(elem, "li")
+    restrict(elem, "li")
     return ListItemNode(children=get_child_nodes(elem))
 
 

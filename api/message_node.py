@@ -646,7 +646,7 @@ class KatexNode(BaseNode):
 
 class PygmentsCodeBlockNode(BaseNode):
     html: SafeHtml
-    lang: str
+    lang: str | None
     content: str
 
     def as_text(self) -> str:
