@@ -498,7 +498,7 @@ TextFormattingNode = Union[
 ]
 
 
-def maybe_get_text_formatting_node(elem: Element) -> TextFormattingNode | None:
+def get_text_formatting_node(elem: Element) -> TextFormattingNode:
     if elem.tag == "code":
         restrict_attributes(elem)
         return CodeNode(children=get_child_nodes(elem))
@@ -518,7 +518,7 @@ def maybe_get_text_formatting_node(elem: Element) -> TextFormattingNode | None:
     if elem.tag == "time":
         return get_time_widget_node(elem)
 
-    return None
+    raise IllegalMessage("not a text node")
 
 
 LinkNode = Union[AnchorNode, EmojiImageNode, MessageLinkNode, StreamLinkNode]
@@ -554,7 +554,7 @@ def get_node(elem: Element) -> BaseNode:
     elem_class = maybe_get_string(elem, "class")
 
     if elem.tag in ["code", "del", "em", "strong", "time"]:
-        text_formatting_node = maybe_get_text_formatting_node(elem)
+        text_formatting_node = get_text_formatting_node(elem)
         if text_formatting_node is not None:
             return text_formatting_node
 
