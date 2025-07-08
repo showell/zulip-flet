@@ -44,8 +44,17 @@ from message_node import (
 Element = etree._Element
 
 
+def assert_attribute(elem: Element, field: str, expected: str) -> None:
+    assert_equal(elem.get(field) or "", expected)
+
+
 def assert_class(elem: Element, expected: str) -> None:
     assert_equal(get_string(elem, "class"), expected)
+
+
+def assert_empty(elem: Element) -> None:
+    if elem.text or len(elem) > 0:
+        raise AssertionError(f"{elem} is not empty")
 
 
 def assert_equal(s1: str, s2: str) -> None:
@@ -83,6 +92,7 @@ def get_html(elem: Element) -> str:
 
 def get_only_child(elem: Element, tag_name: str) -> Element:
     assert_num_children(elem, 1)
+    assert elem.text is None
     child = elem[0]
     assert_equal(child.tag, tag_name)
     return child
@@ -188,10 +198,10 @@ def get_katex_node(elem: Element) -> KatexNode:
 
 
 def get_inline_image_node(elem: Element) -> InlineImageNode:
-    restrict_attributes(elem, "class")
+    restrict(elem, "div", "class")
     assert_class(elem, "message_inline_image")
     anchor = get_only_child(elem, "a")
-    restrict_attributes(anchor, "href", "title")
+    restrict(anchor, "a", "href", "title")
     href = get_string(anchor, "href")
     title = anchor.get("title")
     img = get_only_child(anchor, "img")
@@ -204,24 +214,19 @@ def get_inline_image_node(elem: Element) -> InlineImageNode:
 
 
 def get_inline_video_node(elem: Element) -> InlineVideoNode:
-    assert set(elem.attrib) == {"class"}
-    assert elem.get("class") == "message_inline_image message_inline_video"
-    assert elem.text is None
-    assert len(elem) == 1
-    anchor = elem[0]
-    assert anchor.tag == "a"
-    restrict_attributes(anchor, "href", "title")
-    href = anchor.get("href") or ""
+    restrict(elem, "div", "class")
+    assert_class(elem, "message_inline_image message_inline_video")
+
+    anchor = get_only_child(elem, "a")
+    restrict(anchor, "a", "href", "title")
+    href = get_string(anchor, "href")
     title = anchor.get("title")
-    assert href
-    assert len(anchor) == 1
-    assert anchor.text is None
-    video = anchor[0]
-    assert video.tag == "video"
-    assert set(video.attrib) == {"preload", "src"}
-    assert video.get("preload") == "metadata"
-    src = video.get("src") or ""
-    assert video.text is None
+
+    video = get_only_child(anchor, "video")
+    restrict(video, "video", "preload", "src")
+    assert_attribute(video, "preload", "metadata")
+    src = get_string(video, "src")
+    assert_empty(video)
     return InlineVideoNode(href=href, src=src, title=title)
 
 
