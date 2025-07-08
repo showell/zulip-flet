@@ -95,7 +95,7 @@ def forbid_children(elem: Element) -> None:
 
 
 def get_bool(elem: Element, field: str) -> bool:
-    return (elem.get(field) or "") == "true"
+    return (maybe_get_string(elem, field) or "") == "true"
 
 
 def get_class(elem: Element, *expected: str) -> str:
@@ -136,12 +136,14 @@ def get_only_block_child(elem: Element, tag_name: str) -> Element:
 
 
 def get_optional_int(elem: Element, field: str) -> int | None:
-    val = elem.get(field)
-    return int(val) if val else None
+    val = maybe_get_string(elem, field)
+    if val is None:
+        return None
+    return int(val)
 
 
 def get_string(elem: Element, field: str) -> str:
-    s = elem.get(field)
+    s = maybe_get_string(elem, field)
     if s is None:
         raise IllegalMessage(f"{field} is missing")
     return s
@@ -161,6 +163,10 @@ def get_two_block_children(elem: Element) -> tuple[Element, Element]:
     for c in elem:
         assert c.tail == "\n"
     return elem[0], elem[1]
+
+
+def maybe_get_string(elem: Element, field: str) -> str | None:
+    return elem.get(field)
 
 
 def restrict(elem: Element, tag: str, *fields: str) -> None:
@@ -192,7 +198,7 @@ Custom validators follow.
 def get_code_block_node(elem: Element) -> PygmentsCodeBlockNode:
     restrict(elem, "div", "class", "data-code-language")
     html = get_html(elem)
-    lang = elem.get("data-code-language")
+    lang = maybe_get_string(elem, "data-code-language")
     content = text_content(elem)
     return PygmentsCodeBlockNode(html=SafeHtml.trust(html), lang=lang, content=content)
 
@@ -232,8 +238,8 @@ def get_img_node(elem: Element) -> InlineImageChildImgNode:
     )
     src = get_string(elem, "src")
     animated = get_bool(elem, "data-animated")
-    original_dimensions = elem.get("data-original-dimensions")
-    original_content_type = elem.get("data-original-content-type")
+    original_dimensions = maybe_get_string(elem, "data-original-dimensions")
+    original_content_type = maybe_get_string(elem, "data-original-content-type")
     return InlineImageChildImgNode(
         src=src,
         animated=animated,
@@ -356,7 +362,7 @@ def get_stream_link_node(elem: Element, *, has_topic: bool) -> StreamLinkNode:
 
 def get_table_cell_alignment(elem: Element) -> str | None:
     restrict_attributes(elem, "style")
-    style = elem.get("style")
+    style = maybe_get_string(elem, "style")
     if style is None:
         return None
     label, value = style.strip(";").split(": ")
@@ -440,7 +446,7 @@ def get_child_nodes(elem: Element, ignore_newlines: bool = False) -> list[BaseNo
 
 
 def _get_node(elem: Element) -> BaseNode:
-    elem_class = elem.get("class") or ""
+    elem_class = maybe_get_string(elem, "class")
 
     if elem.tag == "a":
         if elem_class == "message-link":
@@ -529,6 +535,9 @@ def _get_node(elem: Element) -> BaseNode:
         return ParagraphNode(children=get_child_nodes(elem))
 
     if elem.tag == "span":
+        if elem_class is None:
+            raise IllegalMessage("span tags need a class")
+
         if elem_class.startswith("emoji "):
             return get_emoji_span_node(elem)
         if elem_class in ["katex", "katex-display"]:
