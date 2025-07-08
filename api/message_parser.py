@@ -93,6 +93,7 @@ def get_only_child(elem: Element, tag_name: str) -> Element:
     assert_num_children(elem, 1)
     assert elem.text is None
     child = elem[0]
+    assert child.tail is None
     assert_equal(child.tag, tag_name)
     return child
 
@@ -107,6 +108,14 @@ def get_string(elem: Element, field: str) -> str:
     if s is None:
         raise AssertionError(f"{field} is missing")
     return s
+
+
+def get_two_children(elem: Element) -> tuple[Element, Element]:
+    assert_num_children(elem, 2)
+    assert elem.text is None
+    for c in elem:
+        assert c.tail is None
+    return elem[0], elem[1]
 
 
 def restrict(elem: Element, tag: str, *fields: str) -> None:
@@ -266,10 +275,9 @@ def get_message_link_node(elem: Element) -> MessageLinkNode:
 
 
 def get_spoiler_content(elem: Element) -> SpoilerContentNode:
-    assert elem.tag == "div"
-    assert set(elem.attrib) == {"class", "aria-hidden"}
-    assert elem.get("class") == "spoiler-content"
-    assert elem.get("aria-hidden") == "true"
+    restrict(elem, "div", "class", "aria-hidden")
+    assert_class(elem, "spoiler-content")
+    assert_attribute(elem, "aria-hidden", "true")
     aria_attribute_comes_first = list(elem.attrib.keys())[0] == "aria-hidden"
     return SpoilerContentNode(
         children=get_child_nodes(elem, ignore_newlines=True),
@@ -278,17 +286,15 @@ def get_spoiler_content(elem: Element) -> SpoilerContentNode:
 
 
 def get_spoiler_header(elem: Element) -> SpoilerHeaderNode:
-    assert elem.tag == "div"
-    assert set(elem.attrib) == {"class"}
-    assert elem.get("class") == "spoiler-header"
+    restrict(elem, "div", "class")
+    assert_class(elem, "spoiler-header")
     return SpoilerHeaderNode(children=get_child_nodes(elem, ignore_newlines=True))
 
 
 def get_spoiler_node(elem: Element) -> SpoilerNode:
-    children = list(elem.iterchildren())
-    assert len(children) == 2
-    header = get_spoiler_header(children[0])
-    content = get_spoiler_content(children[1])
+    header_elem, content_elem = get_two_children(elem)
+    header = get_spoiler_header(header_elem)
+    content = get_spoiler_content(content_elem)
     return SpoilerNode(header=header, content=content)
 
 
