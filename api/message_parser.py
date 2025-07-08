@@ -299,6 +299,8 @@ def get_spoiler_header(elem: Element) -> SpoilerHeaderNode:
 
 
 def get_spoiler_node(elem: Element) -> SpoilerNode:
+    restrict(elem, "div", "class")
+    assert_class(elem, "spoiler-block")
     header_elem, content_elem = get_two_children(elem)
     header = get_spoiler_header(header_elem)
     content = get_spoiler_content(content_elem)
