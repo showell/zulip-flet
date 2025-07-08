@@ -304,7 +304,7 @@ def get_list_item_nodes(elem: Element) -> list[ListItemNode]:
     assert elem.text == "\n"
 
     for c in elem:
-        assert c.tail in (None, "\n")
+        assert c.tail == "\n"
         children.append(get_list_item_node(c))
 
     return children
