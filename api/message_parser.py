@@ -217,15 +217,18 @@ def get_inline_video_node(elem: Element) -> InlineVideoNode:
     assert_class(elem, "message_inline_image message_inline_video")
 
     anchor = get_only_child(elem, "a")
+
     restrict(anchor, "a", "href", "title")
     href = get_string(anchor, "href")
     title = anchor.get("title")
 
     video = get_only_child(anchor, "video")
+
     restrict(video, "video", "preload", "src")
     assert_attribute(video, "preload", "metadata")
     src = get_string(video, "src")
     assert_empty(video)
+
     return InlineVideoNode(href=href, src=src, title=title)
 
 
@@ -246,16 +249,15 @@ def get_list_item_nodes(elem: Element) -> list[ListItemNode]:
 
 
 def get_ordered_list_node(elem: Element) -> OrderedListNode:
-    restrict_attributes(elem, "start")
+    restrict(elem, "ol", "start")
     start = get_optional_int(elem, "start")
     children = get_list_item_nodes(elem)
     return OrderedListNode(children=children, start=start)
 
 
 def get_message_link_node(elem: Element) -> MessageLinkNode:
-    assert set(elem.attrib) == {"class", "href"}
-    href = elem.get("href") or ""
-    assert href
+    restrict(elem, "a", "class", "href")
+    href = get_string(elem, "href")
     children = get_child_nodes(elem)
     return MessageLinkNode(
         href=href,
