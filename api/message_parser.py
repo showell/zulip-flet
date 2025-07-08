@@ -145,7 +145,7 @@ def get_optional_int(elem: Element, field: str) -> int | None:
     return int(val)
 
 
-def get_string(elem: Element, field: str, allow_empty: bool=False) -> str:
+def get_string(elem: Element, field: str, allow_empty: bool = False) -> str:
     s = maybe_get_string(elem, field)
     if s is None:
         raise IllegalMessage(f"{field} is missing")
