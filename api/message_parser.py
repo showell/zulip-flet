@@ -42,6 +42,13 @@ from message_node import (
     UserMentionNode,
 )
 
+TextFormattingNode = Union[
+    CodeNode, DeleteNode, EmphasisNode, StrongNode, TimeWidgetNode
+]
+LinkNode = Union[AnchorNode, EmojiImageNode, MessageLinkNode, StreamLinkNode]
+SpanNode = Union[EmojiSpanNode, KatexNode, UserGroupMentionNode, UserMentionNode]
+PhrasingNode = Union[BreakNode, TextFormattingNode, LinkNode, SpanNode]
+
 Element = etree._Element
 
 
@@ -339,7 +346,7 @@ def get_ordered_list_node(elem: Element) -> OrderedListNode:
 def get_message_link_node(elem: Element) -> MessageLinkNode:
     restrict(elem, "a", "class", "href")
     href = get_string(elem, "href")
-    children = get_child_nodes(elem)
+    children = get_phrasing_nodes(elem)
     return MessageLinkNode(
         href=href,
         children=children,
@@ -376,7 +383,7 @@ def get_stream_link_node(elem: Element, *, has_topic: bool) -> StreamLinkNode:
     restrict(elem, "a", "class", "data-stream-id", "href")
     stream_id = get_database_id(elem, "data-stream-id")
     href = get_string(elem, "href")
-    children = get_child_nodes(elem)
+    children = get_phrasing_nodes(elem)
     return StreamLinkNode(
         href=href, stream_id=stream_id, children=children, has_topic=has_topic
     )
@@ -477,11 +484,6 @@ def verify_round_trip(
     return new_f
 
 
-TextFormattingNode = Union[
-    CodeNode, DeleteNode, EmphasisNode, StrongNode, TimeWidgetNode
-]
-
-
 def get_text_formatting_node(elem: Element) -> TextFormattingNode:
     if elem.tag == "code":
         restrict_attributes(elem)
@@ -489,23 +491,20 @@ def get_text_formatting_node(elem: Element) -> TextFormattingNode:
 
     if elem.tag == "del":
         restrict_attributes(elem)
-        return DeleteNode(children=get_child_nodes(elem))
+        return DeleteNode(children=get_phrasing_nodes(elem))
 
     if elem.tag == "em":
         restrict_attributes(elem)
-        return EmphasisNode(children=get_child_nodes(elem))
+        return EmphasisNode(children=get_phrasing_nodes(elem))
 
     if elem.tag == "strong":
         restrict_attributes(elem)
-        return StrongNode(children=get_child_nodes(elem))
+        return StrongNode(children=get_phrasing_nodes(elem))
 
     if elem.tag == "time":
         return get_time_widget_node(elem)
 
     raise IllegalMessage("not a text node")
-
-
-LinkNode = Union[AnchorNode, EmojiImageNode, MessageLinkNode, StreamLinkNode]
 
 
 def get_link_node(elem: Element) -> LinkNode:
@@ -523,7 +522,7 @@ def get_link_node(elem: Element) -> LinkNode:
 
         restrict_attributes(elem, "href")
         href = get_string(elem, "href", allow_empty=True)
-        return AnchorNode(href=href, children=get_child_nodes(elem))
+        return AnchorNode(href=href, children=get_phrasing_nodes(elem))
 
     if elem.tag == "img":
         if elem_class == "emoji":
@@ -531,9 +530,6 @@ def get_link_node(elem: Element) -> LinkNode:
         raise IllegalMessage("unexpected img tag")
 
     raise IllegalMessage("not a link node")
-
-
-SpanNode = Union[EmojiSpanNode, KatexNode, UserGroupMentionNode, UserMentionNode]
 
 
 def get_span_node(elem: Element) -> SpanNode:
@@ -556,9 +552,6 @@ def get_span_node(elem: Element) -> SpanNode:
         return get_user_mention_node(elem, silent=True)
 
     raise IllegalMessage("unexpected span tag")
-
-
-PhrasingNode = Union[BreakNode, TextFormattingNode, LinkNode, SpanNode]
 
 
 def maybe_get_phrasing_node(elem: Element) -> PhrasingNode | None:
@@ -605,6 +598,26 @@ def get_child_nodes(elem: Element, ignore_newlines: bool = False) -> list[BaseNo
     return children
 
 
+def get_phrasing_nodes(elem: Element) -> list[BaseNode]:
+    children: list[BaseNode] = []
+
+    maybe_text_node = maybe_get_text_node(elem.text)
+    if maybe_text_node is not None:
+        children.append(maybe_text_node)
+
+    for c in elem:
+        child_node = maybe_get_phrasing_node(c)
+        if child_node is None:
+            raise IllegalMessage("expected phrasing node")
+        children.append(child_node)
+
+        maybe_text_node = maybe_get_text_node(c.tail)
+        if maybe_text_node is not None:
+            children.append(maybe_text_node)
+
+    return children
+
+
 @verify_round_trip
 def get_node(elem: Element) -> BaseNode:
     elem_class = maybe_get_string(elem, "class")
@@ -634,22 +647,22 @@ def get_node(elem: Element) -> BaseNode:
         raise IllegalMessage("unexpected div tag")
 
     if elem.tag == "h1":
-        return HeadingNode(depth=1, children=get_child_nodes(elem))
+        return HeadingNode(depth=1, children=get_phrasing_nodes(elem))
 
     if elem.tag == "h2":
-        return HeadingNode(depth=2, children=get_child_nodes(elem))
+        return HeadingNode(depth=2, children=get_phrasing_nodes(elem))
 
     if elem.tag == "h3":
-        return HeadingNode(depth=3, children=get_child_nodes(elem))
+        return HeadingNode(depth=3, children=get_phrasing_nodes(elem))
 
     if elem.tag == "h4":
-        return HeadingNode(depth=4, children=get_child_nodes(elem))
+        return HeadingNode(depth=4, children=get_phrasing_nodes(elem))
 
     if elem.tag == "h5":
-        return HeadingNode(depth=5, children=get_child_nodes(elem))
+        return HeadingNode(depth=5, children=get_phrasing_nodes(elem))
 
     if elem.tag == "h6":
-        return HeadingNode(depth=6, children=get_child_nodes(elem))
+        return HeadingNode(depth=6, children=get_phrasing_nodes(elem))
 
     if elem.tag == "hr":
         restrict_attributes(elem)
