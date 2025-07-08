@@ -70,6 +70,12 @@ def get_bool(elem: Element, field: str) -> bool:
     return (elem.get(field) or "") == "true"
 
 
+def get_class(elem: Element, *expected: str) -> str:
+    tag_class = get_string(elem, "class")
+    if tag_class not in expected:
+        raise AssertionError(f"unknown class {tag_class}")
+    return tag_class
+
 def get_html(elem: Element) -> str:
     return etree.tostring(elem, with_tail=False).decode("utf-8")
 
@@ -128,7 +134,7 @@ def get_code_block_node(elem: Element) -> PygmentsCodeBlockNode:
 
 
 def get_emoji_image_node(elem: Element) -> EmojiImageNode:
-    restrict_attributes(elem, "alt", "class", "src", "title")
+    restrict(elem, "img","alt", "class", "src", "title")
     alt = get_string(elem, "alt")
     src = get_string(elem, "src")
     title = get_string(elem, "title")
@@ -137,7 +143,7 @@ def get_emoji_image_node(elem: Element) -> EmojiImageNode:
 
 
 def get_emoji_span_node(elem: Element) -> EmojiSpanNode:
-    restrict_attributes(elem, "aria-label", "class", "role", "title")
+    restrict(elem, "span", "aria-label", "class", "role", "title")
     title = get_string(elem, "title")
     assert_equal(get_string(elem, "role"), "img")
     assert_equal(get_string(elem, "aria-label"), title)
@@ -165,7 +171,6 @@ def get_img_node(elem: Element) -> InlineImageChildImgNode:
     animated = get_bool(elem, "data-animated")
     original_dimensions = elem.get("data-original-dimensions")
     original_content_type = elem.get("data-original-content-type")
-    assert src
     return InlineImageChildImgNode(
         src=src,
         animated=animated,
@@ -175,9 +180,8 @@ def get_img_node(elem: Element) -> InlineImageChildImgNode:
 
 
 def get_katex_node(elem: Element) -> KatexNode:
-    assert set(elem.attrib) == {"class"}
-    tag_class = elem.get("class") or ""
-    assert tag_class in ["katex", "katex-display"]
+    restrict(elem,"span", "class")
+    tag_class = get_class(elem,"katex", "katex-display")
     html = get_html(elem)
     return KatexNode(html=SafeHtml.trust(html), tag_class=tag_class)
 
