@@ -390,16 +390,14 @@ def get_unordered_list_node(elem: Element) -> UnorderedListNode:
 def get_user_group_mention_node(elem: Element, silent: bool) -> UserGroupMentionNode:
     name = elem.text or ""
     assert set(elem.attrib) == {"class", "data-user-group-id"}
-    group_id = elem.get("data-user-group-id") or ""
-    assert group_id
+    group_id = get_database_id(elem, "data-user-group-id")
     return UserGroupMentionNode(name=name, group_id=group_id, silent=silent)
 
 
 def get_user_mention_node(elem: Element, silent: bool) -> UserMentionNode:
     name = elem.text or ""
     assert set(elem.attrib) == {"class", "data-user-id"}
-    user_id = elem.get("data-user-id") or ""
-    assert user_id
+    user_id = get_database_id(elem, "data-user-id")
     return UserMentionNode(name=name, user_id=user_id, silent=silent)
 
 

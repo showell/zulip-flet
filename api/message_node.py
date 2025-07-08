@@ -562,7 +562,7 @@ class StreamLinkNode(ContainerNode):
 
 class UserGroupMentionNode(BaseNode):
     name: str
-    group_id: str
+    group_id: int
     silent: bool
 
     def as_text(self) -> str:
@@ -576,13 +576,13 @@ class UserGroupMentionNode(BaseNode):
             tag="span",
             inner=escape_text(self.name),
             class_=self.zulip_class(),
-            data_user_group_id=self.group_id,
+            data_user_group_id=str(self.group_id),
         )
 
 
 class UserMentionNode(BaseNode):
     name: str
-    user_id: str
+    user_id: int
     silent: bool
 
     def as_text(self) -> str:
@@ -596,7 +596,7 @@ class UserMentionNode(BaseNode):
             tag="span",
             inner=escape_text(self.name),
             class_=self.zulip_class(),
-            data_user_id=self.user_id,
+            data_user_id=str(self.user_id),
         )
 
 
