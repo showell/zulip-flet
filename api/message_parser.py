@@ -78,6 +78,7 @@ def ensure_newline(s: str | None) -> None:
     if s != "\n":
         raise IllegalMessage("expected newline for pretty HTML")
 
+
 def ensure_num_children(elem: Element, count: int) -> None:
     if len(elem) != count:
         raise IllegalMessage("bad count")
@@ -126,9 +127,11 @@ def get_database_id(elem: Element, field: str) -> int:
 
 def get_only_child(elem: Element, tag_name: str) -> Element:
     ensure_num_children(elem, 1)
-    assert elem.text is None
+    if elem.text is not None:
+        raise IllegalMessage("unexpected text")
     child = elem[0]
-    assert child.tail is None
+    if child.tail is not None:
+        raise IllegalMessage("unexpected tail")
     ensure_equal(child.tag, tag_name)
     return child
 
@@ -160,9 +163,11 @@ def get_string(elem: Element, field: str, allow_empty: bool = False) -> str:
 
 def get_two_children(elem: Element) -> tuple[Element, Element]:
     ensure_num_children(elem, 2)
-    assert elem.text is None
+    if elem.text is not None:
+        raise IllegalMessage("unexpected text")
     for c in elem:
-        assert c.tail is None
+        if c.tail is not None:
+            raise IllegalMessage("unexpected tail")
     return elem[0], elem[1]
 
 
@@ -227,11 +232,13 @@ def get_emoji_span_node(elem: Element) -> EmojiSpanNode:
     ensure_attribute(elem, "role", "img")
     ensure_attribute(elem, "aria-label", title)
     elem_class = get_string(elem, "class")
-    assert elem_class.startswith("emoji ")
+    if not elem_class.startswith("emoji "):
+        raise IllegalMessage("bad class for emoji span")
     _, emoji_unicode_class = elem_class.split(" ")
     emoji_prefix, *unicodes = emoji_unicode_class.split("-")
     ensure_equal(emoji_prefix, "emoji")
-    assert unicodes
+    if not unicodes:
+        raise IllegalMessage("bad unicode values in class for emoji")
     ensure_contains_text(elem, f":{title.replace(' ', '_')}:")
     return EmojiSpanNode(title=title, unicodes=unicodes)
 
@@ -307,10 +314,10 @@ def get_list_item_node(elem: Element) -> ListItemNode:
 
 def get_list_item_nodes(elem: Element) -> list[ListItemNode]:
     children: list[ListItemNode] = []
-    assert elem.text == "\n"
+    ensure_newline(elem.text)
 
     for c in elem:
-        assert c.tail == "\n"
+        ensure_newline(c.tail)
         children.append(get_list_item_node(c))
 
     return children
