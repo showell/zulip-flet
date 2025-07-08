@@ -578,9 +578,8 @@ def get_node(elem: Element) -> BaseNode:
 
 def get_message_node(html: str) -> BaseNode:
     root = etree.HTML("<body>" + html + "</body>")
-    assert root.tag == "html"
-    assert len(root) == 1
-    body = root[0]
-    assert body.tag == "body"
+    restrict(root, "html")
+    body = get_only_child(root, "body")
+    restrict(body, "body")
     message_node = get_node(body)
     return message_node
