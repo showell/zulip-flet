@@ -524,7 +524,7 @@ def get_text_formatting_node(elem: Element) -> TextFormattingNode:
 LinkNode = Union[AnchorNode, EmojiImageNode, MessageLinkNode, StreamLinkNode]
 
 
-def maybe_get_link_node(elem: Element) -> LinkNode | None:
+def get_link_node(elem: Element) -> LinkNode:
     elem_class = maybe_get_string(elem, "class")
 
     if elem.tag == "a":
@@ -546,7 +546,7 @@ def maybe_get_link_node(elem: Element) -> LinkNode | None:
             return get_emoji_image_node(elem)
         raise IllegalMessage("unexpected img tag")
 
-    return None
+    raise IllegalMessage("not a link node")
 
 
 @verify_round_trip
@@ -554,14 +554,10 @@ def get_node(elem: Element) -> BaseNode:
     elem_class = maybe_get_string(elem, "class")
 
     if elem.tag in ["code", "del", "em", "strong", "time"]:
-        text_formatting_node = get_text_formatting_node(elem)
-        if text_formatting_node is not None:
-            return text_formatting_node
+        return get_text_formatting_node(elem)
 
     if elem.tag in ["a", "img"]:
-        link_node = maybe_get_link_node(elem)
-        if link_node is not None:
-            return link_node
+        return get_link_node(elem)
 
     if elem.tag == "blockquote":
         restrict_attributes(elem)
