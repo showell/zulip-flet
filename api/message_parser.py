@@ -95,7 +95,10 @@ def forbid_children(elem: Element) -> None:
 
 
 def get_bool(elem: Element, field: str) -> bool:
-    return (maybe_get_string(elem, field) or "") == "true"
+    val = elem.get(field)
+    if val is None:
+        return False
+    return val == "true"
 
 
 def get_class(elem: Element, *expected: str) -> str:
@@ -261,7 +264,7 @@ def get_inline_image_node(elem: Element) -> InlineImageNode:
     anchor = get_only_child(elem, "a")
     restrict(anchor, "a", "href", "title")
     href = get_string(anchor, "href")
-    title = anchor.get("title")
+    title = maybe_get_string(anchor, "title")
     img = get_only_child(anchor, "img")
 
     return InlineImageNode(
@@ -279,7 +282,7 @@ def get_inline_video_node(elem: Element) -> InlineVideoNode:
 
     restrict(anchor, "a", "href", "title")
     href = get_string(anchor, "href")
-    title = anchor.get("title")
+    title = maybe_get_string(anchor, "title")
 
     video = get_only_child(anchor, "video")
 
