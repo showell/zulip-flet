@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Callable, Union
 
 from html_helpers import SafeHtml
 from lxml import etree
@@ -451,6 +451,32 @@ def get_user_mention_node(elem: Element, silent: bool) -> UserMentionNode:
     return UserMentionNode(name=name, user_id=user_id, silent=silent)
 
 
+"""
+Now glue it all together.
+"""
+
+
+def verify_round_trip(
+    f: Callable[[Element], BaseNode],
+) -> Callable[[Element], BaseNode]:
+    def new_f(elem: Element) -> BaseNode:
+        node = f(elem)
+
+        expected_html = get_html(elem)
+
+        if str(node.as_html()) != expected_html:
+            print("\n------- as_html MISMATCH\n")
+            print(repr(expected_html))
+            print()
+            print(repr(str(node.as_html())))
+            print()
+            raise IllegalMessage("as_html does not round trip")
+
+        return node
+
+    return new_f
+
+
 def get_child_nodes(elem: Element, ignore_newlines: bool = False) -> list[BaseNode]:
     children: list[BaseNode] = []
     if elem.text:
@@ -495,37 +521,47 @@ def maybe_get_text_formatting_node(elem: Element) -> TextFormattingNode | None:
     return None
 
 
-LinkNode = Union[AnchorNode, MessageLinkNode, StreamLinkNode]
+LinkNode = Union[AnchorNode, EmojiImageNode, MessageLinkNode, StreamLinkNode]
 
 
-def get_link_node(elem: Element) -> LinkNode:
-    ensure_tag(elem, "a")
+def maybe_get_link_node(elem: Element) -> LinkNode | None:
     elem_class = maybe_get_string(elem, "class")
 
-    if elem_class == "message-link":
-        return get_message_link_node(elem)
+    if elem.tag == "a":
+        if elem_class == "message-link":
+            return get_message_link_node(elem)
 
-    if elem_class == "stream":
-        return get_stream_link_node(elem, has_topic=False)
+        if elem_class == "stream":
+            return get_stream_link_node(elem, has_topic=False)
 
-    if elem_class == "stream-topic":
-        return get_stream_link_node(elem, has_topic=True)
+        if elem_class == "stream-topic":
+            return get_stream_link_node(elem, has_topic=True)
 
-    restrict_attributes(elem, "href")
-    href = get_string(elem, "href", allow_empty=True)
-    return AnchorNode(href=href, children=get_child_nodes(elem))
+        restrict_attributes(elem, "href")
+        href = get_string(elem, "href", allow_empty=True)
+        return AnchorNode(href=href, children=get_child_nodes(elem))
+
+    if elem.tag == "img":
+        if elem_class == "emoji":
+            return get_emoji_image_node(elem)
+        raise IllegalMessage("unexpected img tag")
+
+    return None
 
 
-def _get_node(elem: Element) -> BaseNode:
+@verify_round_trip
+def get_node(elem: Element) -> BaseNode:
     elem_class = maybe_get_string(elem, "class")
 
     if elem.tag in ["code", "del", "em", "strong", "time"]:
-        node = maybe_get_text_formatting_node(elem)
-        if node is not None:
-            return node
+        text_formatting_node = maybe_get_text_formatting_node(elem)
+        if text_formatting_node is not None:
+            return text_formatting_node
 
-    if elem.tag == "a":
-        return get_link_node(elem)
+    if elem.tag in ["a", "img"]:
+        link_node = maybe_get_link_node(elem)
+        if link_node is not None:
+            return link_node
 
     if elem.tag == "blockquote":
         restrict_attributes(elem)
@@ -575,11 +611,6 @@ def _get_node(elem: Element) -> BaseNode:
         forbid_children(elem)
         return ThematicBreakNode()
 
-    if elem.tag == "img":
-        if elem_class == "emoji":
-            return get_emoji_image_node(elem)
-        raise IllegalMessage("unexpected img tag")
-
     if elem.tag == "ol":
         return get_ordered_list_node(elem)
 
@@ -613,22 +644,6 @@ def _get_node(elem: Element) -> BaseNode:
         return get_unordered_list_node(elem)
 
     raise IllegalMessage(f"Unsupported tag {elem.tag}")
-
-
-def get_node(elem: Element) -> BaseNode:
-    node = _get_node(elem)
-
-    expected_html = get_html(elem)
-
-    if str(node.as_html()) != expected_html:
-        print("\n------- as_html MISMATCH\n")
-        print(repr(expected_html))
-        print()
-        print(repr(str(node.as_html())))
-        print()
-        raise IllegalMessage("as_html does not round trip")
-
-    return node
 
 
 def get_message_node(html: str) -> BaseNode:
