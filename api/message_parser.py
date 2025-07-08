@@ -155,6 +155,14 @@ def get_two_children(elem: Element) -> tuple[Element, Element]:
     return elem[0], elem[1]
 
 
+def get_two_block_children(elem: Element) -> tuple[Element, Element]:
+    ensure_num_children(elem, 2)
+    assert elem.text == "\n"
+    for c in elem:
+        assert c.tail == "\n"
+    return elem[0], elem[1]
+
+
 def restrict(elem: Element, tag: str, *fields: str) -> None:
     ensure_equal(elem.tag or "", tag)
     restrict_attributes(elem, *fields)
@@ -382,8 +390,9 @@ def get_table_node(elem: Element) -> TableNode:
         trs = [get_tr_node(tr) for tr in tbody.iterchildren()]
         return TBodyNode(trs=trs)
 
-    thead = get_thead_node(elem[0])
-    tbody = get_tbody_node(elem[1])
+    thead_elem, tbody_elem = get_two_block_children(elem)
+    thead = get_thead_node(thead_elem)
+    tbody = get_tbody_node(tbody_elem)
     return TableNode(thead=thead, tbody=tbody)
 
 
