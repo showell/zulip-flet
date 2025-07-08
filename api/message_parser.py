@@ -1,3 +1,5 @@
+from typing import Union
+
 from html_helpers import SafeHtml
 from lxml import etree
 from message_node import (
@@ -82,6 +84,10 @@ def ensure_newline(s: str | None) -> None:
 def ensure_num_children(elem: Element, count: int) -> None:
     if len(elem) != count:
         raise IllegalMessage("bad count")
+
+
+def ensure_tag(elem: Element, tag: str) -> None:
+    ensure_equal(elem.tag, tag)
 
 
 def ensure_only_text(elem: Element) -> str:
@@ -461,22 +467,65 @@ def get_child_nodes(elem: Element, ignore_newlines: bool = False) -> list[BaseNo
     return children
 
 
+TextFormattingNode = Union[
+    CodeNode, DeleteNode, EmphasisNode, StrongNode, TimeWidgetNode
+]
+
+
+def maybe_get_text_formatting_node(elem: Element) -> TextFormattingNode | None:
+    if elem.tag == "code":
+        restrict_attributes(elem)
+        return CodeNode(children=get_child_nodes(elem))
+
+    if elem.tag == "del":
+        restrict_attributes(elem)
+        return DeleteNode(children=get_child_nodes(elem))
+
+    if elem.tag == "em":
+        restrict_attributes(elem)
+        return EmphasisNode(children=get_child_nodes(elem))
+
+    if elem.tag == "strong":
+        restrict_attributes(elem)
+        return StrongNode(children=get_child_nodes(elem))
+
+    if elem.tag == "time":
+        return get_time_widget_node(elem)
+
+    return None
+
+
+LinkNode = Union[AnchorNode, MessageLinkNode, StreamLinkNode]
+
+
+def get_link_node(elem: Element) -> LinkNode:
+    ensure_tag(elem, "a")
+    elem_class = maybe_get_string(elem, "class")
+
+    if elem_class == "message-link":
+        return get_message_link_node(elem)
+
+    if elem_class == "stream":
+        return get_stream_link_node(elem, has_topic=False)
+
+    if elem_class == "stream-topic":
+        return get_stream_link_node(elem, has_topic=True)
+
+    restrict_attributes(elem, "href")
+    href = get_string(elem, "href", allow_empty=True)
+    return AnchorNode(href=href, children=get_child_nodes(elem))
+
+
 def _get_node(elem: Element) -> BaseNode:
     elem_class = maybe_get_string(elem, "class")
 
+    if elem.tag in ["code", "del", "em", "strong", "time"]:
+        node = maybe_get_text_formatting_node(elem)
+        if node is not None:
+            return node
+
     if elem.tag == "a":
-        if elem_class == "message-link":
-            return get_message_link_node(elem)
-
-        if elem_class == "stream":
-            return get_stream_link_node(elem, has_topic=False)
-
-        if elem_class == "stream-topic":
-            return get_stream_link_node(elem, has_topic=True)
-
-        restrict_attributes(elem, "href")
-        href = get_string(elem, "href", allow_empty=True)
-        return AnchorNode(href=href, children=get_child_nodes(elem))
+        return get_link_node(elem)
 
     if elem.tag == "blockquote":
         restrict_attributes(elem)
@@ -491,14 +540,6 @@ def _get_node(elem: Element) -> BaseNode:
         forbid_children(elem)
         return BreakNode()
 
-    if elem.tag == "code":
-        restrict_attributes(elem)
-        return CodeNode(children=get_child_nodes(elem))
-
-    if elem.tag == "del":
-        restrict_attributes(elem)
-        return DeleteNode(children=get_child_nodes(elem))
-
     if elem.tag == "div":
         if elem_class == "codehilite":
             return get_code_block_node(elem)
@@ -510,10 +551,6 @@ def _get_node(elem: Element) -> BaseNode:
             return get_inline_video_node(elem)
 
         raise IllegalMessage("unexpected div tag")
-
-    if elem.tag == "em":
-        restrict_attributes(elem)
-        return EmphasisNode(children=get_child_nodes(elem))
 
     if elem.tag == "h1":
         return HeadingNode(depth=1, children=get_child_nodes(elem))
@@ -569,15 +606,8 @@ def _get_node(elem: Element) -> BaseNode:
 
         raise IllegalMessage("unexpected span tag")
 
-    if elem.tag == "strong":
-        restrict_attributes(elem)
-        return StrongNode(children=get_child_nodes(elem))
-
     if elem.tag == "table":
         return get_table_node(elem)
-
-    if elem.tag == "time":
-        return get_time_widget_node(elem)
 
     if elem.tag == "ul":
         return get_unordered_list_node(elem)
