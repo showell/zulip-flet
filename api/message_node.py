@@ -541,7 +541,7 @@ class SpoilerNode(BaseNode):
 
 class StreamLinkNode(ContainerNode):
     href: str
-    stream_id: str
+    stream_id: int
     has_topic: bool
 
     def as_text(self) -> str:
@@ -555,7 +555,7 @@ class StreamLinkNode(ContainerNode):
         return self.tag(
             "a",
             class_=self.zulip_class(),
-            data_stream_id=self.stream_id,
+            data_stream_id=str(self.stream_id),
             href=self.href,
         )
 

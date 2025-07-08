@@ -101,6 +101,14 @@ def get_html(elem: Element) -> str:
     return etree.tostring(elem, with_tail=False).decode("utf-8")
 
 
+def get_database_id(elem: Element, field: str) -> int:
+    s = get_string(elem, field)
+    try:
+        return int(s)
+    except ValueError:
+        raise IllegalMessage("not valid int")
+
+
 def get_only_child(elem: Element, tag_name: str) -> Element:
     ensure_num_children(elem, 1)
     assert elem.text is None
@@ -313,7 +321,7 @@ def get_spoiler_node(elem: Element) -> SpoilerNode:
 
 def get_stream_link_node(elem: Element, *, has_topic: bool) -> StreamLinkNode:
     restrict(elem, "a", "class", "data-stream-id", "href")
-    stream_id = get_string(elem, "data-stream-id")
+    stream_id = get_database_id(elem, "data-stream-id")
     href = get_string(elem, "href")
     children = get_child_nodes(elem)
     return StreamLinkNode(
