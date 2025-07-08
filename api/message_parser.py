@@ -458,7 +458,7 @@ def _get_node(elem: Element) -> BaseNode:
         if elem_class == "message_inline_image message_inline_video":
             return get_inline_video_node(elem)
 
-        raise IllegalMessage("unexpected class for div")
+        raise IllegalMessage("unexpected div tag")
 
     if elem.tag == "em":
         restrict_attributes(elem)
@@ -490,6 +490,7 @@ def _get_node(elem: Element) -> BaseNode:
     if elem.tag == "img":
         if elem_class == "emoji":
             return get_emoji_image_node(elem)
+        raise IllegalMessage("unexpected img tag")
 
     if elem.tag == "ol":
         return get_ordered_list_node(elem)
@@ -512,7 +513,7 @@ def _get_node(elem: Element) -> BaseNode:
         if elem_class == "user-mention silent":
             return get_user_mention_node(elem, silent=True)
 
-        raise IllegalMessage("unexpected class for span")
+        raise IllegalMessage("unexpected span tag")
 
     if elem.tag == "strong":
         restrict_attributes(elem)
