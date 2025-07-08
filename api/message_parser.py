@@ -549,6 +549,31 @@ def get_link_node(elem: Element) -> LinkNode:
     raise IllegalMessage("not a link node")
 
 
+SpanNode = Union[EmojiSpanNode, KatexNode, UserGroupMentionNode, UserMentionNode]
+
+
+def get_span_node(elem: Element) -> SpanNode:
+    elem_class = maybe_get_string(elem, "class")
+
+    if elem_class is None:
+        raise IllegalMessage("span tags need a class")
+
+    if elem_class.startswith("emoji "):
+        return get_emoji_span_node(elem)
+    if elem_class in ["katex", "katex-display"]:
+        return get_katex_node(elem)
+    if elem_class == "user-group-mention":
+        return get_user_group_mention_node(elem, silent=False)
+    if elem_class == "user-group-mention silent":
+        return get_user_group_mention_node(elem, silent=True)
+    if elem_class == "user-mention":
+        return get_user_mention_node(elem, silent=False)
+    if elem_class == "user-mention silent":
+        return get_user_mention_node(elem, silent=True)
+
+    raise IllegalMessage("unexpected span tag")
+
+
 @verify_round_trip
 def get_node(elem: Element) -> BaseNode:
     elem_class = maybe_get_string(elem, "class")
@@ -615,23 +640,7 @@ def get_node(elem: Element) -> BaseNode:
         return ParagraphNode(children=get_child_nodes(elem))
 
     if elem.tag == "span":
-        if elem_class is None:
-            raise IllegalMessage("span tags need a class")
-
-        if elem_class.startswith("emoji "):
-            return get_emoji_span_node(elem)
-        if elem_class in ["katex", "katex-display"]:
-            return get_katex_node(elem)
-        if elem_class == "user-group-mention":
-            return get_user_group_mention_node(elem, silent=False)
-        if elem_class == "user-group-mention silent":
-            return get_user_group_mention_node(elem, silent=True)
-        if elem_class == "user-mention":
-            return get_user_mention_node(elem, silent=False)
-        if elem_class == "user-mention silent":
-            return get_user_mention_node(elem, silent=True)
-
-        raise IllegalMessage("unexpected span tag")
+        return get_span_node(elem)
 
     if elem.tag == "table":
         return get_table_node(elem)
