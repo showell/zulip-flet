@@ -34,6 +34,7 @@ from message_node import (
     TableNode,
     TBodyNode,
     TdNode,
+    TexErrorNode,
     TextFormattingNode,
     TextNode,
     THeadNode,
@@ -44,7 +45,7 @@ from message_node import (
     TrNode,
     UnorderedListNode,
     UserGroupMentionNode,
-    UserMentionNode, TexErrorNode,
+    UserMentionNode,
 )
 
 Element = etree._Element
@@ -357,7 +358,7 @@ def get_spoiler_content(elem: Element) -> SpoilerContentNode:
     ensure_attribute(elem, "aria-hidden", "true")
     aria_attribute_comes_first = list(elem.attrib.keys())[0] == "aria-hidden"
     return SpoilerContentNode(
-        children=get_child_nodes(elem, ignore_newlines=True),
+        children=get_child_nodes(elem),
         aria_attribute_comes_first=aria_attribute_comes_first,
     )
 

@@ -562,9 +562,9 @@ class SpoilerContentNode(ContainerNode):
     def as_html(self) -> SafeHtml:
         class_ = self.zulip_class()
         if self.aria_attribute_comes_first:
-            return self.block_tag("div", aria_hidden="true", class_=class_)
+            return self.tag("div", aria_hidden="true", class_=class_)
         else:
-            return self.block_tag("div", class_=class_, aria_hidden="true")
+            return self.tag("div", class_=class_, aria_hidden="true")
 
 
 class SpoilerHeaderNode(ContainerNode):
