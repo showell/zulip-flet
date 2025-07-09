@@ -39,6 +39,7 @@ from message_node import (
     THeadNode,
     ThematicBreakNode,
     ThNode,
+    TimeStampErrorNode,
     TimeWidgetNode,
     TrNode,
     UnorderedListNode,
@@ -435,6 +436,13 @@ def get_time_widget_node(elem: Element) -> TimeWidgetNode:
     return TimeWidgetNode(datetime=datetime, text=text)
 
 
+def get_timestamp_error_node(elem: Element) -> TimeStampErrorNode:
+    restrict(elem, "span", "class")
+    ensure_class(elem, "timestamp-error")
+    text = ensure_only_text(elem)
+    return TimeStampErrorNode(text=text)
+
+
 def get_unordered_list_node(elem: Element) -> UnorderedListNode:
     restrict_attributes(elem)
     children = get_list_item_nodes(elem)
@@ -532,6 +540,8 @@ def get_span_node(elem: Element) -> SpanNode:
         return get_emoji_span_node(elem)
     if elem_class in ["katex", "katex-display"]:
         return get_katex_node(elem)
+    if elem_class == "timestamp-error":
+        return get_timestamp_error_node(elem)
     if elem_class == "user-group-mention":
         return get_user_group_mention_node(elem, silent=False)
     if elem_class == "user-group-mention silent":

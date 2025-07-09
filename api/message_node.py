@@ -185,6 +185,36 @@ class StrongNode(TextFormattingNode):
 
 
 """
+We have error nodes
+"""
+
+
+class ParseErrorNode(PhrasingNode):
+    text: str
+
+    @abstractmethod
+    def zulip_class(self) -> str:
+        pass
+
+    def as_html(self) -> SafeHtml:
+        return build_tag(
+            tag="span",
+            inner=escape_text(self.text),
+            class_=self.zulip_class(),
+        )
+
+
+class TimeStampErrorNode(SpanNode, ParseErrorNode):
+    text: str
+
+    def as_text(self) -> str:
+        return "timestamp error"
+
+    def zulip_class(self) -> str:
+        return "timestamp-error"
+
+
+"""
 And then some more basic classes follow.
 """
 

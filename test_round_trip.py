@@ -1,3 +1,4 @@
+import json
 import sys
 
 sys.path.append("api")
@@ -35,4 +36,13 @@ def test_real_world():
     test_messages(messages)
 
 
+def test_markdown_test_cases():
+    fn = "markdown_test_cases.json"
+    with open(fn, encoding="utf8") as fp:
+        fixtures = json.load(fp)
+    messages = [fixture["expected_output"] for fixture in fixtures["regular_tests"]]
+    test_messages(messages)
+
+
+test_markdown_test_cases()
 test_real_world()
