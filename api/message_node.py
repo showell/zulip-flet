@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
+from typing import Sequence
+
 from html_helpers import SafeHtml, build_tag, escape_text
 from pydantic import BaseModel, Field
-from typing import Sequence
 
 """
 Our BaseNode class is abstract.

@@ -1,43 +1,39 @@
 import sys
-import time
 
 sys.path.append("api")
 from api.database import Database
 from api.message_node import BaseNode
 from api.message_parser import IllegalMessage, get_message_node
 
-fn = "database.json"
-with open(fn, encoding="utf8") as database_file:
-    db_json = database_file.read()
-database = Database.model_validate_json(db_json)
 
-num_successes = 0
-nodes: list[BaseNode] = []
-for message in database.message_table.get_rows():
-    html = message.content
+def test_messages(messages):
+    num_successes = 0
+    nodes: list[BaseNode] = []
+    for html in messages:
+        html
+        try:
+            node = get_message_node(html)
+            node.as_text()
+            node.as_html()
+        except IllegalMessage as e:
+            print(f"\nOUTER HMTL:\n{repr(html)}")
+            print(f"\nERROR:\n{e}\n")
+            raise
 
-    try:
-        node = get_message_node(html)
-        node.as_text()
-        node.as_html()
-    except IllegalMessage as e:
-        print(f"\nOUTER HMTL:\n{repr(html)}")
-        print(f"\nERROR:\n{e}\n")
-        raise
+        nodes.append(node)
+        num_successes += 1
+    print()
+    print(f"{num_successes=}")
 
-    nodes.append(node)
-    num_successes += 1
-print()
-print(f"{num_successes=}")
 
-t = time.time()
-reps = 200
-assert reps * len(nodes) == 1_000_000
-for _ in range(reps):
-    for node in nodes:
-        node.as_html()
+def test_real_world():
+    fn = "database.json"
+    with open(fn, encoding="utf8") as database_file:
+        db_json = database_file.read()
+    database = Database.model_validate_json(db_json)
 
-# On my dusty old Dell laptop, the average cost
-# of calling as_html() on a fairly representative
-# sample of Zulip messages is about 60 microseconds.
-print("elapsed", time.time() - t)
+    messages = [m.content for m in database.message_table.get_rows()]
+    test_messages(messages)
+
+
+test_real_world()
