@@ -18,6 +18,14 @@ class BaseNode(BaseModel, ABC):
         pass
 
 
+class PhrasingNode(BaseNode, ABC):
+    pass
+
+
+class SpanNode(PhrasingNode, ABC):
+    pass
+
+
 """
 Even though HTML doesn't require you to surround
 text with a text node, we model it that way in our
@@ -37,7 +45,7 @@ the latter is clearly better for humans.
 """
 
 
-class TextNode(BaseNode):
+class TextNode(PhrasingNode):
     value: str
 
     def as_text(self) -> str:
@@ -57,7 +65,7 @@ The <br> and <hr> tags are handled super generically by us.
 """
 
 
-class BreakNode(BaseNode):
+class BreakNode(PhrasingNode):
     def as_text(self) -> str:
         return "\n"
 
@@ -146,7 +154,11 @@ We'll start with simple markup:
 """
 
 
-class DeleteNode(ContainerNode):
+class TextFormattingNode(ContainerNode, PhrasingNode, ABC):
+    pass
+
+
+class DeleteNode(TextFormattingNode):
     def as_text(self) -> str:
         return f"~~{self.children_text()}~~"
 
@@ -154,7 +166,7 @@ class DeleteNode(ContainerNode):
         return self.tag("del")
 
 
-class EmphasisNode(ContainerNode):
+class EmphasisNode(TextFormattingNode):
     def as_text(self) -> str:
         return f"*{self.children_text()}*"
 
@@ -162,7 +174,7 @@ class EmphasisNode(ContainerNode):
         return self.tag("em")
 
 
-class StrongNode(ContainerNode):
+class StrongNode(TextFormattingNode):
     def as_text(self) -> str:
         return f"**{self.children_text()}**"
 
@@ -175,7 +187,11 @@ And then some more basic classes follow.
 """
 
 
-class AnchorNode(ContainerNode):
+class LinkNode(PhrasingNode):
+    pass
+
+
+class AnchorNode(LinkNode, ContainerNode):
     href: str
 
     def as_text(self) -> str:
@@ -200,7 +216,7 @@ class BodyNode(ContainerNode):
         return self.tag("body")
 
 
-class CodeNode(ContainerNode):
+class CodeNode(TextFormattingNode):
     def as_text(self) -> str:
         return f"`{self.children_text()}`"
 
@@ -381,7 +397,7 @@ special Zulip constructs.
 """
 
 
-class EmojiImageNode(BaseNode):
+class EmojiImageNode(LinkNode):
     src: str
     title: str
 
@@ -402,7 +418,7 @@ class EmojiImageNode(BaseNode):
         )
 
 
-class EmojiSpanNode(BaseNode):
+class EmojiSpanNode(SpanNode):
     unicodes: list[str]
     title: str
 
@@ -478,7 +494,7 @@ class InlineVideoNode(BaseNode):
         return build_tag(tag="div", inner=anchor, class_=self.zulip_class())
 
 
-class MessageLinkNode(ContainerNode):
+class MessageLinkNode(LinkNode, ContainerNode):
     href: str
 
     def as_text(self) -> str:
@@ -539,7 +555,7 @@ class SpoilerNode(BaseNode):
         )
 
 
-class StreamLinkNode(ContainerNode):
+class StreamLinkNode(LinkNode, ContainerNode):
     href: str
     stream_id: int
     has_topic: bool
@@ -560,7 +576,7 @@ class StreamLinkNode(ContainerNode):
         )
 
 
-class UserGroupMentionNode(BaseNode):
+class UserGroupMentionNode(SpanNode):
     name: str
     group_id: int
     silent: bool
@@ -580,7 +596,7 @@ class UserGroupMentionNode(BaseNode):
         )
 
 
-class UserMentionNode(BaseNode):
+class UserMentionNode(SpanNode):
     name: str
     user_id: int
     silent: bool
@@ -611,7 +627,7 @@ Typical markdown is <time:2025-07-16T20:00:00-04:00>
 """
 
 
-class TimeWidgetNode(BaseNode):
+class TimeWidgetNode(PhrasingNode):
     datetime: str
     text: str
 
@@ -633,7 +649,7 @@ the security/performance/accuracy considerations to them.
 """
 
 
-class KatexNode(BaseNode):
+class KatexNode(SpanNode):
     html: SafeHtml
     tag_class: str
 

@@ -1,4 +1,4 @@
-from typing import Callable, Union
+from typing import Callable
 
 from html_helpers import SafeHtml
 from lxml import etree
@@ -18,11 +18,14 @@ from message_node import (
     InlineImageNode,
     InlineVideoNode,
     KatexNode,
+    LinkNode,
     ListItemNode,
     MessageLinkNode,
     OrderedListNode,
     ParagraphNode,
+    PhrasingNode,
     PygmentsCodeBlockNode,
+    SpanNode,
     SpoilerContentNode,
     SpoilerHeaderNode,
     SpoilerNode,
@@ -31,6 +34,7 @@ from message_node import (
     TableNode,
     TBodyNode,
     TdNode,
+    TextFormattingNode,
     TextNode,
     THeadNode,
     ThematicBreakNode,
@@ -41,13 +45,6 @@ from message_node import (
     UserGroupMentionNode,
     UserMentionNode,
 )
-
-TextFormattingNode = Union[
-    CodeNode, DeleteNode, EmphasisNode, StrongNode, TimeWidgetNode
-]
-LinkNode = Union[AnchorNode, EmojiImageNode, MessageLinkNode, StreamLinkNode]
-SpanNode = Union[EmojiSpanNode, KatexNode, UserGroupMentionNode, UserMentionNode]
-PhrasingNode = Union[BreakNode, TextFormattingNode, LinkNode, SpanNode]
 
 Element = etree._Element
 
@@ -485,10 +482,6 @@ def verify_round_trip(
 
 
 def get_text_formatting_node(elem: Element) -> TextFormattingNode:
-    if elem.tag == "code":
-        restrict_attributes(elem)
-        return CodeNode(children=get_child_nodes(elem))
-
     if elem.tag == "del":
         restrict_attributes(elem)
         return DeleteNode(children=get_phrasing_nodes(elem))
@@ -500,9 +493,6 @@ def get_text_formatting_node(elem: Element) -> TextFormattingNode:
     if elem.tag == "strong":
         restrict_attributes(elem)
         return StrongNode(children=get_phrasing_nodes(elem))
-
-    if elem.tag == "time":
-        return get_time_widget_node(elem)
 
     raise IllegalMessage("not a text node")
 
@@ -555,7 +545,7 @@ def get_span_node(elem: Element) -> SpanNode:
 
 
 def maybe_get_phrasing_node(elem: Element) -> PhrasingNode | None:
-    if elem.tag in ["code", "del", "em", "strong", "time"]:
+    if elem.tag in ["del", "em", "strong"]:
         return get_text_formatting_node(elem)
 
     if elem.tag in ["a", "img"]:
@@ -566,8 +556,15 @@ def maybe_get_phrasing_node(elem: Element) -> PhrasingNode | None:
         forbid_children(elem)
         return BreakNode()
 
+    if elem.tag == "code":
+        restrict_attributes(elem)
+        return CodeNode(children=get_child_nodes(elem))
+
     if elem.tag == "span":
         return get_span_node(elem)
+
+    if elem.tag == "time":
+        return get_time_widget_node(elem)
 
     return None
 
