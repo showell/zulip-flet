@@ -44,7 +44,7 @@ from message_node import (
     TrNode,
     UnorderedListNode,
     UserGroupMentionNode,
-    UserMentionNode,
+    UserMentionNode, TexErrorNode,
 )
 
 Element = etree._Element
@@ -429,6 +429,13 @@ def get_table_node(elem: Element) -> TableNode:
     return TableNode(thead=thead, tbody=tbody)
 
 
+def get_tex_error_node(elem: Element) -> TexErrorNode:
+    restrict(elem, "span", "class")
+    ensure_class(elem, "tex-error")
+    text = ensure_only_text(elem)
+    return TexErrorNode(text=text)
+
+
 def get_time_widget_node(elem: Element) -> TimeWidgetNode:
     restrict(elem, "time", "datetime")
     datetime = get_string(elem, "datetime")
@@ -540,6 +547,8 @@ def get_span_node(elem: Element) -> SpanNode:
         return get_emoji_span_node(elem)
     if elem_class in ["katex", "katex-display"]:
         return get_katex_node(elem)
+    if elem_class == "tex-error":
+        return get_tex_error_node(elem)
     if elem_class == "timestamp-error":
         return get_timestamp_error_node(elem)
     if elem_class == "user-group-mention":

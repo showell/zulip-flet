@@ -204,6 +204,16 @@ class ParseErrorNode(PhrasingNode):
         )
 
 
+class TexErrorNode(SpanNode, ParseErrorNode):
+    text: str
+
+    def as_text(self) -> str:
+        return "tex error"
+
+    def zulip_class(self) -> str:
+        return "tex-error"
+
+
 class TimeStampErrorNode(SpanNode, ParseErrorNode):
     text: str
 
