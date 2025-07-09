@@ -595,8 +595,8 @@ def get_child_nodes(elem: Element, ignore_newlines: bool = False) -> list[BaseNo
     return children
 
 
-def get_phrasing_nodes(elem: Element) -> list[BaseNode]:
-    children: list[BaseNode] = []
+def get_phrasing_nodes(elem: Element) -> list[PhrasingNode]:
+    children: list[PhrasingNode] = []
 
     maybe_text_node = maybe_get_text_node(elem.text)
     if maybe_text_node is not None:

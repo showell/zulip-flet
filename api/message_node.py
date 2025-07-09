@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-
 from html_helpers import SafeHtml, build_tag, escape_text
 from pydantic import BaseModel, Field
+from typing import Sequence
 
 """
 Our BaseNode class is abstract.
@@ -95,7 +95,7 @@ We eventually want more refinement here.
 
 
 class ContainerNode(BaseNode):
-    children: list[BaseNode]
+    children: Sequence[BaseNode]
 
     def children_text(self) -> str:
         return " ".join(c.as_text() for c in self.children)
@@ -125,6 +125,7 @@ as an example.  Instead of concretely having distinct classes for
 
 
 class HeadingNode(ContainerNode):
+    children: Sequence[PhrasingNode]
     depth: int = Field(ge=1, le=6)
 
     def as_text(self) -> str:
@@ -243,7 +244,7 @@ class ListItemNode(ContainerNode):
 
 
 class OrderedListNode(BaseNode):
-    children: list[ListItemNode]
+    children: Sequence[ListItemNode]
     start: int | None
 
     def as_text(self) -> str:
@@ -263,7 +264,7 @@ class OrderedListNode(BaseNode):
 
 
 class UnorderedListNode(BaseNode):
-    children: list[ListItemNode]
+    children: Sequence[ListItemNode]
 
     def as_text(self) -> str:
         return "".join("\n    - " + c.as_text() for c in self.children)
@@ -308,7 +309,7 @@ class TdNode(ContainerNode):
 
 
 class TrNode(BaseNode):
-    tds: list[TdNode]
+    tds: Sequence[TdNode]
 
     def as_text(self) -> str:
         s = "TR\n"
@@ -323,7 +324,7 @@ class TrNode(BaseNode):
 
 
 class TBodyNode(BaseNode):
-    trs: list[TrNode]
+    trs: Sequence[TrNode]
 
     def as_text(self) -> str:
         tr_text = "".join(tr.as_text() for tr in self.trs)
@@ -335,7 +336,7 @@ class TBodyNode(BaseNode):
 
 
 class THeadNode(BaseNode):
-    ths: list[ThNode]
+    ths: Sequence[ThNode]
 
     def as_text(self) -> str:
         th_text = "".join(th.as_text() for th in self.ths)
@@ -419,7 +420,7 @@ class EmojiImageNode(LinkNode):
 
 
 class EmojiSpanNode(SpanNode):
-    unicodes: list[str]
+    unicodes: Sequence[str]
     title: str
 
     def as_text(self) -> str:
