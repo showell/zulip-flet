@@ -10,7 +10,6 @@ def test_messages(messages):
     num_successes = 0
     nodes: list[BaseNode] = []
     for html in messages:
-        html
         try:
             node = get_message_node(html)
             node.as_text()
