@@ -703,7 +703,14 @@ def get_node(elem: Element) -> BaseNode:
 
 
 def get_message_node(html: str) -> BaseNode:
-    root = etree.HTML("<body>" + html + "</body>")
+    # We try to be strict, but lxml doesn't like math/video/time and doesn't
+    # recover from certain <br> tags in paragraphs.
+    if '<math' in html or '<video' in html or '<time' in html or '<br' in html or '</a></a>' in html:
+        recover = True
+    else:
+        recover = False
+    parser = etree.HTMLParser(recover=recover)
+    root = etree.fromstring("<body>" + html + "</body>", parser=parser)
     restrict(root, "html")
     body = get_only_child(root, "body")
     restrict(body, "body")
