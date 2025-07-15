@@ -8,6 +8,8 @@ from message_node import (
     BlockQuoteNode,
     BodyNode,
     BreakNode,
+    ChannelWildcardMentionNode,
+    ChannelWildcardMentionSilentNode,
     CodeNode,
     DeleteNode,
     EmojiImageNode,
@@ -42,6 +44,8 @@ from message_node import (
     ThNode,
     TimeStampErrorNode,
     TimeWidgetNode,
+    TopicMentionNode,
+    TopicMentionSilentNode,
     TrNode,
     UnorderedListNode,
     UserGroupMentionNode,
@@ -219,6 +223,40 @@ def text_content(elem: Element) -> str:
 """
 Custom validators follow.
 """
+
+
+def get_channel_wildcard_mention_node(elem: Element) -> ChannelWildcardMentionNode:
+    restrict(elem, "span", "class", "data-user-id")
+    name = ensure_only_text(elem)
+    ensure_class(elem, "user-mention channel-wildcard-mention")
+    ensure_attribute(elem, "data-user-id", "*")
+
+    # Fight mypy being dumb about literals.
+    if name == "@all":
+        return ChannelWildcardMentionNode(name="@all")
+    if name == "@channel":
+        return ChannelWildcardMentionNode(name="@channel")
+    if name == "@everyone":
+        return ChannelWildcardMentionNode(name="@everyone")
+    raise IllegalMessage("bad mention")
+
+
+def get_channel_wildcard_mention_silent_node(
+    elem: Element,
+) -> ChannelWildcardMentionSilentNode:
+    restrict(elem, "span", "class", "data-user-id")
+    name = ensure_only_text(elem)
+    ensure_class(elem, "user-mention channel-wildcard-mention silent")
+    ensure_attribute(elem, "data-user-id", "*")
+
+    # Fight mypy being dumb about literals.
+    if name == "all":
+        return ChannelWildcardMentionSilentNode(name="all")
+    if name == "channel":
+        return ChannelWildcardMentionSilentNode(name="channel")
+    if name == "everyone":
+        return ChannelWildcardMentionSilentNode(name="everyone")
+    raise IllegalMessage("bad mention")
 
 
 def get_code_block_node(elem: Element) -> PygmentsCodeBlockNode:
@@ -451,6 +489,24 @@ def get_timestamp_error_node(elem: Element) -> TimeStampErrorNode:
     return TimeStampErrorNode(text=text)
 
 
+def get_topic_mention_node(elem: Element) -> TopicMentionNode:
+    restrict(elem, "span", "class")
+    name = ensure_only_text(elem)
+    if name != "@topic":
+        raise IllegalMessage("bad wildcard mention")
+    ensure_class(elem, "topic-mention")
+    return TopicMentionNode()
+
+
+def get_topic_mention_silent_node(elem: Element) -> TopicMentionSilentNode:
+    restrict(elem, "span", "class")
+    name = ensure_only_text(elem)
+    if name != "topic":
+        raise IllegalMessage("bad wildcard mention")
+    ensure_class(elem, "topic-mention silent")
+    return TopicMentionSilentNode()
+
+
 def get_unordered_list_node(elem: Element) -> UnorderedListNode:
     restrict_attributes(elem)
     children = get_list_item_nodes(elem)
@@ -552,10 +608,18 @@ def get_span_node(elem: Element) -> SpanNode:
         return get_tex_error_node(elem)
     if elem_class == "timestamp-error":
         return get_timestamp_error_node(elem)
+    if elem_class == "topic-mention":
+        return get_topic_mention_node(elem)
+    if elem_class == "topic-mention silent":
+        return get_topic_mention_silent_node(elem)
     if elem_class == "user-group-mention":
         return get_user_group_mention_node(elem, silent=False)
     if elem_class == "user-group-mention silent":
         return get_user_group_mention_node(elem, silent=True)
+    if elem_class == "user-mention channel-wildcard-mention":
+        return get_channel_wildcard_mention_node(elem)
+    if elem_class == "user-mention channel-wildcard-mention silent":
+        return get_channel_wildcard_mention_silent_node(elem)
     if elem_class == "user-mention":
         return get_user_mention_node(elem, silent=False)
     if elem_class == "user-mention silent":
@@ -705,7 +769,13 @@ def get_node(elem: Element) -> BaseNode:
 def get_message_node(html: str) -> BaseNode:
     # We try to be strict, but lxml doesn't like math/video/time and doesn't
     # recover from certain <br> tags in paragraphs.
-    if '<math' in html or '<video' in html or '<time' in html or '<br' in html or '</a></a>' in html:
+    if (
+        "<math" in html
+        or "<video" in html
+        or "<time" in html
+        or "<br" in html
+        or "</a></a>" in html
+    ):
         recover = True
     else:
         recover = False

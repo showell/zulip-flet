@@ -38,7 +38,7 @@ class SafeHtml(BaseModel):
 
 def build_tag(*, tag: str, inner: SafeHtml, **attrs: str | None) -> SafeHtml:
     attr_suffix = "".join(
-        f''' {attr.rstrip("_").replace("_", "-")}="{escape_text(value)}"'''
+        f''' {attr.rstrip("_").replace("_", "-")}="{escape_text(value, replace_quotes=True)}"'''
         for attr, value in attrs.items()
         if value is not None
     )
@@ -47,7 +47,7 @@ def build_tag(*, tag: str, inner: SafeHtml, **attrs: str | None) -> SafeHtml:
     return SafeHtml.trust(f"<{tag}{attr_suffix}>{inner}</{tag}>")
 
 
-def escape_text(text: str) -> SafeHtml:
+def escape_text(text: str, replace_quotes: bool = False) -> SafeHtml:
     # This is very similar to html.escape, but we want to match the
     # lxml output for now.  The lxml parser is annoying in that
     # it doesn't easily round trip the original HTML.
@@ -57,4 +57,6 @@ def escape_text(text: str) -> SafeHtml:
         text = text.replace(c, f"&#{ord(c)};")
     text = text.replace(">", "&gt;")
     text = text.replace("<", "&lt;")
+    if replace_quotes:
+        text = text.replace('"', "&quot;")
     return SafeHtml.trust(text)

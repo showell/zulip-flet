@@ -1,7 +1,6 @@
 from typing import Any
 
 from address import Address
-from message_parser import get_message_node
 from pydantic import BaseModel
 from topic_table import TopicTable
 
@@ -37,8 +36,6 @@ class Message(BaseModel):
         )
 
         content = fix_content(raw_message["content"])
-
-        get_message_node(content)  # for validation
 
         return Message(
             id=raw_message["id"],

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Sequence
+from typing import Literal, Sequence
 
 from html_helpers import SafeHtml, build_tag, escape_text
 from pydantic import BaseModel, Field
@@ -439,6 +439,42 @@ special Zulip constructs.
 """
 
 
+class ChannelWildcardMentionNode(SpanNode):
+    name: Literal["@all", "@channel", "@everyone"]
+
+    def as_text(self) -> str:
+        return f"[ WILDCARD {self.name}]"
+
+    def zulip_class(self) -> str:
+        return "user-mention channel-wildcard-mention"
+
+    def as_html(self) -> SafeHtml:
+        return build_tag(
+            tag="span",
+            inner=escape_text(self.name),
+            class_=self.zulip_class(),
+            data_user_id="*",
+        )
+
+
+class ChannelWildcardMentionSilentNode(SpanNode):
+    name: Literal["all", "channel", "everyone"]
+
+    def as_text(self) -> str:
+        return f"[ WILDCARD {self.name}]"
+
+    def zulip_class(self) -> str:
+        return "user-mention channel-wildcard-mention silent"
+
+    def as_html(self) -> SafeHtml:
+        return build_tag(
+            tag="span",
+            inner=escape_text(self.name),
+            class_=self.zulip_class(),
+            data_user_id="*",
+        )
+
+
 class EmojiImageNode(LinkNode):
     src: str
     title: str
@@ -615,6 +651,36 @@ class StreamLinkNode(LinkNode, ContainerNode):
             class_=self.zulip_class(),
             data_stream_id=str(self.stream_id),
             href=self.href,
+        )
+
+
+class TopicMentionNode(SpanNode):
+    def as_text(self) -> str:
+        return "@**topic**"
+
+    def zulip_class(self) -> str:
+        return "topic-mention"
+
+    def as_html(self) -> SafeHtml:
+        return build_tag(
+            tag="span",
+            inner=escape_text("@topic"),
+            class_=self.zulip_class(),
+        )
+
+
+class TopicMentionSilentNode(SpanNode):
+    def as_text(self) -> str:
+        return "@_**topic**"
+
+    def zulip_class(self) -> str:
+        return "topic-mention silent"
+
+    def as_html(self) -> SafeHtml:
+        return build_tag(
+            tag="span",
+            inner=escape_text("topic"),
+            class_=self.zulip_class(),
         )
 
 
