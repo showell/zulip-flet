@@ -687,13 +687,31 @@ class TopicMentionSilentNode(SpanNode):
 class UserGroupMentionNode(SpanNode):
     name: str
     group_id: int
-    silent: bool
 
     def as_text(self) -> str:
-        return f"[ GROUP {'_' if self.silent else ''}{self.name} {self.group_id} ]"
+        return f"[ GROUP {self.name} {self.group_id} ]"
 
     def zulip_class(self) -> str:
-        return "user-group-mention silent" if self.silent else "user-group-mention"
+        return "user-group-mention"
+
+    def as_html(self) -> SafeHtml:
+        return build_tag(
+            tag="span",
+            inner=escape_text(self.name),
+            class_=self.zulip_class(),
+            data_user_group_id=str(self.group_id),
+        )
+
+
+class UserGroupMentionSilentNode(SpanNode):
+    name: str
+    group_id: int
+
+    def as_text(self) -> str:
+        return f"[ GROUP _{self.name} {self.group_id} ]"
+
+    def zulip_class(self) -> str:
+        return "user-group-mention silent"
 
     def as_html(self) -> SafeHtml:
         return build_tag(

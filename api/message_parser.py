@@ -49,6 +49,7 @@ from message_node import (
     TrNode,
     UnorderedListNode,
     UserGroupMentionNode,
+    UserGroupMentionSilentNode,
     UserMentionNode,
 )
 
@@ -513,11 +514,20 @@ def get_unordered_list_node(elem: Element) -> UnorderedListNode:
     return UnorderedListNode(children=children)
 
 
-def get_user_group_mention_node(elem: Element, silent: bool) -> UserGroupMentionNode:
+def get_user_group_mention_node(elem: Element) -> UserGroupMentionNode:
     restrict(elem, "span", "class", "data-user-group-id")
+    ensure_class(elem, "user-group-mention")
     name = ensure_only_text(elem)
     group_id = get_database_id(elem, "data-user-group-id")
-    return UserGroupMentionNode(name=name, group_id=group_id, silent=silent)
+    return UserGroupMentionNode(name=name, group_id=group_id)
+
+
+def get_user_group_mention_silent_node(elem: Element) -> UserGroupMentionSilentNode:
+    restrict(elem, "span", "class", "data-user-group-id")
+    ensure_class(elem, "user-group-mention silent")
+    name = ensure_only_text(elem)
+    group_id = get_database_id(elem, "data-user-group-id")
+    return UserGroupMentionSilentNode(name=name, group_id=group_id)
 
 
 def get_user_mention_node(elem: Element, silent: bool) -> UserMentionNode:
@@ -613,9 +623,9 @@ def get_span_node(elem: Element) -> SpanNode:
     if elem_class == "topic-mention silent":
         return get_topic_mention_silent_node(elem)
     if elem_class == "user-group-mention":
-        return get_user_group_mention_node(elem, silent=False)
+        return get_user_group_mention_node(elem)
     if elem_class == "user-group-mention silent":
-        return get_user_group_mention_node(elem, silent=True)
+        return get_user_group_mention_silent_node(elem)
     if elem_class == "user-mention channel-wildcard-mention":
         return get_channel_wildcard_mention_node(elem)
     if elem_class == "user-mention channel-wildcard-mention silent":
