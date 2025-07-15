@@ -62,26 +62,38 @@ class Element:
 
 
 @dataclass
+class TextElement(Element):
+    text: str
+
+
+@dataclass
 class TagElement(Element):
     html: str
     tag: str
-    text: str | None
-    tail: str | None
     attrib: dict[str, str]
-    children: list["TagElement"]
+    children: list["Element"]
 
     def get(self, field: str) -> str | None:
         return self.attrib.get(field)
 
     @staticmethod
     def from_lxml(elem: etree._Element) -> "TagElement":
+        children: list["Element"] = []
+
+        if elem.text is not None:
+            children.append(TextElement(text=elem.text))
+
+        for c in elem.iterchildren():
+            children.append(TagElement.from_lxml(c))
+
+            if c.tail is not None:
+                children.append(TextElement(text=c.tail))
+
         return TagElement(
             html=etree.tostring(elem, with_tail=False).decode("utf-8"),
             tag=elem.tag,
-            text=elem.text,
-            tail=elem.tail,
             attrib={str(k): str(v) for k, v in elem.attrib.items()},
-            children=[TagElement.from_lxml(c) for c in elem.iterchildren()],
+            children=children,
         )
 
 
@@ -98,13 +110,16 @@ def ensure_class(elem: TagElement, expected: str) -> None:
 
 
 def ensure_contains_text(elem: TagElement, expected: str) -> None:
-    ensure_equal(elem.text or "", expected)
-    if len(elem.children) != 0:
+    if len(elem.children) != 1:
+        raise IllegalMessage(f"{elem.tag} should have only one child")
+    child = elem.children[0]
+    if not isinstance(child, TextElement):
         raise IllegalMessage(f"{elem.tag} has unexpected non-text children")
+    ensure_equal(child.text, expected)
 
 
 def ensure_empty(elem: TagElement) -> None:
-    if elem.text or len(elem.children) > 0:
+    if len(elem.children) > 0:
         raise IllegalMessage(f"{elem} is not empty")
 
 
@@ -115,8 +130,10 @@ def ensure_equal(s1: str, s2: str) -> None:
         raise IllegalMessage(f"{s1} != {s2}")
 
 
-def ensure_newline(s: str | None) -> None:
-    if s != "\n":
+def ensure_newline(elem: Element) -> None:
+    if not isinstance(elem, TextElement):
+        raise IllegalMessage("expected newline for pretty HTML")
+    if elem.text != "\n":
         raise IllegalMessage("expected newline for pretty HTML")
 
 
@@ -129,17 +146,22 @@ def ensure_tag(elem: TagElement, tag: str) -> None:
     ensure_equal(elem.tag, tag)
 
 
+def ensure_tag_element(elem: Element) -> TagElement:
+    if isinstance(elem, TagElement):
+        return elem
+    raise IllegalMessage(f"{elem} is not a tag")
+
+
 def ensure_only_text(elem: TagElement) -> str:
-    if len(elem.children) != 0:
-        raise IllegalMessage(f"{elem.tag} has unexpected children")
-    if elem.text is None:
+    if len(elem.children) != 1:
+        raise IllegalMessage(f"{elem.tag} has unexpected number of children")
+    child = elem.children[0]
+    if not isinstance(child, TextElement):
         raise IllegalMessage("text is missing")
-    return elem.text
+    return child.text
 
 
 def forbid_children(elem: TagElement) -> None:
-    if elem.text:
-        raise IllegalMessage("unexpected text")
     if len(elem.children) != 0:
         raise IllegalMessage(f"{elem.tag} has unexpected children")
 
@@ -172,20 +194,19 @@ def get_database_id(elem: TagElement, field: str) -> int:
 
 def get_only_child(elem: TagElement, tag_name: str) -> TagElement:
     ensure_num_children(elem, 1)
-    if elem.text is not None:
-        raise IllegalMessage("unexpected text")
     child = elem.children[0]
-    if child.tail is not None:
-        raise IllegalMessage("unexpected tail")
-    ensure_equal(child.tag, tag_name)
-    return child
+    if isinstance(child, TagElement):
+        ensure_equal(child.tag, tag_name)
+        return child
+
+    raise IllegalMessage("unexpected text")
 
 
 def get_only_block_child(elem: TagElement, tag_name: str) -> TagElement:
-    ensure_num_children(elem, 1)
-    ensure_newline(elem.text)
-    child = elem.children[0]
-    ensure_newline(child.tail)
+    ensure_num_children(elem, 3)
+    ensure_newline(elem.children[0])
+    child = ensure_tag_element(elem.children[1])
+    ensure_newline(elem.children[2])
     ensure_equal(child.tag, tag_name)
     return child
 
@@ -206,22 +227,31 @@ def get_string(elem: TagElement, field: str, allow_empty: bool = False) -> str:
     return s
 
 
+def get_tag_children(elem: TagElement) -> list[TagElement]:
+    children: list[TagElement] = []
+
+    for c in elem.children:
+        if isinstance(c, TagElement):
+            children.append(c)
+        elif isinstance(c, TextElement):
+            ensure_newline(c)
+
+    return children
+
+
 def get_two_children(elem: TagElement) -> tuple[TagElement, TagElement]:
     ensure_num_children(elem, 2)
-    if elem.text is not None:
-        raise IllegalMessage("unexpected text")
-    for c in elem.children:
-        if c.tail is not None:
-            raise IllegalMessage("unexpected tail")
-    return elem.children[0], elem.children[1]
+    return ensure_tag_element(elem.children[0]), ensure_tag_element(elem.children[1])
 
 
 def get_two_block_children(elem: TagElement) -> tuple[TagElement, TagElement]:
-    ensure_num_children(elem, 2)
-    ensure_newline(elem.text)
-    for c in elem.children:
-        ensure_newline(c.tail)
-    return elem.children[0], elem.children[1]
+    ensure_num_children(elem, 5)
+    ensure_newline(elem.children[0])
+    c1 = ensure_tag_element(elem.children[1])
+    ensure_newline(elem.children[2])
+    c2 = ensure_tag_element(elem.children[3])
+    ensure_newline(elem.children[4])
+    return c1, c2
 
 
 def maybe_get_string(elem: TagElement, field: str) -> str | None:
@@ -242,10 +272,12 @@ def restrict_attributes(elem: TagElement, *fields: str) -> None:
 
 
 def text_content(elem: TagElement) -> str:
-    s = elem.text or ""
+    s = ""
     for c in elem.children:
-        s += text_content(c)
-        s += c.tail or ""
+        if isinstance(c, TextElement):
+            s += c.text
+        elif isinstance(c, TagElement):
+            s += text_content(c)
     return s
 
 
@@ -393,11 +425,12 @@ def get_list_item_node(elem: TagElement) -> ListItemNode:
 
 def get_list_item_nodes(elem: TagElement) -> list[ListItemNode]:
     children: list[ListItemNode] = []
-    ensure_newline(elem.text)
 
     for c in elem.children:
-        ensure_newline(c.tail)
-        children.append(get_list_item_node(c))
+        if isinstance(c, TextElement):
+            ensure_newline(c)
+        elif isinstance(c, TagElement):
+            children.append(get_list_item_node(c))
 
     return children
 
@@ -475,7 +508,7 @@ def get_table_node(elem: TagElement) -> TableNode:
             return ThNode(text_align=text_align, children=children)
 
         tr = get_only_block_child(thead, "tr")
-        ths = [get_th_node(th) for th in tr.children]
+        ths = [get_th_node(th) for th in get_tag_children(tr)]
         return THeadNode(ths=ths)
 
     def get_tbody_node(tbody: TagElement) -> TBodyNode:
@@ -485,10 +518,10 @@ def get_table_node(elem: TagElement) -> TableNode:
                 children = get_child_nodes(td)
                 return TdNode(text_align=text_align, children=children)
 
-            tds = [get_td_node(td) for td in tr.children]
+            tds = [get_td_node(td) for td in get_tag_children(tr)]
             return TrNode(tds=tds)
 
-        trs = [get_tr_node(tr) for tr in tbody.children]
+        trs = [get_tr_node(tr) for tr in get_tag_children(tbody)]
         return TBodyNode(trs=trs)
 
     thead_elem, tbody_elem = get_two_block_children(elem)
@@ -688,73 +721,57 @@ def get_span_node(elem: TagElement) -> SpanNode:
     raise IllegalMessage("unexpected span tag")
 
 
-def maybe_get_phrasing_node(elem: TagElement) -> PhrasingNode | None:
-    if elem.tag in ["del", "em", "strong"]:
-        return get_text_formatting_node(elem)
+def maybe_get_phrasing_node(elem: Element) -> PhrasingNode | None:
+    if isinstance(elem, TextElement):
+        return TextNode(value=elem.text)
 
-    if elem.tag in ["a", "img"]:
-        return get_link_node(elem)
+    if isinstance(elem, TagElement):
+        if elem.tag in ["del", "em", "strong"]:
+            return get_text_formatting_node(elem)
 
-    if elem.tag == "br":
-        restrict_attributes(elem)
-        forbid_children(elem)
-        return BreakNode()
+        if elem.tag in ["a", "img"]:
+            return get_link_node(elem)
 
-    if elem.tag == "code":
-        restrict_attributes(elem)
-        return CodeNode(children=get_child_nodes(elem))
+        if elem.tag == "br":
+            restrict_attributes(elem)
+            forbid_children(elem)
+            return BreakNode()
 
-    if elem.tag == "span":
-        return get_span_node(elem)
+        if elem.tag == "code":
+            restrict_attributes(elem)
+            return CodeNode(children=get_child_nodes(elem))
 
-    if elem.tag == "time":
-        return get_time_widget_node(elem)
+        if elem.tag == "span":
+            return get_span_node(elem)
+
+        if elem.tag == "time":
+            return get_time_widget_node(elem)
 
     return None
-
-
-def maybe_get_text_node(
-    text: str | None, ignore_newlines: bool = False
-) -> TextNode | None:
-    if text is None:
-        return None
-    if text == "\n" and ignore_newlines:
-        return None
-    return TextNode(value=text)
 
 
 def get_child_nodes(elem: TagElement, ignore_newlines: bool = False) -> list[BaseNode]:
     children: list[BaseNode] = []
 
-    maybe_text_node = maybe_get_text_node(elem.text, ignore_newlines=ignore_newlines)
-    if maybe_text_node is not None:
-        children.append(maybe_text_node)
-
     for c in elem.children:
-        children.append(get_node(c))
-        maybe_text_node = maybe_get_text_node(c.tail, ignore_newlines=ignore_newlines)
-        if maybe_text_node is not None:
-            children.append(maybe_text_node)
-
+        if isinstance(c, TextElement):
+            if ignore_newlines:
+                ensure_newline(c)
+            else:
+                children.append(TextNode(value=c.text))
+        elif isinstance(c, TagElement):
+            children.append(get_node(c))
     return children
 
 
 def get_phrasing_nodes(elem: TagElement) -> list[PhrasingNode]:
     children: list[PhrasingNode] = []
 
-    maybe_text_node = maybe_get_text_node(elem.text)
-    if maybe_text_node is not None:
-        children.append(maybe_text_node)
-
     for c in elem.children:
         child_node = maybe_get_phrasing_node(c)
         if child_node is None:
             raise IllegalMessage("expected phrasing node")
         children.append(child_node)
-
-        maybe_text_node = maybe_get_text_node(c.tail)
-        if maybe_text_node is not None:
-            children.append(maybe_text_node)
 
     return children
 
