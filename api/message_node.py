@@ -439,42 +439,6 @@ special Zulip constructs.
 """
 
 
-class ChannelWildcardMentionNode(SpanNode):
-    name: Literal["@all", "@channel", "@everyone"]
-
-    def as_text(self) -> str:
-        return f"[ WILDCARD {self.name}]"
-
-    def zulip_class(self) -> str:
-        return "user-mention channel-wildcard-mention"
-
-    def as_html(self) -> SafeHtml:
-        return build_tag(
-            tag="span",
-            inner=escape_text(self.name),
-            class_=self.zulip_class(),
-            data_user_id="*",
-        )
-
-
-class ChannelWildcardMentionSilentNode(SpanNode):
-    name: Literal["all", "channel", "everyone"]
-
-    def as_text(self) -> str:
-        return f"[ WILDCARD {self.name}]"
-
-    def zulip_class(self) -> str:
-        return "user-mention channel-wildcard-mention silent"
-
-    def as_html(self) -> SafeHtml:
-        return build_tag(
-            tag="span",
-            inner=escape_text(self.name),
-            class_=self.zulip_class(),
-            data_user_id="*",
-        )
-
-
 class EmojiImageNode(LinkNode):
     src: str
     title: str
@@ -654,7 +618,62 @@ class StreamLinkNode(LinkNode, ContainerNode):
         )
 
 
-class TopicMentionNode(SpanNode):
+"""
+MENTIONS:
+
+Zulip supports many different styles of mentioning users.
+"""
+
+
+class MentionNode(SpanNode, ABC):
+    pass
+
+
+class LoudMentionNode(MentionNode, ABC):
+    pass
+
+
+class SilentMentionNode(MentionNode, ABC):
+    pass
+
+
+class ChannelWildcardMentionNode(LoudMentionNode):
+    name: Literal["@all", "@channel", "@everyone"]
+
+    def as_text(self) -> str:
+        return f"[ WILDCARD {self.name}]"
+
+    def zulip_class(self) -> str:
+        return "user-mention channel-wildcard-mention"
+
+    def as_html(self) -> SafeHtml:
+        return build_tag(
+            tag="span",
+            inner=escape_text(self.name),
+            class_=self.zulip_class(),
+            data_user_id="*",
+        )
+
+
+class ChannelWildcardMentionSilentNode(SilentMentionNode):
+    name: Literal["all", "channel", "everyone"]
+
+    def as_text(self) -> str:
+        return f"[ WILDCARD {self.name}]"
+
+    def zulip_class(self) -> str:
+        return "user-mention channel-wildcard-mention silent"
+
+    def as_html(self) -> SafeHtml:
+        return build_tag(
+            tag="span",
+            inner=escape_text(self.name),
+            class_=self.zulip_class(),
+            data_user_id="*",
+        )
+
+
+class TopicMentionNode(LoudMentionNode):
     def as_text(self) -> str:
         return "@**topic**"
 
@@ -669,7 +688,7 @@ class TopicMentionNode(SpanNode):
         )
 
 
-class TopicMentionSilentNode(SpanNode):
+class TopicMentionSilentNode(SilentMentionNode):
     def as_text(self) -> str:
         return "@_**topic**"
 
@@ -684,7 +703,7 @@ class TopicMentionSilentNode(SpanNode):
         )
 
 
-class UserGroupMentionNode(SpanNode):
+class UserGroupMentionNode(LoudMentionNode):
     name: str
     group_id: int
 
@@ -703,7 +722,7 @@ class UserGroupMentionNode(SpanNode):
         )
 
 
-class UserGroupMentionSilentNode(SpanNode):
+class UserGroupMentionSilentNode(SilentMentionNode):
     name: str
     group_id: int
 
@@ -722,7 +741,7 @@ class UserGroupMentionSilentNode(SpanNode):
         )
 
 
-class UserMentionNode(SpanNode):
+class UserMentionNode(LoudMentionNode):
     name: str
     user_id: int
 
@@ -741,7 +760,7 @@ class UserMentionNode(SpanNode):
         )
 
 
-class UserMentionSilentNode(SpanNode):
+class UserMentionSilentNode(SilentMentionNode):
     name: str
     user_id: int
 
