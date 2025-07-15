@@ -22,6 +22,7 @@ from message_node import (
     KatexNode,
     LinkNode,
     ListItemNode,
+    MentionNode,
     MessageLinkNode,
     OrderedListNode,
     ParagraphNode,
@@ -614,20 +615,8 @@ def get_link_node(elem: Element) -> LinkNode:
     raise IllegalMessage("not a link node")
 
 
-def get_span_node(elem: Element) -> SpanNode:
-    elem_class = maybe_get_string(elem, "class")
-
-    if elem_class is None:
-        raise IllegalMessage("span tags need a class")
-
-    if elem_class.startswith("emoji "):
-        return get_emoji_span_node(elem)
-    if elem_class in ["katex", "katex-display"]:
-        return get_katex_node(elem)
-    if elem_class == "tex-error":
-        return get_tex_error_node(elem)
-    if elem_class == "timestamp-error":
-        return get_timestamp_error_node(elem)
+def get_mention_node(elem: Element) -> MentionNode | None:
+    elem_class = get_string(elem, "class")
 
     if elem_class == "topic-mention":
         return get_topic_mention_node(elem)
@@ -647,6 +636,28 @@ def get_span_node(elem: Element) -> SpanNode:
         return get_user_mention_silent_node(elem)
     if elem_class == "user-mention silent":
         return get_user_mention_node(elem)
+
+    return None
+
+
+def get_span_node(elem: Element) -> SpanNode:
+    elem_class = maybe_get_string(elem, "class")
+
+    if elem_class is None:
+        raise IllegalMessage("span tags need a class")
+
+    if elem_class.startswith("emoji "):
+        return get_emoji_span_node(elem)
+    if elem_class in ["katex", "katex-display"]:
+        return get_katex_node(elem)
+    if elem_class == "tex-error":
+        return get_tex_error_node(elem)
+    if elem_class == "timestamp-error":
+        return get_timestamp_error_node(elem)
+
+    maybe_mention_node = get_mention_node(elem)
+    if maybe_mention_node is not None:
+        return maybe_mention_node
 
     raise IllegalMessage("unexpected span tag")
 
