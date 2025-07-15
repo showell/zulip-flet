@@ -51,6 +51,7 @@ from message_node import (
     UserGroupMentionNode,
     UserGroupMentionSilentNode,
     UserMentionNode,
+    UserMentionSilentNode,
 )
 
 Element = etree._Element
@@ -530,11 +531,20 @@ def get_user_group_mention_silent_node(elem: Element) -> UserGroupMentionSilentN
     return UserGroupMentionSilentNode(name=name, group_id=group_id)
 
 
-def get_user_mention_node(elem: Element, silent: bool) -> UserMentionNode:
+def get_user_mention_node(elem: Element) -> UserMentionNode:
     restrict(elem, "span", "class", "data-user-id")
+    ensure_class(elem, "user-mention")
     name = ensure_only_text(elem)
     user_id = get_database_id(elem, "data-user-id")
-    return UserMentionNode(name=name, user_id=user_id, silent=silent)
+    return UserMentionNode(name=name, user_id=user_id)
+
+
+def get_user_mention_silent_node(elem: Element) -> UserMentionSilentNode:
+    restrict(elem, "span", "class", "data-user-id")
+    ensure_class(elem, "user-mention silent")
+    name = ensure_only_text(elem)
+    user_id = get_database_id(elem, "data-user-id")
+    return UserMentionSilentNode(name=name, user_id=user_id)
 
 
 """
@@ -618,6 +628,7 @@ def get_span_node(elem: Element) -> SpanNode:
         return get_tex_error_node(elem)
     if elem_class == "timestamp-error":
         return get_timestamp_error_node(elem)
+
     if elem_class == "topic-mention":
         return get_topic_mention_node(elem)
     if elem_class == "topic-mention silent":
@@ -631,9 +642,11 @@ def get_span_node(elem: Element) -> SpanNode:
     if elem_class == "user-mention channel-wildcard-mention silent":
         return get_channel_wildcard_mention_silent_node(elem)
     if elem_class == "user-mention":
-        return get_user_mention_node(elem, silent=False)
+        return get_user_mention_node(elem)
     if elem_class == "user-mention silent":
-        return get_user_mention_node(elem, silent=True)
+        return get_user_mention_silent_node(elem)
+    if elem_class == "user-mention silent":
+        return get_user_mention_node(elem)
 
     raise IllegalMessage("unexpected span tag")
 
