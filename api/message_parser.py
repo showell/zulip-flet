@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Callable
 
 from html_helpers import SafeHtml
@@ -55,7 +56,29 @@ from message_node import (
     UserMentionSilentNode,
 )
 
-Element = etree._Element
+
+@dataclass
+class Element:
+    html: str
+    tag: str
+    text: str | None
+    tail: str | None
+    attrib: dict[str, str]
+    children: list["Element"]
+
+    def get(self, field: str) -> str | None:
+        return self.attrib.get(field)
+
+    @staticmethod
+    def from_lxml(elem: etree._Element) -> "Element":
+        return Element(
+            html=etree.tostring(elem, with_tail=False).decode("utf-8"),
+            tag=elem.tag,
+            text=elem.text,
+            tail=elem.tail,
+            attrib={str(k): str(v) for k, v in elem.attrib.items()},
+            children=[Element.from_lxml(c) for c in elem.iterchildren()],
+        )
 
 
 class IllegalMessage(Exception):
@@ -72,13 +95,12 @@ def ensure_class(elem: Element, expected: str) -> None:
 
 def ensure_contains_text(elem: Element, expected: str) -> None:
     ensure_equal(elem.text or "", expected)
-    if len(elem) != 0:
-        print(etree.tostring(elem, with_tail=False))
+    if len(elem.children) != 0:
         raise IllegalMessage(f"{elem.tag} has unexpected non-text children")
 
 
 def ensure_empty(elem: Element) -> None:
-    if elem.text or len(elem) > 0:
+    if elem.text or len(elem.children) > 0:
         raise IllegalMessage(f"{elem} is not empty")
 
 
@@ -95,7 +117,7 @@ def ensure_newline(s: str | None) -> None:
 
 
 def ensure_num_children(elem: Element, count: int) -> None:
-    if len(elem) != count:
+    if len(elem.children) != count:
         raise IllegalMessage("bad count")
 
 
@@ -104,7 +126,7 @@ def ensure_tag(elem: Element, tag: str) -> None:
 
 
 def ensure_only_text(elem: Element) -> str:
-    if len(elem) != 0:
+    if len(elem.children) != 0:
         raise IllegalMessage(f"{elem.tag} has unexpected children")
     if elem.text is None:
         raise IllegalMessage("text is missing")
@@ -114,7 +136,7 @@ def ensure_only_text(elem: Element) -> str:
 def forbid_children(elem: Element) -> None:
     if elem.text:
         raise IllegalMessage("unexpected text")
-    if len(elem) != 0:
+    if len(elem.children) != 0:
         raise IllegalMessage(f"{elem.tag} has unexpected children")
 
 
@@ -133,7 +155,7 @@ def get_class(elem: Element, *expected: str) -> str:
 
 
 def get_html(elem: Element) -> str:
-    return etree.tostring(elem, with_tail=False).decode("utf-8")
+    return elem.html
 
 
 def get_database_id(elem: Element, field: str) -> int:
@@ -148,7 +170,7 @@ def get_only_child(elem: Element, tag_name: str) -> Element:
     ensure_num_children(elem, 1)
     if elem.text is not None:
         raise IllegalMessage("unexpected text")
-    child = elem[0]
+    child = elem.children[0]
     if child.tail is not None:
         raise IllegalMessage("unexpected tail")
     ensure_equal(child.tag, tag_name)
@@ -158,7 +180,7 @@ def get_only_child(elem: Element, tag_name: str) -> Element:
 def get_only_block_child(elem: Element, tag_name: str) -> Element:
     ensure_num_children(elem, 1)
     ensure_newline(elem.text)
-    child = elem[0]
+    child = elem.children[0]
     ensure_newline(child.tail)
     ensure_equal(child.tag, tag_name)
     return child
@@ -184,18 +206,18 @@ def get_two_children(elem: Element) -> tuple[Element, Element]:
     ensure_num_children(elem, 2)
     if elem.text is not None:
         raise IllegalMessage("unexpected text")
-    for c in elem:
+    for c in elem.children:
         if c.tail is not None:
             raise IllegalMessage("unexpected tail")
-    return elem[0], elem[1]
+    return elem.children[0], elem.children[1]
 
 
 def get_two_block_children(elem: Element) -> tuple[Element, Element]:
     ensure_num_children(elem, 2)
     ensure_newline(elem.text)
-    for c in elem:
+    for c in elem.children:
         ensure_newline(c.tail)
-    return elem[0], elem[1]
+    return elem.children[0], elem.children[1]
 
 
 def maybe_get_string(elem: Element, field: str) -> str | None:
@@ -209,7 +231,7 @@ def restrict(elem: Element, tag: str, *fields: str) -> None:
 
 def restrict_attributes(elem: Element, *fields: str) -> None:
     if not set(elem.attrib).issubset(set(fields)):
-        print(etree.tostring(elem, with_tail=False))
+        print(elem.html)
         raise IllegalMessage(
             f"{set(elem.attrib)} (actual attributes) > {set(fields)} (expected)"
         )
@@ -217,7 +239,7 @@ def restrict_attributes(elem: Element, *fields: str) -> None:
 
 def text_content(elem: Element) -> str:
     s = elem.text or ""
-    for c in elem:
+    for c in elem.children:
         s += text_content(c)
         s += c.tail or ""
     return s
@@ -369,7 +391,7 @@ def get_list_item_nodes(elem: Element) -> list[ListItemNode]:
     children: list[ListItemNode] = []
     ensure_newline(elem.text)
 
-    for c in elem:
+    for c in elem.children:
         ensure_newline(c.tail)
         children.append(get_list_item_node(c))
 
@@ -449,7 +471,7 @@ def get_table_node(elem: Element) -> TableNode:
             return ThNode(text_align=text_align, children=children)
 
         tr = get_only_block_child(thead, "tr")
-        ths = [get_th_node(th) for th in tr.iterchildren()]
+        ths = [get_th_node(th) for th in tr.children]
         return THeadNode(ths=ths)
 
     def get_tbody_node(tbody: Element) -> TBodyNode:
@@ -459,10 +481,10 @@ def get_table_node(elem: Element) -> TableNode:
                 children = get_child_nodes(td)
                 return TdNode(text_align=text_align, children=children)
 
-            tds = [get_td_node(td) for td in tr.iterchildren()]
+            tds = [get_td_node(td) for td in tr.children]
             return TrNode(tds=tds)
 
-        trs = [get_tr_node(tr) for tr in tbody.iterchildren()]
+        trs = [get_tr_node(tr) for tr in tbody.children]
         return TBodyNode(trs=trs)
 
     thead_elem, tbody_elem = get_two_block_children(elem)
@@ -704,7 +726,7 @@ def get_child_nodes(elem: Element, ignore_newlines: bool = False) -> list[BaseNo
     if maybe_text_node is not None:
         children.append(maybe_text_node)
 
-    for c in elem:
+    for c in elem.children:
         children.append(get_node(c))
         maybe_text_node = maybe_get_text_node(c.tail, ignore_newlines=ignore_newlines)
         if maybe_text_node is not None:
@@ -720,7 +742,7 @@ def get_phrasing_nodes(elem: Element) -> list[PhrasingNode]:
     if maybe_text_node is not None:
         children.append(maybe_text_node)
 
-    for c in elem:
+    for c in elem.children:
         child_node = maybe_get_phrasing_node(c)
         if child_node is None:
             raise IllegalMessage("expected phrasing node")
@@ -814,7 +836,8 @@ def get_message_node(html: str) -> BaseNode:
     else:
         recover = False
     parser = etree.HTMLParser(recover=recover)
-    root = etree.fromstring("<body>" + html + "</body>", parser=parser)
+    lxml_root = etree.fromstring("<body>" + html + "</body>", parser=parser)
+    root = Element.from_lxml(lxml_root)
     restrict(root, "html")
     body = get_only_child(root, "body")
     restrict(body, "body")
