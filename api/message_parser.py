@@ -57,27 +57,31 @@ from message_node import (
 )
 
 
-@dataclass
 class Element:
+    pass
+
+
+@dataclass
+class TagElement(Element):
     html: str
     tag: str
     text: str | None
     tail: str | None
     attrib: dict[str, str]
-    children: list["Element"]
+    children: list["TagElement"]
 
     def get(self, field: str) -> str | None:
         return self.attrib.get(field)
 
     @staticmethod
-    def from_lxml(elem: etree._Element) -> "Element":
-        return Element(
+    def from_lxml(elem: etree._Element) -> "TagElement":
+        return TagElement(
             html=etree.tostring(elem, with_tail=False).decode("utf-8"),
             tag=elem.tag,
             text=elem.text,
             tail=elem.tail,
             attrib={str(k): str(v) for k, v in elem.attrib.items()},
-            children=[Element.from_lxml(c) for c in elem.iterchildren()],
+            children=[TagElement.from_lxml(c) for c in elem.iterchildren()],
         )
 
 
@@ -85,21 +89,21 @@ class IllegalMessage(Exception):
     pass
 
 
-def ensure_attribute(elem: Element, field: str, expected: str) -> None:
+def ensure_attribute(elem: TagElement, field: str, expected: str) -> None:
     ensure_equal(get_string(elem, field), expected)
 
 
-def ensure_class(elem: Element, expected: str) -> None:
+def ensure_class(elem: TagElement, expected: str) -> None:
     ensure_equal(get_string(elem, "class"), expected)
 
 
-def ensure_contains_text(elem: Element, expected: str) -> None:
+def ensure_contains_text(elem: TagElement, expected: str) -> None:
     ensure_equal(elem.text or "", expected)
     if len(elem.children) != 0:
         raise IllegalMessage(f"{elem.tag} has unexpected non-text children")
 
 
-def ensure_empty(elem: Element) -> None:
+def ensure_empty(elem: TagElement) -> None:
     if elem.text or len(elem.children) > 0:
         raise IllegalMessage(f"{elem} is not empty")
 
@@ -116,16 +120,16 @@ def ensure_newline(s: str | None) -> None:
         raise IllegalMessage("expected newline for pretty HTML")
 
 
-def ensure_num_children(elem: Element, count: int) -> None:
+def ensure_num_children(elem: TagElement, count: int) -> None:
     if len(elem.children) != count:
         raise IllegalMessage("bad count")
 
 
-def ensure_tag(elem: Element, tag: str) -> None:
+def ensure_tag(elem: TagElement, tag: str) -> None:
     ensure_equal(elem.tag, tag)
 
 
-def ensure_only_text(elem: Element) -> str:
+def ensure_only_text(elem: TagElement) -> str:
     if len(elem.children) != 0:
         raise IllegalMessage(f"{elem.tag} has unexpected children")
     if elem.text is None:
@@ -133,32 +137,32 @@ def ensure_only_text(elem: Element) -> str:
     return elem.text
 
 
-def forbid_children(elem: Element) -> None:
+def forbid_children(elem: TagElement) -> None:
     if elem.text:
         raise IllegalMessage("unexpected text")
     if len(elem.children) != 0:
         raise IllegalMessage(f"{elem.tag} has unexpected children")
 
 
-def get_bool(elem: Element, field: str) -> bool:
+def get_bool(elem: TagElement, field: str) -> bool:
     val = elem.get(field)
     if val is None:
         return False
     return val == "true"
 
 
-def get_class(elem: Element, *expected: str) -> str:
+def get_class(elem: TagElement, *expected: str) -> str:
     tag_class = get_string(elem, "class")
     if tag_class not in expected:
         raise IllegalMessage(f"unknown class {tag_class}")
     return tag_class
 
 
-def get_html(elem: Element) -> str:
+def get_html(elem: TagElement) -> str:
     return elem.html
 
 
-def get_database_id(elem: Element, field: str) -> int:
+def get_database_id(elem: TagElement, field: str) -> int:
     s = get_string(elem, field)
     try:
         return int(s)
@@ -166,7 +170,7 @@ def get_database_id(elem: Element, field: str) -> int:
         raise IllegalMessage("not valid int")
 
 
-def get_only_child(elem: Element, tag_name: str) -> Element:
+def get_only_child(elem: TagElement, tag_name: str) -> TagElement:
     ensure_num_children(elem, 1)
     if elem.text is not None:
         raise IllegalMessage("unexpected text")
@@ -177,7 +181,7 @@ def get_only_child(elem: Element, tag_name: str) -> Element:
     return child
 
 
-def get_only_block_child(elem: Element, tag_name: str) -> Element:
+def get_only_block_child(elem: TagElement, tag_name: str) -> TagElement:
     ensure_num_children(elem, 1)
     ensure_newline(elem.text)
     child = elem.children[0]
@@ -186,14 +190,14 @@ def get_only_block_child(elem: Element, tag_name: str) -> Element:
     return child
 
 
-def get_optional_int(elem: Element, field: str) -> int | None:
+def get_optional_int(elem: TagElement, field: str) -> int | None:
     val = maybe_get_string(elem, field)
     if val is None:
         return None
     return int(val)
 
 
-def get_string(elem: Element, field: str, allow_empty: bool = False) -> str:
+def get_string(elem: TagElement, field: str, allow_empty: bool = False) -> str:
     s = maybe_get_string(elem, field)
     if s is None:
         raise IllegalMessage(f"{field} is missing")
@@ -202,7 +206,7 @@ def get_string(elem: Element, field: str, allow_empty: bool = False) -> str:
     return s
 
 
-def get_two_children(elem: Element) -> tuple[Element, Element]:
+def get_two_children(elem: TagElement) -> tuple[TagElement, TagElement]:
     ensure_num_children(elem, 2)
     if elem.text is not None:
         raise IllegalMessage("unexpected text")
@@ -212,7 +216,7 @@ def get_two_children(elem: Element) -> tuple[Element, Element]:
     return elem.children[0], elem.children[1]
 
 
-def get_two_block_children(elem: Element) -> tuple[Element, Element]:
+def get_two_block_children(elem: TagElement) -> tuple[TagElement, TagElement]:
     ensure_num_children(elem, 2)
     ensure_newline(elem.text)
     for c in elem.children:
@@ -220,16 +224,16 @@ def get_two_block_children(elem: Element) -> tuple[Element, Element]:
     return elem.children[0], elem.children[1]
 
 
-def maybe_get_string(elem: Element, field: str) -> str | None:
+def maybe_get_string(elem: TagElement, field: str) -> str | None:
     return elem.get(field)
 
 
-def restrict(elem: Element, tag: str, *fields: str) -> None:
+def restrict(elem: TagElement, tag: str, *fields: str) -> None:
     ensure_equal(elem.tag or "", tag)
     restrict_attributes(elem, *fields)
 
 
-def restrict_attributes(elem: Element, *fields: str) -> None:
+def restrict_attributes(elem: TagElement, *fields: str) -> None:
     if not set(elem.attrib).issubset(set(fields)):
         print(elem.html)
         raise IllegalMessage(
@@ -237,7 +241,7 @@ def restrict_attributes(elem: Element, *fields: str) -> None:
         )
 
 
-def text_content(elem: Element) -> str:
+def text_content(elem: TagElement) -> str:
     s = elem.text or ""
     for c in elem.children:
         s += text_content(c)
@@ -250,7 +254,7 @@ Custom validators follow.
 """
 
 
-def get_channel_wildcard_mention_node(elem: Element) -> ChannelWildcardMentionNode:
+def get_channel_wildcard_mention_node(elem: TagElement) -> ChannelWildcardMentionNode:
     restrict(elem, "span", "class", "data-user-id")
     name = ensure_only_text(elem)
     ensure_class(elem, "user-mention channel-wildcard-mention")
@@ -267,7 +271,7 @@ def get_channel_wildcard_mention_node(elem: Element) -> ChannelWildcardMentionNo
 
 
 def get_channel_wildcard_mention_silent_node(
-    elem: Element,
+    elem: TagElement,
 ) -> ChannelWildcardMentionSilentNode:
     restrict(elem, "span", "class", "data-user-id")
     name = ensure_only_text(elem)
@@ -284,7 +288,7 @@ def get_channel_wildcard_mention_silent_node(
     raise IllegalMessage("bad mention")
 
 
-def get_code_block_node(elem: Element) -> PygmentsCodeBlockNode:
+def get_code_block_node(elem: TagElement) -> PygmentsCodeBlockNode:
     restrict(elem, "div", "class", "data-code-language")
     html = get_html(elem)
     lang = maybe_get_string(elem, "data-code-language")
@@ -292,7 +296,7 @@ def get_code_block_node(elem: Element) -> PygmentsCodeBlockNode:
     return PygmentsCodeBlockNode(html=SafeHtml.trust(html), lang=lang, content=content)
 
 
-def get_emoji_image_node(elem: Element) -> EmojiImageNode:
+def get_emoji_image_node(elem: TagElement) -> EmojiImageNode:
     restrict(elem, "img", "alt", "class", "src", "title")
     alt = get_string(elem, "alt")
     src = get_string(elem, "src")
@@ -301,7 +305,7 @@ def get_emoji_image_node(elem: Element) -> EmojiImageNode:
     return EmojiImageNode(src=src, title=title)
 
 
-def get_emoji_span_node(elem: Element) -> EmojiSpanNode:
+def get_emoji_span_node(elem: TagElement) -> EmojiSpanNode:
     restrict(elem, "span", "aria-label", "class", "role", "title")
     title = get_string(elem, "title")
     ensure_attribute(elem, "role", "img")
@@ -318,7 +322,7 @@ def get_emoji_span_node(elem: Element) -> EmojiSpanNode:
     return EmojiSpanNode(title=title, unicodes=unicodes)
 
 
-def get_img_node(elem: Element) -> InlineImageChildImgNode:
+def get_img_node(elem: TagElement) -> InlineImageChildImgNode:
     restrict(
         elem,
         "img",
@@ -339,14 +343,14 @@ def get_img_node(elem: Element) -> InlineImageChildImgNode:
     )
 
 
-def get_katex_node(elem: Element) -> KatexNode:
+def get_katex_node(elem: TagElement) -> KatexNode:
     restrict(elem, "span", "class")
     tag_class = get_class(elem, "katex", "katex-display")
     html = get_html(elem)
     return KatexNode(html=SafeHtml.trust(html), tag_class=tag_class)
 
 
-def get_inline_image_node(elem: Element) -> InlineImageNode:
+def get_inline_image_node(elem: TagElement) -> InlineImageNode:
     restrict(elem, "div", "class")
     ensure_class(elem, "message_inline_image")
     anchor = get_only_child(elem, "a")
@@ -362,7 +366,7 @@ def get_inline_image_node(elem: Element) -> InlineImageNode:
     )
 
 
-def get_inline_video_node(elem: Element) -> InlineVideoNode:
+def get_inline_video_node(elem: TagElement) -> InlineVideoNode:
     restrict(elem, "div", "class")
     ensure_class(elem, "message_inline_image message_inline_video")
 
@@ -382,12 +386,12 @@ def get_inline_video_node(elem: Element) -> InlineVideoNode:
     return InlineVideoNode(href=href, src=src, title=title)
 
 
-def get_list_item_node(elem: Element) -> ListItemNode:
+def get_list_item_node(elem: TagElement) -> ListItemNode:
     restrict(elem, "li")
     return ListItemNode(children=get_child_nodes(elem))
 
 
-def get_list_item_nodes(elem: Element) -> list[ListItemNode]:
+def get_list_item_nodes(elem: TagElement) -> list[ListItemNode]:
     children: list[ListItemNode] = []
     ensure_newline(elem.text)
 
@@ -398,14 +402,14 @@ def get_list_item_nodes(elem: Element) -> list[ListItemNode]:
     return children
 
 
-def get_ordered_list_node(elem: Element) -> OrderedListNode:
+def get_ordered_list_node(elem: TagElement) -> OrderedListNode:
     restrict(elem, "ol", "start")
     start = get_optional_int(elem, "start")
     children = get_list_item_nodes(elem)
     return OrderedListNode(children=children, start=start)
 
 
-def get_message_link_node(elem: Element) -> MessageLinkNode:
+def get_message_link_node(elem: TagElement) -> MessageLinkNode:
     restrict(elem, "a", "class", "href")
     href = get_string(elem, "href")
     children = get_phrasing_nodes(elem)
@@ -415,7 +419,7 @@ def get_message_link_node(elem: Element) -> MessageLinkNode:
     )
 
 
-def get_spoiler_content(elem: Element) -> SpoilerContentNode:
+def get_spoiler_content(elem: TagElement) -> SpoilerContentNode:
     restrict(elem, "div", "class", "aria-hidden")
     ensure_class(elem, "spoiler-content")
     ensure_attribute(elem, "aria-hidden", "true")
@@ -426,13 +430,13 @@ def get_spoiler_content(elem: Element) -> SpoilerContentNode:
     )
 
 
-def get_spoiler_header(elem: Element) -> SpoilerHeaderNode:
+def get_spoiler_header(elem: TagElement) -> SpoilerHeaderNode:
     restrict(elem, "div", "class")
     ensure_class(elem, "spoiler-header")
     return SpoilerHeaderNode(children=get_child_nodes(elem, ignore_newlines=True))
 
 
-def get_spoiler_node(elem: Element) -> SpoilerNode:
+def get_spoiler_node(elem: TagElement) -> SpoilerNode:
     restrict(elem, "div", "class")
     ensure_class(elem, "spoiler-block")
     header_elem, content_elem = get_two_children(elem)
@@ -441,7 +445,7 @@ def get_spoiler_node(elem: Element) -> SpoilerNode:
     return SpoilerNode(header=header, content=content)
 
 
-def get_stream_link_node(elem: Element, *, has_topic: bool) -> StreamLinkNode:
+def get_stream_link_node(elem: TagElement, *, has_topic: bool) -> StreamLinkNode:
     restrict(elem, "a", "class", "data-stream-id", "href")
     stream_id = get_database_id(elem, "data-stream-id")
     href = get_string(elem, "href")
@@ -451,7 +455,7 @@ def get_stream_link_node(elem: Element, *, has_topic: bool) -> StreamLinkNode:
     )
 
 
-def get_table_cell_alignment(elem: Element) -> str | None:
+def get_table_cell_alignment(elem: TagElement) -> str | None:
     restrict_attributes(elem, "style")
     style = maybe_get_string(elem, "style")
     if style is None:
@@ -463,9 +467,9 @@ def get_table_cell_alignment(elem: Element) -> str | None:
     return value
 
 
-def get_table_node(elem: Element) -> TableNode:
-    def get_thead_node(thead: Element) -> THeadNode:
-        def get_th_node(th: Element) -> ThNode:
+def get_table_node(elem: TagElement) -> TableNode:
+    def get_thead_node(thead: TagElement) -> THeadNode:
+        def get_th_node(th: TagElement) -> ThNode:
             text_align = get_table_cell_alignment(th)
             children = get_child_nodes(th)
             return ThNode(text_align=text_align, children=children)
@@ -474,9 +478,9 @@ def get_table_node(elem: Element) -> TableNode:
         ths = [get_th_node(th) for th in tr.children]
         return THeadNode(ths=ths)
 
-    def get_tbody_node(tbody: Element) -> TBodyNode:
-        def get_tr_node(tr: Element) -> TrNode:
-            def get_td_node(td: Element) -> TdNode:
+    def get_tbody_node(tbody: TagElement) -> TBodyNode:
+        def get_tr_node(tr: TagElement) -> TrNode:
+            def get_td_node(td: TagElement) -> TdNode:
                 text_align = get_table_cell_alignment(td)
                 children = get_child_nodes(td)
                 return TdNode(text_align=text_align, children=children)
@@ -493,28 +497,28 @@ def get_table_node(elem: Element) -> TableNode:
     return TableNode(thead=thead, tbody=tbody)
 
 
-def get_tex_error_node(elem: Element) -> TexErrorNode:
+def get_tex_error_node(elem: TagElement) -> TexErrorNode:
     restrict(elem, "span", "class")
     ensure_class(elem, "tex-error")
     text = ensure_only_text(elem)
     return TexErrorNode(text=text)
 
 
-def get_time_widget_node(elem: Element) -> TimeWidgetNode:
+def get_time_widget_node(elem: TagElement) -> TimeWidgetNode:
     restrict(elem, "time", "datetime")
     datetime = get_string(elem, "datetime")
     text = ensure_only_text(elem)
     return TimeWidgetNode(datetime=datetime, text=text)
 
 
-def get_timestamp_error_node(elem: Element) -> TimeStampErrorNode:
+def get_timestamp_error_node(elem: TagElement) -> TimeStampErrorNode:
     restrict(elem, "span", "class")
     ensure_class(elem, "timestamp-error")
     text = ensure_only_text(elem)
     return TimeStampErrorNode(text=text)
 
 
-def get_topic_mention_node(elem: Element) -> TopicMentionNode:
+def get_topic_mention_node(elem: TagElement) -> TopicMentionNode:
     restrict(elem, "span", "class")
     name = ensure_only_text(elem)
     if name != "@topic":
@@ -523,7 +527,7 @@ def get_topic_mention_node(elem: Element) -> TopicMentionNode:
     return TopicMentionNode()
 
 
-def get_topic_mention_silent_node(elem: Element) -> TopicMentionSilentNode:
+def get_topic_mention_silent_node(elem: TagElement) -> TopicMentionSilentNode:
     restrict(elem, "span", "class")
     name = ensure_only_text(elem)
     if name != "topic":
@@ -532,13 +536,13 @@ def get_topic_mention_silent_node(elem: Element) -> TopicMentionSilentNode:
     return TopicMentionSilentNode()
 
 
-def get_unordered_list_node(elem: Element) -> UnorderedListNode:
+def get_unordered_list_node(elem: TagElement) -> UnorderedListNode:
     restrict_attributes(elem)
     children = get_list_item_nodes(elem)
     return UnorderedListNode(children=children)
 
 
-def get_user_group_mention_node(elem: Element) -> UserGroupMentionNode:
+def get_user_group_mention_node(elem: TagElement) -> UserGroupMentionNode:
     restrict(elem, "span", "class", "data-user-group-id")
     ensure_class(elem, "user-group-mention")
     name = ensure_only_text(elem)
@@ -546,7 +550,7 @@ def get_user_group_mention_node(elem: Element) -> UserGroupMentionNode:
     return UserGroupMentionNode(name=name, group_id=group_id)
 
 
-def get_user_group_mention_silent_node(elem: Element) -> UserGroupMentionSilentNode:
+def get_user_group_mention_silent_node(elem: TagElement) -> UserGroupMentionSilentNode:
     restrict(elem, "span", "class", "data-user-group-id")
     ensure_class(elem, "user-group-mention silent")
     name = ensure_only_text(elem)
@@ -554,7 +558,7 @@ def get_user_group_mention_silent_node(elem: Element) -> UserGroupMentionSilentN
     return UserGroupMentionSilentNode(name=name, group_id=group_id)
 
 
-def get_user_mention_node(elem: Element) -> UserMentionNode:
+def get_user_mention_node(elem: TagElement) -> UserMentionNode:
     restrict(elem, "span", "class", "data-user-id")
     ensure_class(elem, "user-mention")
     name = ensure_only_text(elem)
@@ -562,7 +566,7 @@ def get_user_mention_node(elem: Element) -> UserMentionNode:
     return UserMentionNode(name=name, user_id=user_id)
 
 
-def get_user_mention_silent_node(elem: Element) -> UserMentionSilentNode:
+def get_user_mention_silent_node(elem: TagElement) -> UserMentionSilentNode:
     restrict(elem, "span", "class", "data-user-id")
     ensure_class(elem, "user-mention silent")
     name = ensure_only_text(elem)
@@ -576,9 +580,9 @@ Now glue it all together.
 
 
 def verify_round_trip(
-    f: Callable[[Element], BaseNode],
-) -> Callable[[Element], BaseNode]:
-    def new_f(elem: Element) -> BaseNode:
+    f: Callable[[TagElement], BaseNode],
+) -> Callable[[TagElement], BaseNode]:
+    def new_f(elem: TagElement) -> BaseNode:
         node = f(elem)
 
         expected_html = get_html(elem)
@@ -596,7 +600,7 @@ def verify_round_trip(
     return new_f
 
 
-def get_text_formatting_node(elem: Element) -> TextFormattingNode:
+def get_text_formatting_node(elem: TagElement) -> TextFormattingNode:
     if elem.tag == "del":
         restrict_attributes(elem)
         return DeleteNode(children=get_phrasing_nodes(elem))
@@ -612,7 +616,7 @@ def get_text_formatting_node(elem: Element) -> TextFormattingNode:
     raise IllegalMessage("not a text node")
 
 
-def get_link_node(elem: Element) -> LinkNode:
+def get_link_node(elem: TagElement) -> LinkNode:
     elem_class = maybe_get_string(elem, "class")
 
     if elem.tag == "a":
@@ -637,7 +641,7 @@ def get_link_node(elem: Element) -> LinkNode:
     raise IllegalMessage("not a link node")
 
 
-def get_mention_node(elem: Element) -> MentionNode | None:
+def get_mention_node(elem: TagElement) -> MentionNode | None:
     elem_class = get_string(elem, "class")
 
     if elem_class == "topic-mention":
@@ -662,7 +666,7 @@ def get_mention_node(elem: Element) -> MentionNode | None:
     return None
 
 
-def get_span_node(elem: Element) -> SpanNode:
+def get_span_node(elem: TagElement) -> SpanNode:
     elem_class = maybe_get_string(elem, "class")
 
     if elem_class is None:
@@ -684,7 +688,7 @@ def get_span_node(elem: Element) -> SpanNode:
     raise IllegalMessage("unexpected span tag")
 
 
-def maybe_get_phrasing_node(elem: Element) -> PhrasingNode | None:
+def maybe_get_phrasing_node(elem: TagElement) -> PhrasingNode | None:
     if elem.tag in ["del", "em", "strong"]:
         return get_text_formatting_node(elem)
 
@@ -719,7 +723,7 @@ def maybe_get_text_node(
     return TextNode(value=text)
 
 
-def get_child_nodes(elem: Element, ignore_newlines: bool = False) -> list[BaseNode]:
+def get_child_nodes(elem: TagElement, ignore_newlines: bool = False) -> list[BaseNode]:
     children: list[BaseNode] = []
 
     maybe_text_node = maybe_get_text_node(elem.text, ignore_newlines=ignore_newlines)
@@ -735,7 +739,7 @@ def get_child_nodes(elem: Element, ignore_newlines: bool = False) -> list[BaseNo
     return children
 
 
-def get_phrasing_nodes(elem: Element) -> list[PhrasingNode]:
+def get_phrasing_nodes(elem: TagElement) -> list[PhrasingNode]:
     children: list[PhrasingNode] = []
 
     maybe_text_node = maybe_get_text_node(elem.text)
@@ -756,7 +760,7 @@ def get_phrasing_nodes(elem: Element) -> list[PhrasingNode]:
 
 
 @verify_round_trip
-def get_node(elem: Element) -> BaseNode:
+def get_node(elem: TagElement) -> BaseNode:
     elem_class = maybe_get_string(elem, "class")
 
     node = maybe_get_phrasing_node(elem)
@@ -837,7 +841,7 @@ def get_message_node(html: str) -> BaseNode:
         recover = False
     parser = etree.HTMLParser(recover=recover)
     lxml_root = etree.fromstring("<body>" + html + "</body>", parser=parser)
-    root = Element.from_lxml(lxml_root)
+    root = TagElement.from_lxml(lxml_root)
     restrict(root, "html")
     body = get_only_child(root, "body")
     restrict(body, "body")
