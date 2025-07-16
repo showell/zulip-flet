@@ -54,6 +54,7 @@ from message_node import (
     UserGroupMentionSilentNode,
     UserMentionNode,
     UserMentionSilentNode,
+    ListNode,
 )
 
 
@@ -764,6 +765,16 @@ def get_child_nodes(elem: TagElement, ignore_newlines: bool = False) -> list[Bas
     return children
 
 
+def get_list_node(elem: TagElement) -> ListNode:
+    if elem.tag == "ol":
+        return get_ordered_list_node(elem)
+
+    if elem.tag == "ul":
+        return get_unordered_list_node(elem)
+
+    raise IllegalMessage(f"Unsupported tag {elem.tag}")
+
+
 def get_phrasing_nodes(elem: TagElement) -> list[PhrasingNode]:
     children: list[PhrasingNode] = []
 
@@ -827,8 +838,8 @@ def get_node(elem: TagElement) -> BaseNode:
         forbid_children(elem)
         return ThematicBreakNode()
 
-    if elem.tag == "ol":
-        return get_ordered_list_node(elem)
+    if elem.tag in ["ol", "ul"]:
+        return get_list_node(elem)
 
     if elem.tag == "p":
         restrict_attributes(elem)
@@ -836,9 +847,6 @@ def get_node(elem: TagElement) -> BaseNode:
 
     if elem.tag == "table":
         return get_table_node(elem)
-
-    if elem.tag == "ul":
-        return get_unordered_list_node(elem)
 
     raise IllegalMessage(f"Unsupported tag {elem.tag}")
 
