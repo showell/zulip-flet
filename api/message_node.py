@@ -652,7 +652,8 @@ class InlineImageNode(BaseNode):
     def as_text(self) -> str:
         return f"INLINE IMAGE: {self.href}"
 
-    def zulip_class(self) -> str:
+    @staticmethod
+    def zulip_class() -> str:
         return "message_inline_image"
 
     def as_html(self) -> SafeHtml:
@@ -693,7 +694,8 @@ class InlineVideoNode(BaseNode):
     def as_text(self) -> str:
         return f"INLINE VIDEO: {self.href}"
 
-    def zulip_class(self) -> str:
+    @staticmethod
+    def zulip_class() -> str:
         return "message_inline_image message_inline_video"
 
     def as_html(self) -> SafeHtml:
@@ -739,7 +741,8 @@ class MessageLinkNode(LinkNode, ContainerNode):
         text = " ".join(c.as_text() for c in self.children)
         return f"[{text} (MESSAGE LINK: {self.href})]"
 
-    def zulip_class(self) -> str:
+    @staticmethod
+    def zulip_class() -> str:
         return "message-link"
 
     def as_html(self) -> SafeHtml:
@@ -762,7 +765,8 @@ class SpoilerContentNode(ContainerNode):
     # do round trip testing
     aria_attribute_comes_first: bool
 
-    def zulip_class(self) -> str:
+    @staticmethod
+    def zulip_class() -> str:
         return "spoiler-content"
 
     def as_html(self) -> SafeHtml:
@@ -785,7 +789,8 @@ class SpoilerContentNode(ContainerNode):
 
 
 class SpoilerHeaderNode(ContainerNode):
-    def zulip_class(self) -> str:
+    @staticmethod
+    def zulip_class() -> str:
         return "spoiler-header"
 
     def as_html(self) -> SafeHtml:
@@ -807,7 +812,8 @@ class SpoilerNode(BaseNode):
         content = self.content.as_text()
         return f"SPOILER: {header}\nHIDDEN:\n{content}\nENDHIDDEN\n"
 
-    def zulip_class(self) -> str:
+    @staticmethod
+    def zulip_class() -> str:
         return "spoiler-block"
 
     def as_html(self) -> SafeHtml:
@@ -837,7 +843,8 @@ class StreamLinkNode(LinkNode, ContainerNode):
         text = " ".join(c.as_text() for c in self.children)
         return f"[STREAM {text}] ({self.href}) (stream id {self.stream_id})"
 
-    def zulip_class(self) -> str:
+    @staticmethod
+    def zulip_class() -> str:
         return "stream"
 
     def as_html(self) -> SafeHtml:
@@ -866,7 +873,8 @@ class StreamTopicLinkNode(LinkNode, ContainerNode):
         text = " ".join(c.as_text() for c in self.children)
         return f"[STREAM/TOPIC {text}] ({self.href}) (stream id {self.stream_id})"
 
-    def zulip_class(self) -> str:
+    @staticmethod
+    def zulip_class() -> str:
         return "stream-topic"
 
     def as_html(self) -> SafeHtml:
@@ -954,7 +962,8 @@ class ChannelWildcardMentionNode(LoudMentionNode):
     def as_text(self) -> str:
         return f"[ WILDCARD {self.name}]"
 
-    def zulip_class(self) -> str:
+    @staticmethod
+    def zulip_class() -> str:
         return "user-mention channel-wildcard-mention"
 
     def as_html(self) -> SafeHtml:
@@ -988,7 +997,8 @@ class ChannelWildcardMentionSilentNode(SilentMentionNode):
     def as_text(self) -> str:
         return f"[ WILDCARD {self.name}]"
 
-    def zulip_class(self) -> str:
+    @staticmethod
+    def zulip_class() -> str:
         return "user-mention channel-wildcard-mention silent"
 
     def as_html(self) -> SafeHtml:
@@ -1022,7 +1032,8 @@ class TopicMentionNode(LoudMentionNode):
     def as_text(self) -> str:
         return "@**topic**"
 
-    def zulip_class(self) -> str:
+    @staticmethod
+    def zulip_class() -> str:
         return "topic-mention"
 
     def as_html(self) -> SafeHtml:
@@ -1046,7 +1057,8 @@ class TopicMentionSilentNode(SilentMentionNode):
     def as_text(self) -> str:
         return "@_**topic**"
 
-    def zulip_class(self) -> str:
+    @staticmethod
+    def zulip_class() -> str:
         return "topic-mention silent"
 
     def as_html(self) -> SafeHtml:
@@ -1073,7 +1085,8 @@ class UserGroupMentionNode(LoudMentionNode):
     def as_text(self) -> str:
         return f"[ GROUP {self.name} {self.group_id} ]"
 
-    def zulip_class(self) -> str:
+    @staticmethod
+    def zulip_class() -> str:
         return "user-group-mention"
 
     def as_html(self) -> SafeHtml:
@@ -1100,7 +1113,8 @@ class UserGroupMentionSilentNode(SilentMentionNode):
     def as_text(self) -> str:
         return f"[ GROUP _{self.name} {self.group_id} ]"
 
-    def zulip_class(self) -> str:
+    @staticmethod
+    def zulip_class() -> str:
         return "user-group-mention silent"
 
     def as_html(self) -> SafeHtml:
@@ -1127,7 +1141,8 @@ class UserMentionNode(LoudMentionNode):
     def as_text(self) -> str:
         return f"[ {self.name} {self.user_id} ]"
 
-    def zulip_class(self) -> str:
+    @staticmethod
+    def zulip_class() -> str:
         return "user-mention"
 
     def as_html(self) -> SafeHtml:
@@ -1154,7 +1169,8 @@ class UserMentionSilentNode(SilentMentionNode):
     def as_text(self) -> str:
         return f"[ _{self.name} {self.user_id} ]"
 
-    def zulip_class(self) -> str:
+    @staticmethod
+    def zulip_class() -> str:
         return "user-mention silent"
 
     def as_html(self) -> SafeHtml:
