@@ -997,18 +997,20 @@ class PygmentsCodeBlockNode(BaseNode):
     def as_html(self) -> SafeHtml:
         return self.html
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "PygmentsCodeBlockNode":
+        restrict(elem, "div", "class", "data-code-language")
+        html = get_html(elem)
+        lang = maybe_get_string(elem, "data-code-language")
+        content = text_content(elem)
+        return PygmentsCodeBlockNode(
+            html=SafeHtml.trust(html), lang=lang, content=content
+        )
+
 
 """
 Custom validators follow.
 """
-
-
-def get_code_block_node(elem: TagElement) -> PygmentsCodeBlockNode:
-    restrict(elem, "div", "class", "data-code-language")
-    html = get_html(elem)
-    lang = maybe_get_string(elem, "data-code-language")
-    content = text_content(elem)
-    return PygmentsCodeBlockNode(html=SafeHtml.trust(html), lang=lang, content=content)
 
 
 def get_emoji_image_node(elem: TagElement) -> EmojiImageNode:
@@ -1405,7 +1407,7 @@ def get_node(elem: TagElement) -> BaseNode:
 
     if elem.tag == "div":
         if elem_class == "codehilite":
-            return get_code_block_node(elem)
+            return PygmentsCodeBlockNode.from_tag_element(elem)
         if elem_class == "spoiler-block":
             return get_spoiler_node(elem)
         if elem_class == "message_inline_image":
