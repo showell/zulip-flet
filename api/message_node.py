@@ -258,7 +258,7 @@ And then some more basic classes follow.
 """
 
 
-class LinkNode(PhrasingNode):
+class LinkNode(PhrasingNode, ABC):
     pass
 
 
@@ -706,6 +706,16 @@ class MessageLinkNode(LinkNode, ContainerNode):
         href = self.href
         return self.tag("a", class_=self.zulip_class(), href=href)
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "MessageLinkNode":
+        restrict(elem, "a", "class", "href")
+        href = get_string(elem, "href")
+        children = get_phrasing_nodes(elem)
+        return MessageLinkNode(
+            href=href,
+            children=children,
+        )
+
 
 class SpoilerContentNode(ContainerNode):
     # we only need this silly field in order to
@@ -722,6 +732,17 @@ class SpoilerContentNode(ContainerNode):
         else:
             return self.tag("div", class_=class_, aria_hidden="true")
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "SpoilerContentNode":
+        restrict(elem, "div", "class", "aria-hidden")
+        ensure_class(elem, "spoiler-content")
+        ensure_attribute(elem, "aria-hidden", "true")
+        aria_attribute_comes_first = list(elem.attrib.keys())[0] == "aria-hidden"
+        return SpoilerContentNode(
+            children=get_child_nodes(elem),
+            aria_attribute_comes_first=aria_attribute_comes_first,
+        )
+
 
 class SpoilerHeaderNode(ContainerNode):
     def zulip_class(self) -> str:
@@ -729,6 +750,12 @@ class SpoilerHeaderNode(ContainerNode):
 
     def as_html(self) -> SafeHtml:
         return self.block_tag("div", class_=self.zulip_class())
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "SpoilerHeaderNode":
+        restrict(elem, "div", "class")
+        ensure_class(elem, "spoiler-header")
+        return SpoilerHeaderNode(children=get_child_nodes(elem, ignore_newlines=True))
 
 
 class SpoilerNode(BaseNode):
@@ -751,6 +778,15 @@ class SpoilerNode(BaseNode):
             inner=SafeHtml.combine([header, content]),
             class_=self.zulip_class(),
         )
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "SpoilerNode":
+        restrict(elem, "div", "class")
+        ensure_class(elem, "spoiler-block")
+        header_elem, content_elem = get_two_children(elem)
+        header = SpoilerHeaderNode.from_tag_element(header_elem)
+        content = SpoilerContentNode.from_tag_element(content_elem)
+        return SpoilerNode(header=header, content=content)
 
 
 class StreamLinkNode(LinkNode, ContainerNode):
@@ -1176,42 +1212,6 @@ Custom validators follow.
 """
 
 
-def get_message_link_node(elem: TagElement) -> MessageLinkNode:
-    restrict(elem, "a", "class", "href")
-    href = get_string(elem, "href")
-    children = get_phrasing_nodes(elem)
-    return MessageLinkNode(
-        href=href,
-        children=children,
-    )
-
-
-def get_spoiler_content(elem: TagElement) -> SpoilerContentNode:
-    restrict(elem, "div", "class", "aria-hidden")
-    ensure_class(elem, "spoiler-content")
-    ensure_attribute(elem, "aria-hidden", "true")
-    aria_attribute_comes_first = list(elem.attrib.keys())[0] == "aria-hidden"
-    return SpoilerContentNode(
-        children=get_child_nodes(elem),
-        aria_attribute_comes_first=aria_attribute_comes_first,
-    )
-
-
-def get_spoiler_header(elem: TagElement) -> SpoilerHeaderNode:
-    restrict(elem, "div", "class")
-    ensure_class(elem, "spoiler-header")
-    return SpoilerHeaderNode(children=get_child_nodes(elem, ignore_newlines=True))
-
-
-def get_spoiler_node(elem: TagElement) -> SpoilerNode:
-    restrict(elem, "div", "class")
-    ensure_class(elem, "spoiler-block")
-    header_elem, content_elem = get_two_children(elem)
-    header = get_spoiler_header(header_elem)
-    content = get_spoiler_content(content_elem)
-    return SpoilerNode(header=header, content=content)
-
-
 def get_table_cell_alignment(elem: TagElement) -> str | None:
     restrict_attributes(elem, "style")
     style = maybe_get_string(elem, "style")
@@ -1322,7 +1322,7 @@ def get_link_node(elem: TagElement) -> LinkNode:
 
     if elem.tag == "a":
         if elem_class == "message-link":
-            return get_message_link_node(elem)
+            return MessageLinkNode.from_tag_element(elem)
 
         if elem_class == "stream":
             return StreamLinkNode.from_tag_element(elem)
@@ -1449,7 +1449,7 @@ def get_node(elem: TagElement) -> BaseNode:
         if elem_class == "codehilite":
             return PygmentsCodeBlockNode.from_tag_element(elem)
         if elem_class == "spoiler-block":
-            return get_spoiler_node(elem)
+            return SpoilerNode.from_tag_element(elem)
         if elem_class == "message_inline_image":
             return InlineImageNode.from_tag_element(elem)
         if elem_class == "message_inline_image message_inline_video":
