@@ -684,6 +684,22 @@ class ChannelWildcardMentionNode(LoudMentionNode):
             data_user_id="*",
         )
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "ChannelWildcardMentionNode":
+        restrict(elem, "span", "class", "data-user-id")
+        name = ensure_only_text(elem)
+        ensure_class(elem, "user-mention channel-wildcard-mention")
+        ensure_attribute(elem, "data-user-id", "*")
+
+        # Fight mypy being dumb about literals.
+        if name == "@all":
+            return ChannelWildcardMentionNode(name="@all")
+        if name == "@channel":
+            return ChannelWildcardMentionNode(name="@channel")
+        if name == "@everyone":
+            return ChannelWildcardMentionNode(name="@everyone")
+        raise IllegalMessage("bad mention")
+
 
 class ChannelWildcardMentionSilentNode(SilentMentionNode):
     name: Literal["all", "channel", "everyone"]
@@ -868,22 +884,6 @@ class PygmentsCodeBlockNode(BaseNode):
 """
 Custom validators follow.
 """
-
-
-def get_channel_wildcard_mention_node(elem: TagElement) -> ChannelWildcardMentionNode:
-    restrict(elem, "span", "class", "data-user-id")
-    name = ensure_only_text(elem)
-    ensure_class(elem, "user-mention channel-wildcard-mention")
-    ensure_attribute(elem, "data-user-id", "*")
-
-    # Fight mypy being dumb about literals.
-    if name == "@all":
-        return ChannelWildcardMentionNode(name="@all")
-    if name == "@channel":
-        return ChannelWildcardMentionNode(name="@channel")
-    if name == "@everyone":
-        return ChannelWildcardMentionNode(name="@everyone")
-    raise IllegalMessage("bad mention")
 
 
 def get_channel_wildcard_mention_silent_node(
@@ -1266,7 +1266,7 @@ def get_loud_mention_node(elem: TagElement) -> LoudMentionNode | None:
     if elem_class == "user-group-mention":
         return get_user_group_mention_node(elem)
     if elem_class == "user-mention channel-wildcard-mention":
-        return get_channel_wildcard_mention_node(elem)
+        return ChannelWildcardMentionNode.from_tag_element(elem)
     if elem_class == "user-mention":
         return get_user_mention_node(elem)
 
