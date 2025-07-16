@@ -387,25 +387,51 @@ include custom thingies.
 """
 
 
+class TextAlignment(BaseModel):
+    value: Literal["center", "left", "right"] | None
+
+    def as_style(self) -> str | None:
+        if self.value is None:
+            return None
+        else:
+            return f"text-align: {self.value};"
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "TextAlignment":
+        restrict_attributes(elem, "style")
+        style = maybe_get_string(elem, "style")
+        if style is None:
+            return TextAlignment(value=None)
+        label, value = style.strip(";").split(": ")
+        ensure_equal(label, "text-align")
+        if value == "center":
+            return TextAlignment(value="center")
+        if value == "left":
+            return TextAlignment(value="left")
+        if value == "right":
+            return TextAlignment(value="right")
+        raise IllegalMessage("bad alignment value")
+
+
 class ThNode(ContainerNode):
-    text_align: str | None
+    text_align: TextAlignment
 
     def as_text(self) -> str:
-        return f"    TH: {self.children_text()} ({self.text_align})\n"
+        return f"    TH: {self.children_text()} ({self.text_align.value})\n"
 
     def as_html(self) -> SafeHtml:
-        style = f"text-align: {self.text_align};" if self.text_align else None
+        style = self.text_align.as_style()
         return self.tag("th", style=style)
 
 
 class TdNode(ContainerNode):
-    text_align: str | None
+    text_align: TextAlignment
 
     def as_text(self) -> str:
-        return f"    TD: {self.children_text()} ({self.text_align})\n"
+        return f"    TD: {self.children_text()} ({self.text_align.value})\n"
 
     def as_html(self) -> SafeHtml:
-        style = f"text-align: {self.text_align};" if self.text_align else None
+        style = self.text_align.as_style()
         return self.tag("td", style=style)
 
 
@@ -1212,22 +1238,10 @@ Custom validators follow.
 """
 
 
-def get_table_cell_alignment(elem: TagElement) -> str | None:
-    restrict_attributes(elem, "style")
-    style = maybe_get_string(elem, "style")
-    if style is None:
-        return None
-    label, value = style.strip(";").split(": ")
-    ensure_equal(label, "text-align")
-    if value not in ("center", "left", "right"):
-        raise IllegalMessage("bad alignment value")
-    return value
-
-
 def get_table_node(elem: TagElement) -> TableNode:
     def get_thead_node(thead: TagElement) -> THeadNode:
         def get_th_node(th: TagElement) -> ThNode:
-            text_align = get_table_cell_alignment(th)
+            text_align = TextAlignment.from_tag_element(th)
             children = get_child_nodes(th)
             return ThNode(text_align=text_align, children=children)
 
@@ -1238,7 +1252,7 @@ def get_table_node(elem: TagElement) -> TableNode:
     def get_tbody_node(tbody: TagElement) -> TBodyNode:
         def get_tr_node(tr: TagElement) -> TrNode:
             def get_td_node(td: TagElement) -> TdNode:
-                text_align = get_table_cell_alignment(td)
+                text_align = TextAlignment.from_tag_element(td)
                 children = get_child_nodes(td)
                 return TdNode(text_align=text_align, children=children)
 
