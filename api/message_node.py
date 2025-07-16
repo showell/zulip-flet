@@ -321,6 +321,18 @@ class ListItemNode(ContainerNode):
 class ListNode(BaseNode):
     children: Sequence[ListItemNode]
 
+    @staticmethod
+    def get_list_item_nodes(elem: TagElement) -> list[ListItemNode]:
+        children: list[ListItemNode] = []
+
+        for c in elem.children:
+            if isinstance(c, TextElement):
+                ensure_newline(c)
+            elif isinstance(c, TagElement):
+                children.append(ListItemNode.from_tag_element(c))
+
+        return children
+
 
 class OrderedListNode(ListNode):
     start: int | None
@@ -340,6 +352,13 @@ class OrderedListNode(ListNode):
             start=start_attr,
         )
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "OrderedListNode":
+        restrict(elem, "ol", "start")
+        start = get_optional_int(elem, "start")
+        children = ListNode.get_list_item_nodes(elem)
+        return OrderedListNode(children=children, start=start)
+
 
 class UnorderedListNode(ListNode):
     def as_text(self) -> str:
@@ -351,6 +370,12 @@ class UnorderedListNode(ListNode):
             tag="ul",
             inner=list_items,
         )
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "UnorderedListNode":
+        restrict_attributes(elem)
+        children = ListNode.get_list_item_nodes(elem)
+        return UnorderedListNode(children=children)
 
 
 """
@@ -1151,25 +1176,6 @@ Custom validators follow.
 """
 
 
-def get_list_item_nodes(elem: TagElement) -> list[ListItemNode]:
-    children: list[ListItemNode] = []
-
-    for c in elem.children:
-        if isinstance(c, TextElement):
-            ensure_newline(c)
-        elif isinstance(c, TagElement):
-            children.append(ListItemNode.from_tag_element(c))
-
-    return children
-
-
-def get_ordered_list_node(elem: TagElement) -> OrderedListNode:
-    restrict(elem, "ol", "start")
-    start = get_optional_int(elem, "start")
-    children = get_list_item_nodes(elem)
-    return OrderedListNode(children=children, start=start)
-
-
 def get_message_link_node(elem: TagElement) -> MessageLinkNode:
     restrict(elem, "a", "class", "href")
     href = get_string(elem, "href")
@@ -1267,12 +1273,6 @@ def get_timestamp_error_node(elem: TagElement) -> TimeStampErrorNode:
     ensure_class(elem, "timestamp-error")
     text = ensure_only_text(elem)
     return TimeStampErrorNode(text=text)
-
-
-def get_unordered_list_node(elem: TagElement) -> UnorderedListNode:
-    restrict_attributes(elem)
-    children = get_list_item_nodes(elem)
-    return UnorderedListNode(children=children)
 
 
 """
@@ -1409,10 +1409,10 @@ def get_child_nodes(elem: TagElement, ignore_newlines: bool = False) -> list[Bas
 
 def get_list_node(elem: TagElement) -> ListNode:
     if elem.tag == "ol":
-        return get_ordered_list_node(elem)
+        return OrderedListNode.from_tag_element(elem)
 
     if elem.tag == "ul":
-        return get_unordered_list_node(elem)
+        return UnorderedListNode.from_tag_element(elem)
 
     raise IllegalMessage(f"Unsupported tag {elem.tag}")
 
