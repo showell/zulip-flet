@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Callable, Literal, Optional, Sequence
 
+import emoji
+
 from html_element import (
     Element,
     IllegalMessage,
@@ -540,8 +542,14 @@ class EmojiSpanNode(SpanNode):
         for c in unicode_hexes:
             try:
                 unicode_point = int(c, 16)
+                chr(unicode_point)
             except ValueError:
                 raise IllegalMessage(f"bad unicode point: {c}")
+            """
+            Ideally we would restrict unicode values, but simple
+            checks like emoji.is_emoji (from pip install emoji)
+            are too restrictive.
+            """
             unicode_points.append(unicode_point)
         ensure_contains_text(elem, f":{title.replace(' ', '_')}:")
         return EmojiSpanNode(title=title, unicode_points=unicode_points)
