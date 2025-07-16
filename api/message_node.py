@@ -242,6 +242,13 @@ class TexErrorNode(SpanNode, ParseErrorNode):
     def zulip_class(self) -> str:
         return "tex-error"
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "TexErrorNode":
+        restrict(elem, "span", "class")
+        ensure_class(elem, "tex-error")
+        text = ensure_only_text(elem)
+        return TexErrorNode(text=text)
+
 
 class TimeStampErrorNode(SpanNode, ParseErrorNode):
     text: str
@@ -251,6 +258,13 @@ class TimeStampErrorNode(SpanNode, ParseErrorNode):
 
     def zulip_class(self) -> str:
         return "timestamp-error"
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "TimeStampErrorNode":
+        restrict(elem, "span", "class")
+        ensure_class(elem, "timestamp-error")
+        text = ensure_only_text(elem)
+        return TimeStampErrorNode(text=text)
 
 
 """
@@ -1241,6 +1255,13 @@ class TimeWidgetNode(PhrasingNode):
             datetime=self.datetime,
         )
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "TimeWidgetNode":
+        restrict(elem, "time", "datetime")
+        datetime = get_string(elem, "datetime")
+        text = ensure_only_text(elem)
+        return TimeWidgetNode(datetime=datetime, text=text)
+
 
 """
 For the two major third-party plugins (pygments and katex),
@@ -1287,32 +1308,6 @@ class PygmentsCodeBlockNode(BaseNode):
         return PygmentsCodeBlockNode(
             html=SafeHtml.trust(html), lang=lang, content=content
         )
-
-
-"""
-Custom validators follow.
-"""
-
-
-def get_tex_error_node(elem: TagElement) -> TexErrorNode:
-    restrict(elem, "span", "class")
-    ensure_class(elem, "tex-error")
-    text = ensure_only_text(elem)
-    return TexErrorNode(text=text)
-
-
-def get_time_widget_node(elem: TagElement) -> TimeWidgetNode:
-    restrict(elem, "time", "datetime")
-    datetime = get_string(elem, "datetime")
-    text = ensure_only_text(elem)
-    return TimeWidgetNode(datetime=datetime, text=text)
-
-
-def get_timestamp_error_node(elem: TagElement) -> TimeStampErrorNode:
-    restrict(elem, "span", "class")
-    ensure_class(elem, "timestamp-error")
-    text = ensure_only_text(elem)
-    return TimeStampErrorNode(text=text)
 
 
 """
@@ -1393,9 +1388,9 @@ def get_span_node(elem: TagElement) -> SpanNode:
     if elem_class in ["katex", "katex-display"]:
         return KatexNode.from_tag_element(elem)
     if elem_class == "tex-error":
-        return get_tex_error_node(elem)
+        return TexErrorNode.from_tag_element(elem)
     if elem_class == "timestamp-error":
-        return get_timestamp_error_node(elem)
+        return TimeStampErrorNode.from_tag_element(elem)
 
     maybe_mention_node = MentionNode.maybe_from_tag_element(elem)
     if maybe_mention_node is not None:
@@ -1428,7 +1423,7 @@ def maybe_get_phrasing_node(elem: Element) -> PhrasingNode | None:
             return get_span_node(elem)
 
         if elem.tag == "time":
-            return get_time_widget_node(elem)
+            return TimeWidgetNode.from_tag_element(elem)
 
     return None
 
