@@ -312,6 +312,11 @@ class ListItemNode(ContainerNode):
     def as_html(self) -> SafeHtml:
         return self.tag("li")
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "ListItemNode":
+        restrict(elem, "li")
+        return ListItemNode(children=get_child_nodes(elem))
+
 
 class ListNode(BaseNode):
     children: Sequence[ListItemNode]
@@ -640,6 +645,26 @@ class InlineVideoNode(BaseNode):
             title=self.title,
         )
         return build_tag(tag="div", inner=anchor, class_=self.zulip_class())
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "InlineVideoNode":
+        restrict(elem, "div", "class")
+        ensure_class(elem, "message_inline_image message_inline_video")
+
+        anchor = get_only_child(elem, "a")
+
+        restrict(anchor, "a", "href", "title")
+        href = get_string(anchor, "href")
+        title = maybe_get_string(anchor, "title")
+
+        video = get_only_child(anchor, "video")
+
+        restrict(video, "video", "preload", "src")
+        ensure_attribute(video, "preload", "metadata")
+        src = get_string(video, "src")
+        ensure_empty(video)
+
+        return InlineVideoNode(href=href, src=src, title=title)
 
 
 class MessageLinkNode(LinkNode, ContainerNode):
@@ -1126,31 +1151,6 @@ Custom validators follow.
 """
 
 
-def get_inline_video_node(elem: TagElement) -> InlineVideoNode:
-    restrict(elem, "div", "class")
-    ensure_class(elem, "message_inline_image message_inline_video")
-
-    anchor = get_only_child(elem, "a")
-
-    restrict(anchor, "a", "href", "title")
-    href = get_string(anchor, "href")
-    title = maybe_get_string(anchor, "title")
-
-    video = get_only_child(anchor, "video")
-
-    restrict(video, "video", "preload", "src")
-    ensure_attribute(video, "preload", "metadata")
-    src = get_string(video, "src")
-    ensure_empty(video)
-
-    return InlineVideoNode(href=href, src=src, title=title)
-
-
-def get_list_item_node(elem: TagElement) -> ListItemNode:
-    restrict(elem, "li")
-    return ListItemNode(children=get_child_nodes(elem))
-
-
 def get_list_item_nodes(elem: TagElement) -> list[ListItemNode]:
     children: list[ListItemNode] = []
 
@@ -1158,7 +1158,7 @@ def get_list_item_nodes(elem: TagElement) -> list[ListItemNode]:
         if isinstance(c, TextElement):
             ensure_newline(c)
         elif isinstance(c, TagElement):
-            children.append(get_list_item_node(c))
+            children.append(ListItemNode.from_tag_element(c))
 
     return children
 
@@ -1453,7 +1453,7 @@ def get_node(elem: TagElement) -> BaseNode:
         if elem_class == "message_inline_image":
             return InlineImageNode.from_tag_element(elem)
         if elem_class == "message_inline_image message_inline_video":
-            return get_inline_video_node(elem)
+            return InlineVideoNode.from_tag_element(elem)
 
         raise IllegalMessage("unexpected div tag")
 
