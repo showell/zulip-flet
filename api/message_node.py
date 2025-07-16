@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Literal, Sequence
+from typing import Callable, Literal, Optional, Sequence
 
 from html_element import (
     Element,
@@ -660,11 +660,43 @@ class MentionNode(SpanNode, ABC):
 
 
 class LoudMentionNode(MentionNode, ABC):
-    pass
+    @staticmethod
+    def maybe_from_tag_element(elem: TagElement) -> Optional["LoudMentionNode"]:
+        if elem.tag != "span":
+            return None
+
+        elem_class = get_string(elem, "class")
+
+        if elem_class == "topic-mention":
+            return TopicMentionNode.from_tag_element(elem)
+        if elem_class == "user-group-mention":
+            return UserGroupMentionNode.from_tag_element(elem)
+        if elem_class == "user-mention channel-wildcard-mention":
+            return ChannelWildcardMentionNode.from_tag_element(elem)
+        if elem_class == "user-mention":
+            return UserMentionNode.from_tag_element(elem)
+
+        return None
 
 
 class SilentMentionNode(MentionNode, ABC):
-    pass
+    @staticmethod
+    def maybe_from_tag_element(elem: TagElement) -> Optional["SilentMentionNode"]:
+        if elem.tag != "span":
+            return None
+
+        elem_class = get_string(elem, "class")
+
+        if elem_class == "topic-mention silent":
+            return TopicMentionSilentNode.from_tag_element(elem)
+        if elem_class == "user-group-mention silent":
+            return UserGroupMentionSilentNode.from_tag_element(elem)
+        if elem_class == "user-mention channel-wildcard-mention silent":
+            return ChannelWildcardMentionSilentNode.from_tag_element(elem)
+        if elem_class == "user-mention silent":
+            return UserMentionSilentNode.from_tag_element(elem)
+
+        return None
 
 
 class ChannelWildcardMentionNode(LoudMentionNode):
@@ -1258,42 +1290,12 @@ def get_link_node(elem: TagElement) -> LinkNode:
     raise IllegalMessage("not a link node")
 
 
-def get_loud_mention_node(elem: TagElement) -> LoudMentionNode | None:
-    elem_class = get_string(elem, "class")
-
-    if elem_class == "topic-mention":
-        return TopicMentionNode.from_tag_element(elem)
-    if elem_class == "user-group-mention":
-        return UserGroupMentionNode.from_tag_element(elem)
-    if elem_class == "user-mention channel-wildcard-mention":
-        return ChannelWildcardMentionNode.from_tag_element(elem)
-    if elem_class == "user-mention":
-        return UserMentionNode.from_tag_element(elem)
-
-    return None
-
-
-def get_silent_mention_node(elem: TagElement) -> SilentMentionNode | None:
-    elem_class = get_string(elem, "class")
-
-    if elem_class == "topic-mention silent":
-        return TopicMentionSilentNode.from_tag_element(elem)
-    if elem_class == "user-group-mention silent":
-        return UserGroupMentionSilentNode.from_tag_element(elem)
-    if elem_class == "user-mention channel-wildcard-mention silent":
-        return ChannelWildcardMentionSilentNode.from_tag_element(elem)
-    if elem_class == "user-mention silent":
-        return UserMentionSilentNode.from_tag_element(elem)
-
-    return None
-
-
 def get_mention_node(elem: TagElement) -> MentionNode | None:
-    loud = get_loud_mention_node(elem)
+    loud = LoudMentionNode.maybe_from_tag_element(elem)
     if loud is not None:
         return loud
 
-    silent = get_silent_mention_node(elem)
+    silent = SilentMentionNode.maybe_from_tag_element(elem)
     if silent is not None:
         return silent
 
