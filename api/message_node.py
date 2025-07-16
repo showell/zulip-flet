@@ -350,6 +350,16 @@ class ListNode(BaseNode, ABC):
     children: Sequence[ListItemNode]
 
     @staticmethod
+    def from_tag_element(elem: TagElement) -> "ListNode":
+        if elem.tag == "ol":
+            return OrderedListNode.from_tag_element(elem)
+
+        if elem.tag == "ul":
+            return UnorderedListNode.from_tag_element(elem)
+
+        raise IllegalMessage(f"Unsupported tag {elem.tag}")
+
+    @staticmethod
     def get_list_item_nodes(elem: TagElement) -> list[ListItemNode]:
         children: list[ListItemNode] = []
 
@@ -1440,16 +1450,6 @@ def get_child_nodes(elem: TagElement, ignore_newlines: bool = False) -> list[Bas
     return children
 
 
-def get_list_node(elem: TagElement) -> ListNode:
-    if elem.tag == "ol":
-        return OrderedListNode.from_tag_element(elem)
-
-    if elem.tag == "ul":
-        return UnorderedListNode.from_tag_element(elem)
-
-    raise IllegalMessage(f"Unsupported tag {elem.tag}")
-
-
 def get_phrasing_nodes(elem: TagElement) -> list[PhrasingNode]:
     children: list[PhrasingNode] = []
 
@@ -1514,7 +1514,7 @@ def get_node(elem: TagElement) -> BaseNode:
         return ThematicBreakNode()
 
     if elem.tag in ["ol", "ul"]:
-        return get_list_node(elem)
+        return ListNode.from_tag_element(elem)
 
     if elem.tag == "p":
         restrict_attributes(elem)
