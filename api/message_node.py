@@ -656,7 +656,17 @@ Zulip supports many different styles of mentioning users.
 
 
 class MentionNode(SpanNode, ABC):
-    pass
+    @staticmethod
+    def maybe_from_tag_element(elem: TagElement) -> Optional["MentionNode"]:
+        loud = LoudMentionNode.maybe_from_tag_element(elem)
+        if loud is not None:
+            return loud
+
+        silent = SilentMentionNode.maybe_from_tag_element(elem)
+        if silent is not None:
+            return silent
+
+        return None
 
 
 class LoudMentionNode(MentionNode, ABC):
@@ -968,6 +978,13 @@ class KatexNode(SpanNode):
     def as_html(self) -> SafeHtml:
         return self.html
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "KatexNode":
+        restrict(elem, "span", "class")
+        tag_class = get_class(elem, "katex", "katex-display")
+        html = get_html(elem)
+        return KatexNode(html=SafeHtml.trust(html), tag_class=tag_class)
+
 
 class PygmentsCodeBlockNode(BaseNode):
     html: SafeHtml
@@ -1039,13 +1056,6 @@ def get_img_node(elem: TagElement) -> InlineImageChildImgNode:
         original_dimensions=original_dimensions,
         original_content_type=original_content_type,
     )
-
-
-def get_katex_node(elem: TagElement) -> KatexNode:
-    restrict(elem, "span", "class")
-    tag_class = get_class(elem, "katex", "katex-display")
-    html = get_html(elem)
-    return KatexNode(html=SafeHtml.trust(html), tag_class=tag_class)
 
 
 def get_inline_image_node(elem: TagElement) -> InlineImageNode:
@@ -1290,18 +1300,6 @@ def get_link_node(elem: TagElement) -> LinkNode:
     raise IllegalMessage("not a link node")
 
 
-def get_mention_node(elem: TagElement) -> MentionNode | None:
-    loud = LoudMentionNode.maybe_from_tag_element(elem)
-    if loud is not None:
-        return loud
-
-    silent = SilentMentionNode.maybe_from_tag_element(elem)
-    if silent is not None:
-        return silent
-
-    return None
-
-
 def get_span_node(elem: TagElement) -> SpanNode:
     elem_class = maybe_get_string(elem, "class")
 
@@ -1311,13 +1309,13 @@ def get_span_node(elem: TagElement) -> SpanNode:
     if elem_class.startswith("emoji "):
         return get_emoji_span_node(elem)
     if elem_class in ["katex", "katex-display"]:
-        return get_katex_node(elem)
+        return KatexNode.from_tag_element(elem)
     if elem_class == "tex-error":
         return get_tex_error_node(elem)
     if elem_class == "timestamp-error":
         return get_timestamp_error_node(elem)
 
-    maybe_mention_node = get_mention_node(elem)
+    maybe_mention_node = MentionNode.maybe_from_tag_element(elem)
     if maybe_mention_node is not None:
         return maybe_mention_node
 
