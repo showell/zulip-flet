@@ -318,7 +318,7 @@ class ListItemNode(ContainerNode):
         return ListItemNode(children=get_child_nodes(elem))
 
 
-class ListNode(BaseNode):
+class ListNode(BaseNode, ABC):
     children: Sequence[ListItemNode]
 
     @staticmethod
@@ -398,7 +398,6 @@ class TextAlignment(BaseModel):
 
     @staticmethod
     def from_tag_element(elem: TagElement) -> "TextAlignment":
-        restrict_attributes(elem, "style")
         style = maybe_get_string(elem, "style")
         if style is None:
             return TextAlignment(value=None)
@@ -423,6 +422,13 @@ class ThNode(ContainerNode):
         style = self.text_align.as_style()
         return self.tag("th", style=style)
 
+    @staticmethod
+    def from_tag_element(th: TagElement) -> "ThNode":
+        restrict(th, "th", "style")
+        text_align = TextAlignment.from_tag_element(th)
+        children = get_child_nodes(th)
+        return ThNode(text_align=text_align, children=children)
+
 
 class TdNode(ContainerNode):
     text_align: TextAlignment
@@ -433,6 +439,13 @@ class TdNode(ContainerNode):
     def as_html(self) -> SafeHtml:
         style = self.text_align.as_style()
         return self.tag("td", style=style)
+
+    @staticmethod
+    def from_tag_element(td: TagElement) -> "TdNode":
+        restrict(td, "td", "style")
+        text_align = TextAlignment.from_tag_element(td)
+        children = get_child_nodes(td)
+        return TdNode(text_align=text_align, children=children)
 
 
 class TrNode(BaseNode):
@@ -553,7 +566,8 @@ class EmojiImageNode(LinkNode):
     def as_text(self) -> str:
         return f":{self.title}:"
 
-    def zulip_class(self) -> str:
+    @staticmethod
+    def zulip_class() -> str:
         return "emoji"
 
     def as_html(self) -> SafeHtml:
@@ -1240,23 +1254,13 @@ Custom validators follow.
 
 def get_table_node(elem: TagElement) -> TableNode:
     def get_thead_node(thead: TagElement) -> THeadNode:
-        def get_th_node(th: TagElement) -> ThNode:
-            text_align = TextAlignment.from_tag_element(th)
-            children = get_child_nodes(th)
-            return ThNode(text_align=text_align, children=children)
-
         tr = get_only_block_child(thead, "tr")
-        ths = [get_th_node(th) for th in get_tag_children(tr)]
+        ths = [ThNode.from_tag_element(th) for th in get_tag_children(tr)]
         return THeadNode(ths=ths)
 
     def get_tbody_node(tbody: TagElement) -> TBodyNode:
         def get_tr_node(tr: TagElement) -> TrNode:
-            def get_td_node(td: TagElement) -> TdNode:
-                text_align = TextAlignment.from_tag_element(td)
-                children = get_child_nodes(td)
-                return TdNode(text_align=text_align, children=children)
-
-            tds = [get_td_node(td) for td in get_tag_children(tr)]
+            tds = [TdNode.from_tag_element(td) for td in get_tag_children(tr)]
             return TrNode(tds=tds)
 
         trs = [get_tr_node(tr) for tr in get_tag_children(tbody)]
