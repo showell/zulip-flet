@@ -3,8 +3,9 @@ import sys
 
 sys.path.append("api")
 from api.database import Database
+from api.html_element import IllegalMessage
 from api.message_node import BaseNode
-from api.message_parser import IllegalMessage, get_message_node
+from api.message_parser import get_message_node
 
 
 def test_valid_messages(messages):
