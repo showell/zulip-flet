@@ -284,8 +284,11 @@ class ListItemNode(ContainerNode):
         return self.tag("li")
 
 
-class OrderedListNode(BaseNode):
+class ListNode(BaseNode):
     children: Sequence[ListItemNode]
+
+
+class OrderedListNode(ListNode):
     start: int | None
 
     def as_text(self) -> str:
@@ -304,9 +307,7 @@ class OrderedListNode(BaseNode):
         )
 
 
-class UnorderedListNode(BaseNode):
-    children: Sequence[ListItemNode]
-
+class UnorderedListNode(ListNode):
     def as_text(self) -> str:
         return "".join("\n    - " + c.as_text() for c in self.children)
 
