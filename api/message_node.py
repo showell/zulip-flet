@@ -124,7 +124,7 @@ We eventually want more refinement here.
 """
 
 
-class ContainerNode(BaseNode):
+class ContainerNode(BaseNode, ABC):
     children: Sequence[BaseNode]
 
     def children_text(self) -> str:
@@ -460,6 +460,27 @@ class InlineImageChildImgNode(BaseNode):
             src=self.src,
         )
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "InlineImageChildImgNode":
+        restrict(
+            elem,
+            "img",
+            "src",
+            "data-animated",
+            "data-original-dimensions",
+            "data-original-content-type",
+        )
+        src = get_string(elem, "src")
+        animated = get_bool(elem, "data-animated")
+        original_dimensions = maybe_get_string(elem, "data-original-dimensions")
+        original_content_type = maybe_get_string(elem, "data-original-content-type")
+        return InlineImageChildImgNode(
+            src=src,
+            animated=animated,
+            original_dimensions=original_dimensions,
+            original_content_type=original_content_type,
+        )
+
 
 """
 The following classes can be considered to be
@@ -575,6 +596,22 @@ class InlineImageNode(BaseNode):
             tag="div",
             inner=anchor,
             class_=self.zulip_class(),
+        )
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "InlineImageNode":
+        restrict(elem, "div", "class")
+        ensure_class(elem, "message_inline_image")
+        anchor = get_only_child(elem, "a")
+        restrict(anchor, "a", "href", "title")
+        href = get_string(anchor, "href")
+        title = maybe_get_string(anchor, "title")
+        img = get_only_child(anchor, "img")
+
+        return InlineImageNode(
+            img=InlineImageChildImgNode.from_tag_element(img),
+            href=href,
+            title=title,
         )
 
 
@@ -1089,43 +1126,6 @@ Custom validators follow.
 """
 
 
-def get_img_node(elem: TagElement) -> InlineImageChildImgNode:
-    restrict(
-        elem,
-        "img",
-        "src",
-        "data-animated",
-        "data-original-dimensions",
-        "data-original-content-type",
-    )
-    src = get_string(elem, "src")
-    animated = get_bool(elem, "data-animated")
-    original_dimensions = maybe_get_string(elem, "data-original-dimensions")
-    original_content_type = maybe_get_string(elem, "data-original-content-type")
-    return InlineImageChildImgNode(
-        src=src,
-        animated=animated,
-        original_dimensions=original_dimensions,
-        original_content_type=original_content_type,
-    )
-
-
-def get_inline_image_node(elem: TagElement) -> InlineImageNode:
-    restrict(elem, "div", "class")
-    ensure_class(elem, "message_inline_image")
-    anchor = get_only_child(elem, "a")
-    restrict(anchor, "a", "href", "title")
-    href = get_string(anchor, "href")
-    title = maybe_get_string(anchor, "title")
-    img = get_only_child(anchor, "img")
-
-    return InlineImageNode(
-        img=get_img_node(img),
-        href=href,
-        title=title,
-    )
-
-
 def get_inline_video_node(elem: TagElement) -> InlineVideoNode:
     restrict(elem, "div", "class")
     ensure_class(elem, "message_inline_image message_inline_video")
@@ -1451,7 +1451,7 @@ def get_node(elem: TagElement) -> BaseNode:
         if elem_class == "spoiler-block":
             return get_spoiler_node(elem)
         if elem_class == "message_inline_image":
-            return get_inline_image_node(elem)
+            return InlineImageNode.from_tag_element(elem)
         if elem_class == "message_inline_image message_inline_video":
             return get_inline_video_node(elem)
 
