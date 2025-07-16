@@ -489,6 +489,15 @@ class EmojiImageNode(LinkNode):
             title=self.title,
         )
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "EmojiImageNode":
+        restrict(elem, "img", "alt", "class", "src", "title")
+        alt = get_string(elem, "alt")
+        src = get_string(elem, "src")
+        title = get_string(elem, "title")
+        ensure_equal(alt, f":{title.replace(' ', '_')}:")
+        return EmojiImageNode(src=src, title=title)
+
 
 class EmojiSpanNode(SpanNode):
     unicodes: Sequence[str]
@@ -512,6 +521,23 @@ class EmojiSpanNode(SpanNode):
             role="img",
             title=title,
         )
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "EmojiSpanNode":
+        restrict(elem, "span", "aria-label", "class", "role", "title")
+        title = get_string(elem, "title")
+        ensure_attribute(elem, "role", "img")
+        ensure_attribute(elem, "aria-label", title)
+        elem_class = get_string(elem, "class")
+        if not elem_class.startswith("emoji "):
+            raise IllegalMessage("bad class for emoji span")
+        _, emoji_unicode_class = elem_class.split(" ")
+        emoji_prefix, *unicodes = emoji_unicode_class.split("-")
+        ensure_equal(emoji_prefix, "emoji")
+        if not unicodes:
+            raise IllegalMessage("bad unicode values in class for emoji")
+        ensure_contains_text(elem, f":{title.replace(' ', '_')}:")
+        return EmojiSpanNode(title=title, unicodes=unicodes)
 
 
 class InlineImageNode(BaseNode):
@@ -1013,32 +1039,6 @@ Custom validators follow.
 """
 
 
-def get_emoji_image_node(elem: TagElement) -> EmojiImageNode:
-    restrict(elem, "img", "alt", "class", "src", "title")
-    alt = get_string(elem, "alt")
-    src = get_string(elem, "src")
-    title = get_string(elem, "title")
-    ensure_equal(alt, f":{title.replace(' ', '_')}:")
-    return EmojiImageNode(src=src, title=title)
-
-
-def get_emoji_span_node(elem: TagElement) -> EmojiSpanNode:
-    restrict(elem, "span", "aria-label", "class", "role", "title")
-    title = get_string(elem, "title")
-    ensure_attribute(elem, "role", "img")
-    ensure_attribute(elem, "aria-label", title)
-    elem_class = get_string(elem, "class")
-    if not elem_class.startswith("emoji "):
-        raise IllegalMessage("bad class for emoji span")
-    _, emoji_unicode_class = elem_class.split(" ")
-    emoji_prefix, *unicodes = emoji_unicode_class.split("-")
-    ensure_equal(emoji_prefix, "emoji")
-    if not unicodes:
-        raise IllegalMessage("bad unicode values in class for emoji")
-    ensure_contains_text(elem, f":{title.replace(' ', '_')}:")
-    return EmojiSpanNode(title=title, unicodes=unicodes)
-
-
 def get_img_node(elem: TagElement) -> InlineImageChildImgNode:
     restrict(
         elem,
@@ -1296,7 +1296,7 @@ def get_link_node(elem: TagElement) -> LinkNode:
 
     if elem.tag == "img":
         if elem_class == "emoji":
-            return get_emoji_image_node(elem)
+            return EmojiImageNode.from_tag_element(elem)
         raise IllegalMessage("unexpected img tag")
 
     raise IllegalMessage("not a link node")
@@ -1309,7 +1309,7 @@ def get_span_node(elem: TagElement) -> SpanNode:
         raise IllegalMessage("span tags need a class")
 
     if elem_class.startswith("emoji "):
-        return get_emoji_span_node(elem)
+        return EmojiSpanNode.from_tag_element(elem)
     if elem_class in ["katex", "katex-display"]:
         return KatexNode.from_tag_element(elem)
     if elem_class == "tex-error":
