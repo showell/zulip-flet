@@ -500,15 +500,15 @@ class EmojiImageNode(LinkNode):
 
 
 class EmojiSpanNode(SpanNode):
-    unicodes: Sequence[str]
+    unicode_points: Sequence[int]
     title: str
 
     def as_text(self) -> str:
-        c = " ".join(chr(int(unicode, 16)) for unicode in self.unicodes)
+        c = " ".join(chr(n) for n in self.unicode_points)
         return f"{c} (:{self.title})"
 
     def zulip_class(self) -> str:
-        unicode_suffix = "-".join(self.unicodes)
+        unicode_suffix = "-".join(f"{num:04x}" for num in self.unicode_points)
         return f"emoji emoji-{unicode_suffix}"
 
     def as_html(self) -> SafeHtml:
@@ -532,12 +532,19 @@ class EmojiSpanNode(SpanNode):
         if not elem_class.startswith("emoji "):
             raise IllegalMessage("bad class for emoji span")
         _, emoji_unicode_class = elem_class.split(" ")
-        emoji_prefix, *unicodes = emoji_unicode_class.split("-")
+        emoji_prefix, *unicode_hexes = emoji_unicode_class.split("-")
         ensure_equal(emoji_prefix, "emoji")
-        if not unicodes:
+        if not unicode_hexes:
             raise IllegalMessage("bad unicode values in class for emoji")
+        unicode_points = []
+        for c in unicode_hexes:
+            try:
+                unicode_point = int(c, 16)
+            except ValueError:
+                raise IllegalMessage(f"bad unicode point: {c}")
+            unicode_points.append(unicode_point)
         ensure_contains_text(elem, f":{title.replace(' ', '_')}:")
-        return EmojiSpanNode(title=title, unicodes=unicodes)
+        return EmojiSpanNode(title=title, unicode_points=unicode_points)
 
 
 class InlineImageNode(BaseNode):
