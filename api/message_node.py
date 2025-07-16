@@ -718,6 +718,24 @@ class ChannelWildcardMentionSilentNode(SilentMentionNode):
             data_user_id="*",
         )
 
+    @staticmethod
+    def from_tag_element(
+        elem: TagElement,
+    ) -> "ChannelWildcardMentionSilentNode":
+        restrict(elem, "span", "class", "data-user-id")
+        name = ensure_only_text(elem)
+        ensure_class(elem, "user-mention channel-wildcard-mention silent")
+        ensure_attribute(elem, "data-user-id", "*")
+
+        # Fight mypy being dumb about literals.
+        if name == "all":
+            return ChannelWildcardMentionSilentNode(name="all")
+        if name == "channel":
+            return ChannelWildcardMentionSilentNode(name="channel")
+        if name == "everyone":
+            return ChannelWildcardMentionSilentNode(name="everyone")
+        raise IllegalMessage("bad mention")
+
 
 class TopicMentionNode(LoudMentionNode):
     def as_text(self) -> str:
@@ -733,6 +751,15 @@ class TopicMentionNode(LoudMentionNode):
             class_=self.zulip_class(),
         )
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "TopicMentionNode":
+        restrict(elem, "span", "class")
+        name = ensure_only_text(elem)
+        if name != "@topic":
+            raise IllegalMessage("bad wildcard mention")
+        ensure_class(elem, "topic-mention")
+        return TopicMentionNode()
+
 
 class TopicMentionSilentNode(SilentMentionNode):
     def as_text(self) -> str:
@@ -747,6 +774,15 @@ class TopicMentionSilentNode(SilentMentionNode):
             inner=escape_text("topic"),
             class_=self.zulip_class(),
         )
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "TopicMentionSilentNode":
+        restrict(elem, "span", "class")
+        name = ensure_only_text(elem)
+        if name != "topic":
+            raise IllegalMessage("bad wildcard mention")
+        ensure_class(elem, "topic-mention silent")
+        return TopicMentionSilentNode()
 
 
 class UserGroupMentionNode(LoudMentionNode):
@@ -767,6 +803,14 @@ class UserGroupMentionNode(LoudMentionNode):
             data_user_group_id=str(self.group_id),
         )
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "UserGroupMentionNode":
+        restrict(elem, "span", "class", "data-user-group-id")
+        ensure_class(elem, "user-group-mention")
+        name = ensure_only_text(elem)
+        group_id = get_database_id(elem, "data-user-group-id")
+        return UserGroupMentionNode(name=name, group_id=group_id)
+
 
 class UserGroupMentionSilentNode(SilentMentionNode):
     name: str
@@ -785,6 +829,14 @@ class UserGroupMentionSilentNode(SilentMentionNode):
             class_=self.zulip_class(),
             data_user_group_id=str(self.group_id),
         )
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "UserGroupMentionSilentNode":
+        restrict(elem, "span", "class", "data-user-group-id")
+        ensure_class(elem, "user-group-mention silent")
+        name = ensure_only_text(elem)
+        group_id = get_database_id(elem, "data-user-group-id")
+        return UserGroupMentionSilentNode(name=name, group_id=group_id)
 
 
 class UserMentionNode(LoudMentionNode):
@@ -805,6 +857,14 @@ class UserMentionNode(LoudMentionNode):
             data_user_id=str(self.user_id),
         )
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "UserMentionNode":
+        restrict(elem, "span", "class", "data-user-id")
+        ensure_class(elem, "user-mention")
+        name = ensure_only_text(elem)
+        user_id = get_database_id(elem, "data-user-id")
+        return UserMentionNode(name=name, user_id=user_id)
+
 
 class UserMentionSilentNode(SilentMentionNode):
     name: str
@@ -823,6 +883,14 @@ class UserMentionSilentNode(SilentMentionNode):
             class_=self.zulip_class(),
             data_user_id=str(self.user_id),
         )
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "UserMentionSilentNode":
+        restrict(elem, "span", "class", "data-user-id")
+        ensure_class(elem, "user-mention silent")
+        name = ensure_only_text(elem)
+        user_id = get_database_id(elem, "data-user-id")
+        return UserMentionSilentNode(name=name, user_id=user_id)
 
 
 """
@@ -884,24 +952,6 @@ class PygmentsCodeBlockNode(BaseNode):
 """
 Custom validators follow.
 """
-
-
-def get_channel_wildcard_mention_silent_node(
-    elem: TagElement,
-) -> ChannelWildcardMentionSilentNode:
-    restrict(elem, "span", "class", "data-user-id")
-    name = ensure_only_text(elem)
-    ensure_class(elem, "user-mention channel-wildcard-mention silent")
-    ensure_attribute(elem, "data-user-id", "*")
-
-    # Fight mypy being dumb about literals.
-    if name == "all":
-        return ChannelWildcardMentionSilentNode(name="all")
-    if name == "channel":
-        return ChannelWildcardMentionSilentNode(name="channel")
-    if name == "everyone":
-        return ChannelWildcardMentionSilentNode(name="everyone")
-    raise IllegalMessage("bad mention")
 
 
 def get_code_block_node(elem: TagElement) -> PygmentsCodeBlockNode:
@@ -1135,60 +1185,10 @@ def get_timestamp_error_node(elem: TagElement) -> TimeStampErrorNode:
     return TimeStampErrorNode(text=text)
 
 
-def get_topic_mention_node(elem: TagElement) -> TopicMentionNode:
-    restrict(elem, "span", "class")
-    name = ensure_only_text(elem)
-    if name != "@topic":
-        raise IllegalMessage("bad wildcard mention")
-    ensure_class(elem, "topic-mention")
-    return TopicMentionNode()
-
-
-def get_topic_mention_silent_node(elem: TagElement) -> TopicMentionSilentNode:
-    restrict(elem, "span", "class")
-    name = ensure_only_text(elem)
-    if name != "topic":
-        raise IllegalMessage("bad wildcard mention")
-    ensure_class(elem, "topic-mention silent")
-    return TopicMentionSilentNode()
-
-
 def get_unordered_list_node(elem: TagElement) -> UnorderedListNode:
     restrict_attributes(elem)
     children = get_list_item_nodes(elem)
     return UnorderedListNode(children=children)
-
-
-def get_user_group_mention_node(elem: TagElement) -> UserGroupMentionNode:
-    restrict(elem, "span", "class", "data-user-group-id")
-    ensure_class(elem, "user-group-mention")
-    name = ensure_only_text(elem)
-    group_id = get_database_id(elem, "data-user-group-id")
-    return UserGroupMentionNode(name=name, group_id=group_id)
-
-
-def get_user_group_mention_silent_node(elem: TagElement) -> UserGroupMentionSilentNode:
-    restrict(elem, "span", "class", "data-user-group-id")
-    ensure_class(elem, "user-group-mention silent")
-    name = ensure_only_text(elem)
-    group_id = get_database_id(elem, "data-user-group-id")
-    return UserGroupMentionSilentNode(name=name, group_id=group_id)
-
-
-def get_user_mention_node(elem: TagElement) -> UserMentionNode:
-    restrict(elem, "span", "class", "data-user-id")
-    ensure_class(elem, "user-mention")
-    name = ensure_only_text(elem)
-    user_id = get_database_id(elem, "data-user-id")
-    return UserMentionNode(name=name, user_id=user_id)
-
-
-def get_user_mention_silent_node(elem: TagElement) -> UserMentionSilentNode:
-    restrict(elem, "span", "class", "data-user-id")
-    ensure_class(elem, "user-mention silent")
-    name = ensure_only_text(elem)
-    user_id = get_database_id(elem, "data-user-id")
-    return UserMentionSilentNode(name=name, user_id=user_id)
 
 
 """
@@ -1262,13 +1262,13 @@ def get_loud_mention_node(elem: TagElement) -> LoudMentionNode | None:
     elem_class = get_string(elem, "class")
 
     if elem_class == "topic-mention":
-        return get_topic_mention_node(elem)
+        return TopicMentionNode.from_tag_element(elem)
     if elem_class == "user-group-mention":
-        return get_user_group_mention_node(elem)
+        return UserGroupMentionNode.from_tag_element(elem)
     if elem_class == "user-mention channel-wildcard-mention":
         return ChannelWildcardMentionNode.from_tag_element(elem)
     if elem_class == "user-mention":
-        return get_user_mention_node(elem)
+        return UserMentionNode.from_tag_element(elem)
 
     return None
 
@@ -1277,13 +1277,13 @@ def get_silent_mention_node(elem: TagElement) -> SilentMentionNode | None:
     elem_class = get_string(elem, "class")
 
     if elem_class == "topic-mention silent":
-        return get_topic_mention_silent_node(elem)
+        return TopicMentionSilentNode.from_tag_element(elem)
     if elem_class == "user-group-mention silent":
-        return get_user_group_mention_silent_node(elem)
+        return UserGroupMentionSilentNode.from_tag_element(elem)
     if elem_class == "user-mention channel-wildcard-mention silent":
-        return get_channel_wildcard_mention_silent_node(elem)
+        return ChannelWildcardMentionSilentNode.from_tag_element(elem)
     if elem_class == "user-mention silent":
-        return get_user_mention_silent_node(elem)
+        return UserMentionSilentNode.from_tag_element(elem)
 
     return None
 
