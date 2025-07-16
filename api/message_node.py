@@ -462,6 +462,12 @@ class TrNode(BaseNode):
         inner = SafeHtml.block_join([td.as_html() for td in self.tds])
         return build_tag(tag="tr", inner=inner)
 
+    @staticmethod
+    def from_tag_element(tr: TagElement) -> "TrNode":
+        restrict(tr, "tr")
+        tds = [TdNode.from_tag_element(td) for td in get_tag_children(tr)]
+        return TrNode(tds=tds)
+
 
 class TBodyNode(BaseNode):
     trs: Sequence[TrNode]
@@ -473,6 +479,12 @@ class TBodyNode(BaseNode):
     def as_html(self) -> SafeHtml:
         inner = SafeHtml.block_join([tr.as_html() for tr in self.trs])
         return build_tag(tag="tbody", inner=inner)
+
+    @staticmethod
+    def from_tag_element(tbody: TagElement) -> "TBodyNode":
+        restrict(tbody, "tbody")
+        trs = [TrNode.from_tag_element(tr) for tr in get_tag_children(tbody)]
+        return TBodyNode(trs=trs)
 
 
 class THeadNode(BaseNode):
@@ -487,6 +499,13 @@ class THeadNode(BaseNode):
         tr = build_tag(tag="tr", inner=ths)
         return build_tag(tag="thead", inner=SafeHtml.block_join([tr]))
 
+    @staticmethod
+    def from_tag_element(thead: TagElement) -> "THeadNode":
+        restrict(thead, "thead")
+        tr = get_only_block_child(thead, "tr")
+        ths = [ThNode.from_tag_element(th) for th in get_tag_children(tr)]
+        return THeadNode(ths=ths)
+
 
 class TableNode(BaseNode):
     thead: THeadNode
@@ -500,6 +519,13 @@ class TableNode(BaseNode):
         tbody = self.tbody.as_html()
         inner = SafeHtml.block_join([thead, tbody])
         return build_tag(tag="table", inner=inner)
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "TableNode":
+        thead_elem, tbody_elem = get_two_block_children(elem)
+        thead = THeadNode.from_tag_element(thead_elem)
+        tbody = TBodyNode.from_tag_element(tbody_elem)
+        return TableNode(thead=thead, tbody=tbody)
 
 
 """
@@ -1268,26 +1294,6 @@ Custom validators follow.
 """
 
 
-def get_table_node(elem: TagElement) -> TableNode:
-    def get_thead_node(thead: TagElement) -> THeadNode:
-        tr = get_only_block_child(thead, "tr")
-        ths = [ThNode.from_tag_element(th) for th in get_tag_children(tr)]
-        return THeadNode(ths=ths)
-
-    def get_tbody_node(tbody: TagElement) -> TBodyNode:
-        def get_tr_node(tr: TagElement) -> TrNode:
-            tds = [TdNode.from_tag_element(td) for td in get_tag_children(tr)]
-            return TrNode(tds=tds)
-
-        trs = [get_tr_node(tr) for tr in get_tag_children(tbody)]
-        return TBodyNode(trs=trs)
-
-    thead_elem, tbody_elem = get_two_block_children(elem)
-    thead = get_thead_node(thead_elem)
-    tbody = get_tbody_node(tbody_elem)
-    return TableNode(thead=thead, tbody=tbody)
-
-
 def get_tex_error_node(elem: TagElement) -> TexErrorNode:
     restrict(elem, "span", "class")
     ensure_class(elem, "tex-error")
@@ -1522,6 +1528,6 @@ def get_node(elem: TagElement) -> BaseNode:
         return ParagraphNode(children=get_child_nodes(elem))
 
     if elem.tag == "table":
-        return get_table_node(elem)
+        return TableNode.from_tag_element(elem)
 
     raise IllegalMessage(f"Unsupported tag {elem.tag}")
