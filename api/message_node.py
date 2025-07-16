@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Callable, Literal, Optional, Sequence
 
-import emoji
-
 from html_element import (
     Element,
     IllegalMessage,
@@ -671,14 +669,13 @@ class SpoilerNode(BaseNode):
 class StreamLinkNode(LinkNode, ContainerNode):
     href: str
     stream_id: int
-    has_topic: bool
 
     def as_text(self) -> str:
         text = " ".join(c.as_text() for c in self.children)
-        return f"[{text}] ({self.href}) (stream id {self.stream_id}, has_topic: {self.has_topic})"
+        return f"[STREAM {text}] ({self.href}) (stream id {self.stream_id})"
 
     def zulip_class(self) -> str:
-        return "stream-topic" if self.has_topic else "stream"
+        return "stream"
 
     def as_html(self) -> SafeHtml:
         return self.tag(
@@ -687,6 +684,44 @@ class StreamLinkNode(LinkNode, ContainerNode):
             data_stream_id=str(self.stream_id),
             href=self.href,
         )
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "StreamLinkNode":
+        restrict(elem, "a", "class", "data-stream-id", "href")
+        ensure_class(elem, "stream")
+        stream_id = get_database_id(elem, "data-stream-id")
+        href = get_string(elem, "href")
+        children = get_phrasing_nodes(elem)
+        return StreamLinkNode(href=href, stream_id=stream_id, children=children)
+
+
+class StreamTopicLinkNode(LinkNode, ContainerNode):
+    href: str
+    stream_id: int
+
+    def as_text(self) -> str:
+        text = " ".join(c.as_text() for c in self.children)
+        return f"[STREAM/TOPIC {text}] ({self.href}) (stream id {self.stream_id})"
+
+    def zulip_class(self) -> str:
+        return "stream-topic"
+
+    def as_html(self) -> SafeHtml:
+        return self.tag(
+            "a",
+            class_=self.zulip_class(),
+            data_stream_id=str(self.stream_id),
+            href=self.href,
+        )
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "StreamTopicLinkNode":
+        restrict(elem, "a", "class", "data-stream-id", "href")
+        ensure_class(elem, "stream-topic")
+        stream_id = get_database_id(elem, "data-stream-id")
+        href = get_string(elem, "href")
+        children = get_phrasing_nodes(elem)
+        return StreamTopicLinkNode(href=href, stream_id=stream_id, children=children)
 
 
 """
@@ -1171,16 +1206,6 @@ def get_spoiler_node(elem: TagElement) -> SpoilerNode:
     return SpoilerNode(header=header, content=content)
 
 
-def get_stream_link_node(elem: TagElement, *, has_topic: bool) -> StreamLinkNode:
-    restrict(elem, "a", "class", "data-stream-id", "href")
-    stream_id = get_database_id(elem, "data-stream-id")
-    href = get_string(elem, "href")
-    children = get_phrasing_nodes(elem)
-    return StreamLinkNode(
-        href=href, stream_id=stream_id, children=children, has_topic=has_topic
-    )
-
-
 def get_table_cell_alignment(elem: TagElement) -> str | None:
     restrict_attributes(elem, "style")
     style = maybe_get_string(elem, "style")
@@ -1300,10 +1325,10 @@ def get_link_node(elem: TagElement) -> LinkNode:
             return get_message_link_node(elem)
 
         if elem_class == "stream":
-            return get_stream_link_node(elem, has_topic=False)
+            return StreamLinkNode.from_tag_element(elem)
 
         if elem_class == "stream-topic":
-            return get_stream_link_node(elem, has_topic=True)
+            return StreamTopicLinkNode.from_tag_element(elem)
 
         restrict_attributes(elem, "href")
         href = get_string(elem, "href", allow_empty=True)
