@@ -55,6 +55,8 @@ from message_node import (
     UserMentionNode,
     UserMentionSilentNode,
     ListNode,
+    LoudMentionNode,
+    SilentMentionNode,
 )
 
 
@@ -675,27 +677,44 @@ def get_link_node(elem: TagElement) -> LinkNode:
     raise IllegalMessage("not a link node")
 
 
-def get_mention_node(elem: TagElement) -> MentionNode | None:
+def get_loud_mention_node(elem: TagElement) -> LoudMentionNode | None:
     elem_class = get_string(elem, "class")
 
     if elem_class == "topic-mention":
         return get_topic_mention_node(elem)
-    if elem_class == "topic-mention silent":
-        return get_topic_mention_silent_node(elem)
     if elem_class == "user-group-mention":
         return get_user_group_mention_node(elem)
-    if elem_class == "user-group-mention silent":
-        return get_user_group_mention_silent_node(elem)
     if elem_class == "user-mention channel-wildcard-mention":
         return get_channel_wildcard_mention_node(elem)
-    if elem_class == "user-mention channel-wildcard-mention silent":
-        return get_channel_wildcard_mention_silent_node(elem)
     if elem_class == "user-mention":
         return get_user_mention_node(elem)
+
+    return None
+
+
+def get_silent_mention_node(elem: TagElement) -> SilentMentionNode | None:
+    elem_class = get_string(elem, "class")
+
+    if elem_class == "topic-mention silent":
+        return get_topic_mention_silent_node(elem)
+    if elem_class == "user-group-mention silent":
+        return get_user_group_mention_silent_node(elem)
+    if elem_class == "user-mention channel-wildcard-mention silent":
+        return get_channel_wildcard_mention_silent_node(elem)
     if elem_class == "user-mention silent":
         return get_user_mention_silent_node(elem)
-    if elem_class == "user-mention silent":
-        return get_user_mention_node(elem)
+
+    return None
+
+
+def get_mention_node(elem: TagElement) -> MentionNode | None:
+    loud = get_loud_mention_node(elem)
+    if loud is not None:
+        return loud
+
+    silent = get_silent_mention_node(elem)
+    if silent is not None:
+        return silent
 
     return None
 
