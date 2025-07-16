@@ -186,7 +186,21 @@ We'll start with simple markup:
 
 
 class TextFormattingNode(ContainerNode, PhrasingNode, ABC):
-    pass
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "TextFormattingNode":
+        if elem.tag == "del":
+            restrict_attributes(elem)
+            return DeleteNode(children=get_phrasing_nodes(elem))
+
+        if elem.tag == "em":
+            restrict_attributes(elem)
+            return EmphasisNode(children=get_phrasing_nodes(elem))
+
+        if elem.tag == "strong":
+            restrict_attributes(elem)
+            return StrongNode(children=get_phrasing_nodes(elem))
+
+        raise IllegalMessage("not a text node")
 
 
 class DeleteNode(TextFormattingNode):
@@ -1336,22 +1350,6 @@ def verify_round_trip(
     return new_f
 
 
-def get_text_formatting_node(elem: TagElement) -> TextFormattingNode:
-    if elem.tag == "del":
-        restrict_attributes(elem)
-        return DeleteNode(children=get_phrasing_nodes(elem))
-
-    if elem.tag == "em":
-        restrict_attributes(elem)
-        return EmphasisNode(children=get_phrasing_nodes(elem))
-
-    if elem.tag == "strong":
-        restrict_attributes(elem)
-        return StrongNode(children=get_phrasing_nodes(elem))
-
-    raise IllegalMessage("not a text node")
-
-
 def get_link_node(elem: TagElement) -> LinkNode:
     elem_class = maybe_get_string(elem, "class")
 
@@ -1405,7 +1403,7 @@ def maybe_get_phrasing_node(elem: Element) -> PhrasingNode | None:
 
     if isinstance(elem, TagElement):
         if elem.tag in ["del", "em", "strong"]:
-            return get_text_formatting_node(elem)
+            return TextFormattingNode.from_tag_element(elem)
 
         if elem.tag in ["a", "img"]:
             return get_link_node(elem)
