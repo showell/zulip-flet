@@ -208,9 +208,9 @@ into a text widget until you're ready to flesh out the UI.
 
 We'll start with simple markup:
 
-    Delete == StrikeThrough == <del>foo</del> == ~~foo~~
-    Emphasis == <em>foo</em> == *foo*
-    Strong == <strong>foo</strong> == **foo* 
+    DeleteNode == strike-through == <del>foo</del> == ~~foo~~
+    EmphasisNode == italicized == <em>foo</em> == *foo*
+    StrongNode == bold == <strong>foo</strong> == **foo* 
 """
 
 
