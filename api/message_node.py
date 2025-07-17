@@ -238,6 +238,8 @@ class ContainerNode(BaseNode, ABC):
 
 
 """
+HEADINGS:
+
 Whenever practical, I try to stay roughly at the same level of
 abstraction as the mdast project.
 
@@ -367,7 +369,7 @@ We have error nodes
 """
 
 
-class ParseErrorNode(PhrasingNode):
+class ParseErrorNode(PhrasingNode, ABC):
     text: str
 
     @abstractmethod
