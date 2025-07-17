@@ -49,6 +49,26 @@ class BaseNode(BaseModel, ABC):
 
 
 """
+InternalNode ABC:
+
+I use certain ABCs just for classifying types of nodes.
+
+The InternalNode signifies nodes that a class should only be
+instantiated as children of other nodes.
+
+In the context of TableNode (not internal), think of
+things like <tbody>, <thead>, etc.
+
+It's not an entirely rigorous concept, but it's kinda
+helpful when auditing the code.
+"""
+
+
+class InternalNode(BaseModel, ABC):
+    pass
+
+
+"""
 PhrasingNode:
 
 I steal the concept of a "phrasing" node from the mdast project.
@@ -688,7 +708,7 @@ Lists
 """
 
 
-class ListItemNode(ContainerNode):
+class ListItemNode(InternalNode, ContainerNode):
     def as_html(self) -> SafeHtml:
         return self.tag("li")
 
@@ -838,7 +858,7 @@ class TdNode(ContainerNode):
         return TdNode(text_align=text_align, children=children)
 
 
-class TrNode(BaseNode):
+class TrNode(InternalNode):
     tds: Sequence[TdNode]
 
     def as_text(self) -> str:
@@ -859,7 +879,7 @@ class TrNode(BaseNode):
         return TrNode(tds=tds)
 
 
-class TBodyNode(BaseNode):
+class TBodyNode(InternalNode):
     trs: Sequence[TrNode]
 
     def as_text(self) -> str:
@@ -877,7 +897,7 @@ class TBodyNode(BaseNode):
         return TBodyNode(trs=trs)
 
 
-class THeadNode(BaseNode):
+class THeadNode(InternalNode):
     ths: Sequence[ThNode]
 
     def as_text(self) -> str:
@@ -1008,7 +1028,7 @@ MEDIA WIDGETS follow.
 """
 
 
-class InlineImageChildImgNode(BaseNode):
+class InlineImageChildImgNode(InternalNode):
     animated: bool
     src: str
     original_dimensions: str | None
