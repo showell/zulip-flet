@@ -469,7 +469,7 @@ class ParagraphNode(ContainerNode):
 
 
 """
-We use a LinkNode ABC to classify all Zulip nodes that
+We use a LinkNode ABC to classify most Zulip nodes that
 link to things, either within Zulip or externally.  All
 of these nodes are manifested in HTML with either an
 <a> tag or an <img> tag.  For custom Zulip constructs,
@@ -654,6 +654,7 @@ class EmojiImageNode(LinkNode):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "EmojiImageNode":
         restrict(elem, "img", "alt", "class", "src", "title")
+        ensure_class(elem, "emoji")
         alt = get_string(elem, "alt")
         src = get_string(elem, "src")
         title = get_string(elem, "title")
