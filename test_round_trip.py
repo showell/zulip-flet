@@ -4,13 +4,13 @@ import sys
 sys.path.append("api")
 from api.database import Database
 from api.html_element import IllegalMessage
-from api.message_node import BaseNode
+from api.message_node import ContentNode
 from api.message_parser import get_message_node
 
 
 def test_valid_messages(messages):
     num_successes = 0
-    nodes: list[BaseNode] = []
+    nodes: list[ContentNode] = []
     for html in messages:
         try:
             node = get_message_node(html)

@@ -34,11 +34,11 @@ from html_helpers import SafeHtml, build_tag, escape_text
 from pydantic import BaseModel, Field
 
 """
-Our BaseNode class is abstract.
+Our ContentNode class is abstract.
 """
 
 
-class BaseNode(BaseModel, ABC):
+class ContentNode(BaseModel, ABC):
     @abstractmethod
     def as_text(self) -> str:
         pass
@@ -64,7 +64,7 @@ helpful when auditing the code.
 """
 
 
-class InternalNode(BaseModel, ABC):
+class InternalNode(ContentNode, ABC):
     pass
 
 
@@ -88,7 +88,7 @@ testing this more exhaustively.
 """
 
 
-class PhrasingNode(BaseNode, ABC):
+class PhrasingNode(ContentNode, ABC):
     @staticmethod
     def maybe_get_from_element(elem: Element) -> Optional["PhrasingNode"]:
         if isinstance(elem, TextElement):
@@ -136,7 +136,7 @@ These are just purely intended for code organization.
 """
 
 
-class DivNode(BaseNode, ABC):
+class DivNode(ContentNode, ABC):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "DivNode":
         elem_class = maybe_get_string(elem, "class")
@@ -229,7 +229,7 @@ class BreakNode(PhrasingNode):
         return BreakNode()
 
 
-class ThematicBreakNode(BaseNode):
+class ThematicBreakNode(ContentNode):
     def as_text(self) -> str:
         return "\n\n---\n\n"
 
@@ -258,8 +258,8 @@ We eventually want more refinement here.
 """
 
 
-class ContainerNode(BaseNode, ABC):
-    children: Sequence[BaseNode]
+class ContainerNode(ContentNode, ABC):
+    children: Sequence[ContentNode]
 
     def children_text(self) -> str:
         return " ".join(c.as_text() for c in self.children)
@@ -718,7 +718,7 @@ class ListItemNode(InternalNode, ContainerNode):
         return ListItemNode(children=get_child_nodes(elem))
 
 
-class ListNode(BaseNode, ABC):
+class ListNode(ContentNode, ABC):
     children: Sequence[ListItemNode]
 
     @staticmethod
@@ -917,7 +917,7 @@ class THeadNode(InternalNode):
         return THeadNode(ths=ths)
 
 
-class TableNode(BaseNode):
+class TableNode(ContentNode):
     thead: THeadNode
     tbody: TBodyNode
 
@@ -1595,9 +1595,9 @@ Now glue it all together.
 
 
 def verify_round_trip(
-    f: Callable[[TagElement], BaseNode],
-) -> Callable[[TagElement], BaseNode]:
-    def new_f(elem: TagElement) -> BaseNode:
+    f: Callable[[TagElement], ContentNode],
+) -> Callable[[TagElement], ContentNode]:
+    def new_f(elem: TagElement) -> ContentNode:
         node = f(elem)
 
         expected_html = get_html(elem)
@@ -1615,8 +1615,10 @@ def verify_round_trip(
     return new_f
 
 
-def get_child_nodes(elem: TagElement, ignore_newlines: bool = False) -> list[BaseNode]:
-    children: list[BaseNode] = []
+def get_child_nodes(
+    elem: TagElement, ignore_newlines: bool = False
+) -> list[ContentNode]:
+    children: list[ContentNode] = []
 
     for c in elem.children:
         if isinstance(c, TextElement):
@@ -1630,7 +1632,7 @@ def get_child_nodes(elem: TagElement, ignore_newlines: bool = False) -> list[Bas
 
 
 @verify_round_trip
-def get_node(elem: TagElement) -> BaseNode:
+def get_node(elem: TagElement) -> ContentNode:
     node = PhrasingNode.maybe_get_from_element(elem)
     if node is not None:
         return node

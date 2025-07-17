@@ -1,9 +1,9 @@
 from html_element import TagElement, get_only_child, restrict
 from lxml import etree
-from message_node import BaseNode, get_node
+from message_node import ContentNode, get_node
 
 
-def get_message_node(html: str) -> BaseNode:
+def get_message_node(html: str) -> ContentNode:
     # We try to be strict, but lxml doesn't like math/video/time and doesn't
     # recover from certain <br> tags in paragraphs.
     if (
