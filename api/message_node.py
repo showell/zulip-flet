@@ -195,10 +195,18 @@ class ThematicBreakNode(BaseNode):
     def as_html(self) -> SafeHtml:
         return SafeHtml.trust("<hr/>")
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "ThematicBreakNode":
+        restrict(elem, "hr")
+        forbid_children(elem)
+        return ThematicBreakNode()
+
 
 """
 Here we define a ContainerNode class. Essentially, containers
-have arbitrary children.
+have arbitrary children.  Unlike some of our other ABC classes,
+which are mostly around to help mypy, the ContainerNode class
+is intended more for implementation reuse purposes.
 
 Note that there are some classes in our AST that do have
 children but don't inherit from ContainerNode.  This means
@@ -1592,9 +1600,7 @@ def get_node(elem: TagElement) -> BaseNode:
         return HeadingNode.from_tag_element(elem)
 
     if elem.tag == "hr":
-        restrict_attributes(elem)
-        forbid_children(elem)
-        return ThematicBreakNode()
+        return ThematicBreakNode.from_tag_element(elem)
 
     if elem.tag in ["ol", "ul"]:
         return ListNode.from_tag_element(elem)
