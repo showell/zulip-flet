@@ -386,60 +386,6 @@ class StrongNode(TextFormattingNode):
 
 
 """
-We have error nodes
-"""
-
-
-class ParseErrorNode(PhrasingNode, ABC):
-    text: str
-
-    @abstractmethod
-    def zulip_class(self) -> str:
-        pass
-
-    def as_html(self) -> SafeHtml:
-        return build_tag(
-            tag="span",
-            inner=escape_text(self.text),
-            class_=self.zulip_class(),
-        )
-
-
-class TexErrorNode(SpanNode, ParseErrorNode):
-    text: str
-
-    def as_text(self) -> str:
-        return "tex error"
-
-    def zulip_class(self) -> str:
-        return "tex-error"
-
-    @staticmethod
-    def from_tag_element(elem: TagElement) -> "TexErrorNode":
-        restrict(elem, "span", "class")
-        ensure_class(elem, "tex-error")
-        text = ensure_only_text(elem)
-        return TexErrorNode(text=text)
-
-
-class TimeStampErrorNode(SpanNode, ParseErrorNode):
-    text: str
-
-    def as_text(self) -> str:
-        return "timestamp error"
-
-    def zulip_class(self) -> str:
-        return "timestamp-error"
-
-    @staticmethod
-    def from_tag_element(elem: TagElement) -> "TimeStampErrorNode":
-        restrict(elem, "span", "class")
-        ensure_class(elem, "timestamp-error")
-        text = ensure_only_text(elem)
-        return TimeStampErrorNode(text=text)
-
-
-"""
 And then some more basic classes follow.
 """
 
@@ -1567,6 +1513,60 @@ class PygmentsCodeBlockNode(DivNode):
         return PygmentsCodeBlockNode(
             html=SafeHtml.trust(html), lang=lang, content=content
         )
+
+
+"""
+We have error nodes that subclass from the ParseErrorNode ABC.
+"""
+
+
+class ParseErrorNode(PhrasingNode, ABC):
+    text: str
+
+    @abstractmethod
+    def zulip_class(self) -> str:
+        pass
+
+    def as_html(self) -> SafeHtml:
+        return build_tag(
+            tag="span",
+            inner=escape_text(self.text),
+            class_=self.zulip_class(),
+        )
+
+
+class TexErrorNode(SpanNode, ParseErrorNode):
+    text: str
+
+    def as_text(self) -> str:
+        return "tex error"
+
+    def zulip_class(self) -> str:
+        return "tex-error"
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "TexErrorNode":
+        restrict(elem, "span", "class")
+        ensure_class(elem, "tex-error")
+        text = ensure_only_text(elem)
+        return TexErrorNode(text=text)
+
+
+class TimeStampErrorNode(SpanNode, ParseErrorNode):
+    text: str
+
+    def as_text(self) -> str:
+        return "timestamp error"
+
+    def zulip_class(self) -> str:
+        return "timestamp-error"
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "TimeStampErrorNode":
+        restrict(elem, "span", "class")
+        ensure_class(elem, "timestamp-error")
+        text = ensure_only_text(elem)
+        return TimeStampErrorNode(text=text)
 
 
 """
