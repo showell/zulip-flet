@@ -129,6 +129,17 @@ class PhrasingNode(ContentNode, ABC):
 
 
 """
+BlockContentNode ABC:
+
+Similar to what the flutter app does.
+"""
+
+
+class BlockContentNode(ContentNode, ABC):
+    pass
+
+
+"""
 I create ABCs for <div> and <span> tags to be created from
 Zulip HTML input (via TagElement).
 
@@ -136,7 +147,7 @@ These are just purely intended for code organization.
 """
 
 
-class DivNode(ContentNode, ABC):
+class DivNode(BlockContentNode, ABC):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "DivNode":
         elem_class = maybe_get_string(elem, "class")
@@ -216,6 +227,10 @@ The <br> and <hr> tags are handled super generically by us.
 
 
 class BreakNode(PhrasingNode):
+    # Unlike the flutter app, I don't currently mark
+    # BreakNode as a subclass of BlockContentNode, but
+    # I understand why they did it, and I plan future
+    # tweaks to handling Zulip <br> tags.
     def as_text(self) -> str:
         return "\n"
 
@@ -229,7 +244,7 @@ class BreakNode(PhrasingNode):
         return BreakNode()
 
 
-class ThematicBreakNode(ContentNode):
+class ThematicBreakNode(BlockContentNode):
     def as_text(self) -> str:
         return "\n\n---\n\n"
 
@@ -296,7 +311,7 @@ an ABC.)
 """
 
 
-class HeadingNode(ContainerNode):
+class HeadingNode(BlockContentNode, ContainerNode):
     children: Sequence[PhrasingNode]
     depth: int = Field(ge=1, le=6)
 
@@ -410,7 +425,7 @@ And then some more basic classes follow.
 """
 
 
-class BlockQuoteNode(ContainerNode):
+class BlockQuoteNode(BlockContentNode, ContainerNode):
     def as_text(self) -> str:
         content = self.children_text()
         return f"\n-----\n{content}\n-----\n"
@@ -424,12 +439,12 @@ class BlockQuoteNode(ContainerNode):
         return BlockQuoteNode(children=get_child_nodes(elem))
 
 
-class BodyNode(ContainerNode):
+class BodyNode(BlockContentNode, ContainerNode):
     def as_html(self) -> SafeHtml:
         return self.tag("body")
 
 
-class CodeNode(TextFormattingNode):
+class CodeNode(PhrasingNode, ContainerNode):
     def as_text(self) -> str:
         return f"`{self.children_text()}`"
 
@@ -442,7 +457,7 @@ class CodeNode(TextFormattingNode):
         return CodeNode(children=get_child_nodes(elem))
 
 
-class ParagraphNode(ContainerNode):
+class ParagraphNode(BlockContentNode, ContainerNode):
     def as_text(self) -> str:
         return self.children_text() + "\n\n"
 
@@ -718,7 +733,7 @@ class ListItemNode(InternalNode, ContainerNode):
         return ListItemNode(children=get_child_nodes(elem))
 
 
-class ListNode(ContentNode, ABC):
+class ListNode(BlockContentNode, ABC):
     children: Sequence[ListItemNode]
 
     @staticmethod
@@ -917,7 +932,7 @@ class THeadNode(InternalNode):
         return THeadNode(ths=ths)
 
 
-class TableNode(ContentNode):
+class TableNode(BlockContentNode):
     thead: THeadNode
     tbody: TBodyNode
 
@@ -1637,6 +1652,11 @@ def get_node(elem: TagElement) -> ContentNode:
     if node is not None:
         return node
 
+    return get_block_content_node(elem)
+
+
+@verify_round_trip
+def get_block_content_node(elem: TagElement) -> BlockContentNode:
     if elem.tag == "blockquote":
         return BlockQuoteNode.from_tag_element(elem)
 
