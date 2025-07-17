@@ -230,7 +230,7 @@ class ContainerNode(BaseNode, ABC):
 
 
 """
-Whenever practical, I try to stay at the same layer of
+Whenever practical, I try to stay roughly at the same level of
 abstraction as the mdast project.
 
 See https://github.com/syntax-tree/mdast?tab=readme-ov-file#heading
@@ -605,6 +605,102 @@ class StreamTopicLinkNode(LinkNode, ContainerNode):
 
 
 """
+Emojis are a bit of work in Zulip.
+
+For strict validation of emojis, we probably want something out of
+the scope of this project, since Zulip allows for custom emojis.
+So you would probably do additional validation by walking this AST
+after we've verified that things are correct syntactically from
+the incoming source of data.
+"""
+
+
+class EmojiImageNode(LinkNode):
+    src: str
+    title: str
+
+    def as_text(self) -> str:
+        return f":{self.title}:"
+
+    @staticmethod
+    def zulip_class() -> str:
+        return "emoji"
+
+    def as_html(self) -> SafeHtml:
+        return build_tag(
+            tag="img",
+            inner=SafeHtml.trust(""),
+            alt=f":{self.title.replace(' ', '_')}:",
+            class_=self.zulip_class(),
+            src=self.src,
+            title=self.title,
+        )
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "EmojiImageNode":
+        restrict(elem, "img", "alt", "class", "src", "title")
+        alt = get_string(elem, "alt")
+        src = get_string(elem, "src")
+        title = get_string(elem, "title")
+        ensure_equal(alt, f":{title.replace(' ', '_')}:")
+        return EmojiImageNode(src=src, title=title)
+
+
+class EmojiSpanNode(SpanNode):
+    unicode_points: Sequence[int]
+    title: str
+
+    def as_text(self) -> str:
+        c = " ".join(chr(n) for n in self.unicode_points)
+        return f"{c} (:{self.title})"
+
+    def zulip_class(self) -> str:
+        unicode_suffix = "-".join(f"{num:04x}" for num in self.unicode_points)
+        return f"emoji emoji-{unicode_suffix}"
+
+    def as_html(self) -> SafeHtml:
+        title = self.title
+        return build_tag(
+            tag="span",
+            inner=escape_text(f":{title.replace(' ', '_')}:"),
+            aria_label=title,
+            class_=self.zulip_class(),
+            role="img",
+            title=title,
+        )
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "EmojiSpanNode":
+        restrict(elem, "span", "aria-label", "class", "role", "title")
+        title = get_string(elem, "title")
+        ensure_attribute(elem, "role", "img")
+        ensure_attribute(elem, "aria-label", title)
+        elem_class = get_string(elem, "class")
+        if not elem_class.startswith("emoji "):
+            raise IllegalMessage("bad class for emoji span")
+        _, emoji_unicode_class = elem_class.split(" ")
+        emoji_prefix, *unicode_hexes = emoji_unicode_class.split("-")
+        ensure_equal(emoji_prefix, "emoji")
+        if not unicode_hexes:
+            raise IllegalMessage("bad unicode values in class for emoji")
+        unicode_points = []
+        for c in unicode_hexes:
+            try:
+                unicode_point = int(c, 16)
+                chr(unicode_point)
+            except ValueError:
+                raise IllegalMessage(f"bad unicode point: {c}")
+            """
+            Ideally we would restrict unicode values, but simple
+            checks like emoji.is_emoji (from pip install emoji)
+            are too restrictive.
+            """
+            unicode_points.append(unicode_point)
+        ensure_contains_text(elem, f":{title.replace(' ', '_')}:")
+        return EmojiSpanNode(title=title, unicode_points=unicode_points)
+
+
+"""
 Lists
 """
 
@@ -894,91 +990,6 @@ somewhat "custom" to Zulip. The incoming
 markup generally uses class attributes to denote the
 special Zulip constructs.
 """
-
-
-class EmojiImageNode(LinkNode):
-    src: str
-    title: str
-
-    def as_text(self) -> str:
-        return f":{self.title}:"
-
-    @staticmethod
-    def zulip_class() -> str:
-        return "emoji"
-
-    def as_html(self) -> SafeHtml:
-        return build_tag(
-            tag="img",
-            inner=SafeHtml.trust(""),
-            alt=f":{self.title.replace(' ', '_')}:",
-            class_=self.zulip_class(),
-            src=self.src,
-            title=self.title,
-        )
-
-    @staticmethod
-    def from_tag_element(elem: TagElement) -> "EmojiImageNode":
-        restrict(elem, "img", "alt", "class", "src", "title")
-        alt = get_string(elem, "alt")
-        src = get_string(elem, "src")
-        title = get_string(elem, "title")
-        ensure_equal(alt, f":{title.replace(' ', '_')}:")
-        return EmojiImageNode(src=src, title=title)
-
-
-class EmojiSpanNode(SpanNode):
-    unicode_points: Sequence[int]
-    title: str
-
-    def as_text(self) -> str:
-        c = " ".join(chr(n) for n in self.unicode_points)
-        return f"{c} (:{self.title})"
-
-    def zulip_class(self) -> str:
-        unicode_suffix = "-".join(f"{num:04x}" for num in self.unicode_points)
-        return f"emoji emoji-{unicode_suffix}"
-
-    def as_html(self) -> SafeHtml:
-        title = self.title
-        return build_tag(
-            tag="span",
-            inner=escape_text(f":{title.replace(' ', '_')}:"),
-            aria_label=title,
-            class_=self.zulip_class(),
-            role="img",
-            title=title,
-        )
-
-    @staticmethod
-    def from_tag_element(elem: TagElement) -> "EmojiSpanNode":
-        restrict(elem, "span", "aria-label", "class", "role", "title")
-        title = get_string(elem, "title")
-        ensure_attribute(elem, "role", "img")
-        ensure_attribute(elem, "aria-label", title)
-        elem_class = get_string(elem, "class")
-        if not elem_class.startswith("emoji "):
-            raise IllegalMessage("bad class for emoji span")
-        _, emoji_unicode_class = elem_class.split(" ")
-        emoji_prefix, *unicode_hexes = emoji_unicode_class.split("-")
-        ensure_equal(emoji_prefix, "emoji")
-        if not unicode_hexes:
-            raise IllegalMessage("bad unicode values in class for emoji")
-        unicode_points = []
-        for c in unicode_hexes:
-            try:
-                unicode_point = int(c, 16)
-                chr(unicode_point)
-            except ValueError:
-                raise IllegalMessage(f"bad unicode point: {c}")
-            """
-            Ideally we would restrict unicode values, but simple
-            checks like emoji.is_emoji (from pip install emoji)
-            are too restrictive.
-            """
-            unicode_points.append(unicode_point)
-        ensure_contains_text(elem, f":{title.replace(' ', '_')}:")
-        return EmojiSpanNode(title=title, unicode_points=unicode_points)
 
 
 class InlineImageNode(DivNode):
