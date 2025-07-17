@@ -282,11 +282,9 @@ class ContainerNode(ContentNode, ABC):
     def as_text(self) -> str:
         return self.children_text()
 
-    def inner(self) -> SafeHtml:
-        return SafeHtml.combine([c.as_html() for c in self.children])
-
     def tag(self, tag: str, **attrs: str | None) -> SafeHtml:
-        return build_tag(tag=tag, inner=self.inner(), **attrs)
+        inner = SafeHtml.combine([c.as_html() for c in self.children])
+        return build_tag(tag=tag, inner=inner, **attrs)
 
     def block_tag(self, tag: str, **attrs: str | None) -> SafeHtml:
         inner = SafeHtml.block_join([c.as_html() for c in self.children])
