@@ -218,16 +218,13 @@ class TextFormattingNode(ContainerNode, PhrasingNode, ABC):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "TextFormattingNode":
         if elem.tag == "del":
-            restrict_attributes(elem)
-            return DeleteNode(children=get_phrasing_nodes(elem))
+            return DeleteNode.from_tag_element(elem)
 
         if elem.tag == "em":
-            restrict_attributes(elem)
-            return EmphasisNode(children=get_phrasing_nodes(elem))
+            return EmphasisNode.from_tag_element(elem)
 
         if elem.tag == "strong":
-            restrict_attributes(elem)
-            return StrongNode(children=get_phrasing_nodes(elem))
+            return StrongNode.from_tag_element(elem)
 
         raise IllegalMessage("not a text node")
 
@@ -239,6 +236,11 @@ class DeleteNode(TextFormattingNode):
     def as_html(self) -> SafeHtml:
         return self.tag("del")
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "DeleteNode":
+        restrict(elem, "del")
+        return DeleteNode(children=get_phrasing_nodes(elem))
+
 
 class EmphasisNode(TextFormattingNode):
     def as_text(self) -> str:
@@ -247,6 +249,11 @@ class EmphasisNode(TextFormattingNode):
     def as_html(self) -> SafeHtml:
         return self.tag("em")
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "EmphasisNode":
+        restrict(elem, "em")
+        return EmphasisNode(children=get_phrasing_nodes(elem))
+
 
 class StrongNode(TextFormattingNode):
     def as_text(self) -> str:
@@ -254,6 +261,11 @@ class StrongNode(TextFormattingNode):
 
     def as_html(self) -> SafeHtml:
         return self.tag("strong")
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "StrongNode":
+        restrict(elem, "strong")
+        return StrongNode(children=get_phrasing_nodes(elem))
 
 
 """
