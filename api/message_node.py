@@ -413,48 +413,6 @@ And then some more basic classes follow.
 """
 
 
-class LinkNode(PhrasingNode, ABC):
-    @staticmethod
-    def from_tag_element(elem: TagElement) -> "LinkNode":
-        elem_class = maybe_get_string(elem, "class")
-
-        if elem.tag == "a":
-            if elem_class == "message-link":
-                return MessageLinkNode.from_tag_element(elem)
-
-            if elem_class == "stream":
-                return StreamLinkNode.from_tag_element(elem)
-
-            if elem_class == "stream-topic":
-                return StreamTopicLinkNode.from_tag_element(elem)
-
-            return AnchorNode.from_tag_element(elem)
-
-        if elem.tag == "img":
-            if elem_class == "emoji":
-                return EmojiImageNode.from_tag_element(elem)
-            raise IllegalMessage("unexpected img tag")
-
-        raise IllegalMessage("not a link node")
-
-
-class AnchorNode(LinkNode, ContainerNode):
-    href: str
-
-    def as_text(self) -> str:
-        content = "".join(c.as_text() for c in self.children)
-        return f"[{content}] ({self.href})"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag("a", href=self.href)
-
-    @staticmethod
-    def from_tag_element(elem: TagElement) -> "AnchorNode":
-        restrict(elem, "a", "href")
-        href = get_string(elem, "href", allow_empty=True)
-        return AnchorNode(href=href, children=PhrasingNode.get_child_nodes(elem))
-
-
 class BlockQuoteNode(ContainerNode):
     def as_text(self) -> str:
         content = self.children_text()
@@ -493,6 +451,157 @@ class ParagraphNode(ContainerNode):
 
     def as_html(self) -> SafeHtml:
         return self.tag("p")
+
+
+"""
+We use a LinkNode ABC to classify all Zulip nodes that
+link to things, either within Zulip or externally.  All
+of these nodes are manifested in HTML with either an
+<a> tag or an <img> tag.  For custom Zulip constructs,
+we always use a "class" attribute to specify the special
+type of link we are representing.
+
+In the mdast spec, they generalize the concept of a
+Resource (https://github.com/syntax-tree/mdast?tab=readme-ov-file#resource),
+but I stay a bit closer to HTML lingo most of the time, using
+terms like "href" and "src".
+"""
+
+
+class LinkNode(PhrasingNode, ABC):
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "LinkNode":
+        elem_class = maybe_get_string(elem, "class")
+
+        if elem.tag == "a":
+            if elem_class == "message-link":
+                return MessageLinkNode.from_tag_element(elem)
+
+            if elem_class == "stream":
+                return StreamLinkNode.from_tag_element(elem)
+
+            if elem_class == "stream-topic":
+                return StreamTopicLinkNode.from_tag_element(elem)
+
+            return AnchorNode.from_tag_element(elem)
+
+        if elem.tag == "img":
+            if elem_class == "emoji":
+                return EmojiImageNode.from_tag_element(elem)
+            raise IllegalMessage("unexpected img tag")
+
+        raise IllegalMessage("not a link node")
+
+
+"""
+Nodes that are manifested with <a> tags follow here.
+
+The custom Zulip nodes are all called out with a class.
+"""
+
+
+class AnchorNode(LinkNode, ContainerNode):
+    href: str
+
+    def as_text(self) -> str:
+        content = "".join(c.as_text() for c in self.children)
+        return f"[{content}] ({self.href})"
+
+    def as_html(self) -> SafeHtml:
+        return self.tag("a", href=self.href)
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "AnchorNode":
+        restrict(elem, "a", "href")
+        href = get_string(elem, "href", allow_empty=True)
+        return AnchorNode(href=href, children=PhrasingNode.get_child_nodes(elem))
+
+
+class MessageLinkNode(LinkNode, ContainerNode):
+    href: str
+
+    def as_text(self) -> str:
+        text = " ".join(c.as_text() for c in self.children)
+        return f"[{text} (MESSAGE LINK: {self.href})]"
+
+    @staticmethod
+    def zulip_class() -> str:
+        return "message-link"
+
+    def as_html(self) -> SafeHtml:
+        href = self.href
+        return self.tag("a", class_=self.zulip_class(), href=href)
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "MessageLinkNode":
+        restrict(elem, "a", "class", "href")
+        ensure_class(elem, "message-link")
+        href = get_string(elem, "href")
+        children = PhrasingNode.get_child_nodes(elem)
+        return MessageLinkNode(
+            href=href,
+            children=children,
+        )
+
+
+class StreamLinkNode(LinkNode, ContainerNode):
+    href: str
+    stream_id: int
+
+    def as_text(self) -> str:
+        text = " ".join(c.as_text() for c in self.children)
+        return f"[STREAM {text}] ({self.href}) (stream id {self.stream_id})"
+
+    @staticmethod
+    def zulip_class() -> str:
+        return "stream"
+
+    def as_html(self) -> SafeHtml:
+        return self.tag(
+            "a",
+            class_=self.zulip_class(),
+            data_stream_id=str(self.stream_id),
+            href=self.href,
+        )
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "StreamLinkNode":
+        restrict(elem, "a", "class", "data-stream-id", "href")
+        ensure_class(elem, "stream")
+        stream_id = get_database_id(elem, "data-stream-id")
+        href = get_string(elem, "href")
+        children = PhrasingNode.get_child_nodes(elem)
+        return StreamLinkNode(href=href, stream_id=stream_id, children=children)
+
+
+class StreamTopicLinkNode(LinkNode, ContainerNode):
+    href: str
+    stream_id: int
+
+    def as_text(self) -> str:
+        text = " ".join(c.as_text() for c in self.children)
+        return f"[STREAM/TOPIC {text}] ({self.href}) (stream id {self.stream_id})"
+
+    @staticmethod
+    def zulip_class() -> str:
+        return "stream-topic"
+
+    def as_html(self) -> SafeHtml:
+        return self.tag(
+            "a",
+            class_=self.zulip_class(),
+            data_stream_id=str(self.stream_id),
+            href=self.href,
+        )
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "StreamTopicLinkNode":
+        restrict(elem, "a", "class", "data-stream-id", "href")
+        ensure_class(elem, "stream-topic")
+        stream_id = get_database_id(elem, "data-stream-id")
+        href = get_string(elem, "href")
+        children = PhrasingNode.get_child_nodes(elem)
+        return StreamTopicLinkNode(href=href, stream_id=stream_id, children=children)
 
 
 """
@@ -962,32 +1071,6 @@ class InlineVideoNode(DivNode):
         return InlineVideoNode(href=href, src=src, title=title)
 
 
-class MessageLinkNode(LinkNode, ContainerNode):
-    href: str
-
-    def as_text(self) -> str:
-        text = " ".join(c.as_text() for c in self.children)
-        return f"[{text} (MESSAGE LINK: {self.href})]"
-
-    @staticmethod
-    def zulip_class() -> str:
-        return "message-link"
-
-    def as_html(self) -> SafeHtml:
-        href = self.href
-        return self.tag("a", class_=self.zulip_class(), href=href)
-
-    @staticmethod
-    def from_tag_element(elem: TagElement) -> "MessageLinkNode":
-        restrict(elem, "a", "class", "href")
-        href = get_string(elem, "href")
-        children = PhrasingNode.get_child_nodes(elem)
-        return MessageLinkNode(
-            href=href,
-            children=children,
-        )
-
-
 class SpoilerContentNode(ContainerNode):
     # we only need this silly field in order to
     # do round trip testing
@@ -1061,66 +1144,6 @@ class SpoilerNode(DivNode):
         header = SpoilerHeaderNode.from_tag_element(header_elem)
         content = SpoilerContentNode.from_tag_element(content_elem)
         return SpoilerNode(header=header, content=content)
-
-
-class StreamLinkNode(LinkNode, ContainerNode):
-    href: str
-    stream_id: int
-
-    def as_text(self) -> str:
-        text = " ".join(c.as_text() for c in self.children)
-        return f"[STREAM {text}] ({self.href}) (stream id {self.stream_id})"
-
-    @staticmethod
-    def zulip_class() -> str:
-        return "stream"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag(
-            "a",
-            class_=self.zulip_class(),
-            data_stream_id=str(self.stream_id),
-            href=self.href,
-        )
-
-    @staticmethod
-    def from_tag_element(elem: TagElement) -> "StreamLinkNode":
-        restrict(elem, "a", "class", "data-stream-id", "href")
-        ensure_class(elem, "stream")
-        stream_id = get_database_id(elem, "data-stream-id")
-        href = get_string(elem, "href")
-        children = PhrasingNode.get_child_nodes(elem)
-        return StreamLinkNode(href=href, stream_id=stream_id, children=children)
-
-
-class StreamTopicLinkNode(LinkNode, ContainerNode):
-    href: str
-    stream_id: int
-
-    def as_text(self) -> str:
-        text = " ".join(c.as_text() for c in self.children)
-        return f"[STREAM/TOPIC {text}] ({self.href}) (stream id {self.stream_id})"
-
-    @staticmethod
-    def zulip_class() -> str:
-        return "stream-topic"
-
-    def as_html(self) -> SafeHtml:
-        return self.tag(
-            "a",
-            class_=self.zulip_class(),
-            data_stream_id=str(self.stream_id),
-            href=self.href,
-        )
-
-    @staticmethod
-    def from_tag_element(elem: TagElement) -> "StreamTopicLinkNode":
-        restrict(elem, "a", "class", "data-stream-id", "href")
-        ensure_class(elem, "stream-topic")
-        stream_id = get_database_id(elem, "data-stream-id")
-        href = get_string(elem, "href")
-        children = PhrasingNode.get_child_nodes(elem)
-        return StreamTopicLinkNode(href=href, stream_id=stream_id, children=children)
 
 
 """
