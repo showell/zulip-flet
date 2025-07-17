@@ -401,6 +401,11 @@ class BlockQuoteNode(ContainerNode):
     def as_html(self) -> SafeHtml:
         return self.tag("blockquote")
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "BlockQuoteNode":
+        restrict(elem, "blockquote")
+        return BlockQuoteNode(children=get_child_nodes(elem))
+
 
 class BodyNode(ContainerNode):
     def as_html(self) -> SafeHtml:
@@ -1492,8 +1497,7 @@ def get_node(elem: TagElement) -> BaseNode:
         return node
 
     if elem.tag == "blockquote":
-        restrict_attributes(elem)
-        return BlockQuoteNode(children=get_child_nodes(elem))
+        return BlockQuoteNode.from_tag_element(elem)
 
     if elem.tag == "body":
         restrict_attributes(elem)
