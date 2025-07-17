@@ -49,7 +49,31 @@ class BaseNode(BaseModel, ABC):
 
 
 class PhrasingNode(BaseNode, ABC):
-    pass
+    @staticmethod
+    def maybe_get_from_element(elem: Element) -> Optional["PhrasingNode"]:
+        if isinstance(elem, TextElement):
+            return TextNode(value=elem.text)
+
+        if isinstance(elem, TagElement):
+            if elem.tag in ["del", "em", "strong"]:
+                return TextFormattingNode.from_tag_element(elem)
+
+            if elem.tag in ["a", "img"]:
+                return LinkNode.from_tag_element(elem)
+
+            if elem.tag == "br":
+                return BreakNode.from_tag_element(elem)
+
+            if elem.tag == "code":
+                return CodeNode.from_tag_element(elem)
+
+            if elem.tag == "span":
+                return SpanNode.from_tag_element(elem)
+
+            if elem.tag == "time":
+                return TimeWidgetNode.from_tag_element(elem)
+
+        return None
 
 
 class SpanNode(PhrasingNode, ABC):
@@ -1433,32 +1457,6 @@ def verify_round_trip(
     return new_f
 
 
-def maybe_get_phrasing_node(elem: Element) -> PhrasingNode | None:
-    if isinstance(elem, TextElement):
-        return TextNode(value=elem.text)
-
-    if isinstance(elem, TagElement):
-        if elem.tag in ["del", "em", "strong"]:
-            return TextFormattingNode.from_tag_element(elem)
-
-        if elem.tag in ["a", "img"]:
-            return LinkNode.from_tag_element(elem)
-
-        if elem.tag == "br":
-            return BreakNode.from_tag_element(elem)
-
-        if elem.tag == "code":
-            return CodeNode.from_tag_element(elem)
-
-        if elem.tag == "span":
-            return SpanNode.from_tag_element(elem)
-
-        if elem.tag == "time":
-            return TimeWidgetNode.from_tag_element(elem)
-
-    return None
-
-
 def get_child_nodes(elem: TagElement, ignore_newlines: bool = False) -> list[BaseNode]:
     children: list[BaseNode] = []
 
@@ -1477,7 +1475,7 @@ def get_phrasing_nodes(elem: TagElement) -> list[PhrasingNode]:
     children: list[PhrasingNode] = []
 
     for c in elem.children:
-        child_node = maybe_get_phrasing_node(c)
+        child_node = PhrasingNode.maybe_get_from_element(c)
         if child_node is None:
             raise IllegalMessage("expected phrasing node")
         children.append(child_node)
@@ -1489,7 +1487,7 @@ def get_phrasing_nodes(elem: TagElement) -> list[PhrasingNode]:
 def get_node(elem: TagElement) -> BaseNode:
     elem_class = maybe_get_string(elem, "class")
 
-    node = maybe_get_phrasing_node(elem)
+    node = PhrasingNode.maybe_get_from_element(elem)
     if node is not None:
         return node
 
