@@ -796,7 +796,7 @@ class UnorderedListNode(ListNode):
 
     @staticmethod
     def from_tag_element(elem: TagElement) -> "UnorderedListNode":
-        restrict_attributes(elem)
+        restrict(elem, "ul")
         children = ListNode.get_list_item_nodes(elem)
         return UnorderedListNode(children=children)
 
@@ -952,10 +952,92 @@ class TableNode(BaseNode):
 
 
 """
-We use some helper classes for custom Zulip widgets.
+SPOILERS:
 
-Some of these should possibly be used outside the context
-of custom Zulip widgets.
+Zulip implemented spoiler tags before the <details> and <summary>
+tags were widely supported.
+
+So instead Zulip represents spoiler constructs with <div> tags.
+"""
+
+
+class SpoilerContentNode(ContainerNode):
+    # we only need this silly field in order to
+    # do round trip testing
+    aria_attribute_comes_first: bool
+
+    @staticmethod
+    def zulip_class() -> str:
+        return "spoiler-content"
+
+    def as_html(self) -> SafeHtml:
+        class_ = self.zulip_class()
+        if self.aria_attribute_comes_first:
+            return self.tag("div", aria_hidden="true", class_=class_)
+        else:
+            return self.tag("div", class_=class_, aria_hidden="true")
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "SpoilerContentNode":
+        restrict(elem, "div", "class", "aria-hidden")
+        ensure_class(elem, "spoiler-content")
+        ensure_attribute(elem, "aria-hidden", "true")
+        aria_attribute_comes_first = list(elem.attrib.keys())[0] == "aria-hidden"
+        return SpoilerContentNode(
+            children=get_child_nodes(elem),
+            aria_attribute_comes_first=aria_attribute_comes_first,
+        )
+
+
+class SpoilerHeaderNode(ContainerNode):
+    @staticmethod
+    def zulip_class() -> str:
+        return "spoiler-header"
+
+    def as_html(self) -> SafeHtml:
+        return self.block_tag("div", class_=self.zulip_class())
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "SpoilerHeaderNode":
+        restrict(elem, "div", "class")
+        ensure_class(elem, "spoiler-header")
+        return SpoilerHeaderNode(children=get_child_nodes(elem, ignore_newlines=True))
+
+
+class SpoilerNode(DivNode):
+    header: SpoilerHeaderNode
+    content: SpoilerContentNode
+
+    def as_text(self) -> str:
+        header = self.header.as_text()
+        content = self.content.as_text()
+        return f"SPOILER: {header}\nHIDDEN:\n{content}\nENDHIDDEN\n"
+
+    @staticmethod
+    def zulip_class() -> str:
+        return "spoiler-block"
+
+    def as_html(self) -> SafeHtml:
+        header = self.header.as_html()
+        content = self.content.as_html()
+        return build_tag(
+            tag="div",
+            inner=SafeHtml.combine([header, content]),
+            class_=self.zulip_class(),
+        )
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "SpoilerNode":
+        restrict(elem, "div", "class")
+        ensure_class(elem, "spoiler-block")
+        header_elem, content_elem = get_two_children(elem)
+        header = SpoilerHeaderNode.from_tag_element(header_elem)
+        content = SpoilerContentNode.from_tag_element(content_elem)
+        return SpoilerNode(header=header, content=content)
+
+
+"""
+MEDIA WIDGETS follow.
 """
 
 
@@ -998,14 +1080,6 @@ class InlineImageChildImgNode(BaseNode):
             original_dimensions=original_dimensions,
             original_content_type=original_content_type,
         )
-
-
-"""
-The following classes can be considered to be
-somewhat "custom" to Zulip. The incoming
-markup generally uses class attributes to denote the
-special Zulip constructs.
-"""
 
 
 class InlineImageNode(DivNode):
@@ -1096,81 +1170,6 @@ class InlineVideoNode(DivNode):
         ensure_empty(video)
 
         return InlineVideoNode(href=href, src=src, title=title)
-
-
-class SpoilerContentNode(ContainerNode):
-    # we only need this silly field in order to
-    # do round trip testing
-    aria_attribute_comes_first: bool
-
-    @staticmethod
-    def zulip_class() -> str:
-        return "spoiler-content"
-
-    def as_html(self) -> SafeHtml:
-        class_ = self.zulip_class()
-        if self.aria_attribute_comes_first:
-            return self.tag("div", aria_hidden="true", class_=class_)
-        else:
-            return self.tag("div", class_=class_, aria_hidden="true")
-
-    @staticmethod
-    def from_tag_element(elem: TagElement) -> "SpoilerContentNode":
-        restrict(elem, "div", "class", "aria-hidden")
-        ensure_class(elem, "spoiler-content")
-        ensure_attribute(elem, "aria-hidden", "true")
-        aria_attribute_comes_first = list(elem.attrib.keys())[0] == "aria-hidden"
-        return SpoilerContentNode(
-            children=get_child_nodes(elem),
-            aria_attribute_comes_first=aria_attribute_comes_first,
-        )
-
-
-class SpoilerHeaderNode(ContainerNode):
-    @staticmethod
-    def zulip_class() -> str:
-        return "spoiler-header"
-
-    def as_html(self) -> SafeHtml:
-        return self.block_tag("div", class_=self.zulip_class())
-
-    @staticmethod
-    def from_tag_element(elem: TagElement) -> "SpoilerHeaderNode":
-        restrict(elem, "div", "class")
-        ensure_class(elem, "spoiler-header")
-        return SpoilerHeaderNode(children=get_child_nodes(elem, ignore_newlines=True))
-
-
-class SpoilerNode(DivNode):
-    header: SpoilerHeaderNode
-    content: SpoilerContentNode
-
-    def as_text(self) -> str:
-        header = self.header.as_text()
-        content = self.content.as_text()
-        return f"SPOILER: {header}\nHIDDEN:\n{content}\nENDHIDDEN\n"
-
-    @staticmethod
-    def zulip_class() -> str:
-        return "spoiler-block"
-
-    def as_html(self) -> SafeHtml:
-        header = self.header.as_html()
-        content = self.content.as_html()
-        return build_tag(
-            tag="div",
-            inner=SafeHtml.combine([header, content]),
-            class_=self.zulip_class(),
-        )
-
-    @staticmethod
-    def from_tag_element(elem: TagElement) -> "SpoilerNode":
-        restrict(elem, "div", "class")
-        ensure_class(elem, "spoiler-block")
-        header_elem, content_elem = get_two_children(elem)
-        header = SpoilerHeaderNode.from_tag_element(header_elem)
-        content = SpoilerContentNode.from_tag_element(content_elem)
-        return SpoilerNode(header=header, content=content)
 
 
 """
@@ -1540,6 +1539,7 @@ class PygmentsCodeBlockNode(DivNode):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "PygmentsCodeBlockNode":
         restrict(elem, "div", "class", "data-code-language")
+        ensure_class(elem, "codehilite")
         html = get_html(elem)
         lang = maybe_get_string(elem, "data-code-language")
         content = text_content(elem)
