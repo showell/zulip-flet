@@ -310,7 +310,28 @@ And then some more basic classes follow.
 
 
 class LinkNode(PhrasingNode, ABC):
-    pass
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "LinkNode":
+        elem_class = maybe_get_string(elem, "class")
+
+        if elem.tag == "a":
+            if elem_class == "message-link":
+                return MessageLinkNode.from_tag_element(elem)
+
+            if elem_class == "stream":
+                return StreamLinkNode.from_tag_element(elem)
+
+            if elem_class == "stream-topic":
+                return StreamTopicLinkNode.from_tag_element(elem)
+
+            return AnchorNode.from_tag_element(elem)
+
+        if elem.tag == "img":
+            if elem_class == "emoji":
+                return EmojiImageNode.from_tag_element(elem)
+            raise IllegalMessage("unexpected img tag")
+
+        raise IllegalMessage("not a link node")
 
 
 class AnchorNode(LinkNode, ContainerNode):
@@ -1389,29 +1410,6 @@ def verify_round_trip(
     return new_f
 
 
-def get_link_node(elem: TagElement) -> LinkNode:
-    elem_class = maybe_get_string(elem, "class")
-
-    if elem.tag == "a":
-        if elem_class == "message-link":
-            return MessageLinkNode.from_tag_element(elem)
-
-        if elem_class == "stream":
-            return StreamLinkNode.from_tag_element(elem)
-
-        if elem_class == "stream-topic":
-            return StreamTopicLinkNode.from_tag_element(elem)
-
-        return AnchorNode.from_tag_element(elem)
-
-    if elem.tag == "img":
-        if elem_class == "emoji":
-            return EmojiImageNode.from_tag_element(elem)
-        raise IllegalMessage("unexpected img tag")
-
-    raise IllegalMessage("not a link node")
-
-
 def maybe_get_phrasing_node(elem: Element) -> PhrasingNode | None:
     if isinstance(elem, TextElement):
         return TextNode(value=elem.text)
@@ -1421,7 +1419,7 @@ def maybe_get_phrasing_node(elem: Element) -> PhrasingNode | None:
             return TextFormattingNode.from_tag_element(elem)
 
         if elem.tag in ["a", "img"]:
-            return get_link_node(elem)
+            return LinkNode.from_tag_element(elem)
 
         if elem.tag == "br":
             restrict_attributes(elem)
