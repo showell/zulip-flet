@@ -230,12 +230,18 @@ class ContainerNode(BaseNode, ABC):
 
 
 """
-Whenever practical, we try to stay at the same layer of
+Whenever practical, I try to stay at the same layer of
 abstraction as the mdast project.
 
 See https://github.com/syntax-tree/mdast?tab=readme-ov-file#heading
 as an example.  Instead of concretely having distinct classes for
-<h1>, <h2>, etc. in my AST, we use a Heading concept with depth.
+<h1>, <h2>, etc. in my AST, I use a Heading concept with depth.
+
+I'm still on the fence about having a catch-all HeadingNode class,
+though.  I think just having six concrete classes might be nice
+when I start thinking about markdown parsing and stuff like that.
+(But I would probably still keep a superclass, even if it's just
+an ABC.)
 """
 
 
@@ -248,6 +254,30 @@ class HeadingNode(ContainerNode):
 
     def as_html(self) -> SafeHtml:
         return self.tag(f"h{self.depth}")
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "HeadingNode":
+        restrict_attributes(elem)
+
+        if elem.tag == "h1":
+            return HeadingNode(depth=1, children=PhrasingNode.get_child_nodes(elem))
+
+        if elem.tag == "h2":
+            return HeadingNode(depth=2, children=PhrasingNode.get_child_nodes(elem))
+
+        if elem.tag == "h3":
+            return HeadingNode(depth=3, children=PhrasingNode.get_child_nodes(elem))
+
+        if elem.tag == "h4":
+            return HeadingNode(depth=4, children=PhrasingNode.get_child_nodes(elem))
+
+        if elem.tag == "h5":
+            return HeadingNode(depth=5, children=PhrasingNode.get_child_nodes(elem))
+
+        if elem.tag == "h6":
+            return HeadingNode(depth=6, children=PhrasingNode.get_child_nodes(elem))
+
+        raise IllegalMessage(f"Unexpected heading tag {elem.tag}")
 
 
 """
@@ -1524,23 +1554,8 @@ def get_node(elem: TagElement) -> BaseNode:
     if elem.tag == "div":
         return DivNode.from_tag_element(elem)
 
-    if elem.tag == "h1":
-        return HeadingNode(depth=1, children=PhrasingNode.get_child_nodes(elem))
-
-    if elem.tag == "h2":
-        return HeadingNode(depth=2, children=PhrasingNode.get_child_nodes(elem))
-
-    if elem.tag == "h3":
-        return HeadingNode(depth=3, children=PhrasingNode.get_child_nodes(elem))
-
-    if elem.tag == "h4":
-        return HeadingNode(depth=4, children=PhrasingNode.get_child_nodes(elem))
-
-    if elem.tag == "h5":
-        return HeadingNode(depth=5, children=PhrasingNode.get_child_nodes(elem))
-
-    if elem.tag == "h6":
-        return HeadingNode(depth=6, children=PhrasingNode.get_child_nodes(elem))
+    if elem.tag in ["h1", "h2", "h3", "h4", "h5", "h6"]:
+        return HeadingNode.from_tag_element(elem)
 
     if elem.tag == "hr":
         restrict_attributes(elem)
