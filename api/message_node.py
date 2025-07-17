@@ -462,6 +462,11 @@ class ParagraphNode(ContainerNode):
     def as_html(self) -> SafeHtml:
         return self.tag("p")
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "ParagraphNode":
+        restrict(elem, "p")
+        return ParagraphNode(children=get_child_nodes(elem))
+
 
 """
 We use a LinkNode ABC to classify all Zulip nodes that
@@ -1608,8 +1613,7 @@ def get_node(elem: TagElement) -> BaseNode:
         return ListNode.from_tag_element(elem)
 
     if elem.tag == "p":
-        restrict_attributes(elem)
-        return ParagraphNode(children=get_child_nodes(elem))
+        return ParagraphNode.from_tag_element(elem)
 
     if elem.tag == "table":
         return TableNode.from_tag_element(elem)
