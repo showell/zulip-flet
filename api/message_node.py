@@ -125,6 +125,12 @@ class BreakNode(PhrasingNode):
     def as_html(self) -> SafeHtml:
         return SafeHtml.trust("<br/>")
 
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "BreakNode":
+        restrict(elem, "br")
+        forbid_children(elem)
+        return BreakNode()
+
 
 class ThematicBreakNode(BaseNode):
     def as_text(self) -> str:
@@ -371,6 +377,11 @@ class CodeNode(TextFormattingNode):
 
     def as_html(self) -> SafeHtml:
         return self.tag("code")
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "CodeNode":
+        restrict(elem, "code")
+        return CodeNode(children=get_child_nodes(elem))
 
 
 class ParagraphNode(ContainerNode):
@@ -1422,13 +1433,10 @@ def maybe_get_phrasing_node(elem: Element) -> PhrasingNode | None:
             return LinkNode.from_tag_element(elem)
 
         if elem.tag == "br":
-            restrict_attributes(elem)
-            forbid_children(elem)
-            return BreakNode()
+            return BreakNode.from_tag_element(elem)
 
         if elem.tag == "code":
-            restrict_attributes(elem)
-            return CodeNode(children=get_child_nodes(elem))
+            return CodeNode.from_tag_element(elem)
 
         if elem.tag == "span":
             return SpanNode.from_tag_element(elem)
