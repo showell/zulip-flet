@@ -75,6 +75,18 @@ class PhrasingNode(BaseNode, ABC):
 
         return None
 
+    @staticmethod
+    def get_child_nodes(elem: TagElement) -> list["PhrasingNode"]:
+        children: list[PhrasingNode] = []
+
+        for c in elem.children:
+            child_node = PhrasingNode.maybe_get_from_element(c)
+            if child_node is None:
+                raise IllegalMessage("expected phrasing node")
+            children.append(child_node)
+
+        return children
+
 
 class DivNode(BaseNode, ABC):
     @staticmethod
@@ -283,7 +295,7 @@ class DeleteNode(TextFormattingNode):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "DeleteNode":
         restrict(elem, "del")
-        return DeleteNode(children=get_phrasing_nodes(elem))
+        return DeleteNode(children=PhrasingNode.get_child_nodes(elem))
 
 
 class EmphasisNode(TextFormattingNode):
@@ -296,7 +308,7 @@ class EmphasisNode(TextFormattingNode):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "EmphasisNode":
         restrict(elem, "em")
-        return EmphasisNode(children=get_phrasing_nodes(elem))
+        return EmphasisNode(children=PhrasingNode.get_child_nodes(elem))
 
 
 class StrongNode(TextFormattingNode):
@@ -309,7 +321,7 @@ class StrongNode(TextFormattingNode):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "StrongNode":
         restrict(elem, "strong")
-        return StrongNode(children=get_phrasing_nodes(elem))
+        return StrongNode(children=PhrasingNode.get_child_nodes(elem))
 
 
 """
@@ -410,7 +422,7 @@ class AnchorNode(LinkNode, ContainerNode):
     def from_tag_element(elem: TagElement) -> "AnchorNode":
         restrict(elem, "a", "href")
         href = get_string(elem, "href", allow_empty=True)
-        return AnchorNode(href=href, children=get_phrasing_nodes(elem))
+        return AnchorNode(href=href, children=PhrasingNode.get_child_nodes(elem))
 
 
 class BlockQuoteNode(ContainerNode):
@@ -939,7 +951,7 @@ class MessageLinkNode(LinkNode, ContainerNode):
     def from_tag_element(elem: TagElement) -> "MessageLinkNode":
         restrict(elem, "a", "class", "href")
         href = get_string(elem, "href")
-        children = get_phrasing_nodes(elem)
+        children = PhrasingNode.get_child_nodes(elem)
         return MessageLinkNode(
             href=href,
             children=children,
@@ -1047,7 +1059,7 @@ class StreamLinkNode(LinkNode, ContainerNode):
         ensure_class(elem, "stream")
         stream_id = get_database_id(elem, "data-stream-id")
         href = get_string(elem, "href")
-        children = get_phrasing_nodes(elem)
+        children = PhrasingNode.get_child_nodes(elem)
         return StreamLinkNode(href=href, stream_id=stream_id, children=children)
 
 
@@ -1077,7 +1089,7 @@ class StreamTopicLinkNode(LinkNode, ContainerNode):
         ensure_class(elem, "stream-topic")
         stream_id = get_database_id(elem, "data-stream-id")
         href = get_string(elem, "href")
-        children = get_phrasing_nodes(elem)
+        children = PhrasingNode.get_child_nodes(elem)
         return StreamTopicLinkNode(href=href, stream_id=stream_id, children=children)
 
 
@@ -1496,22 +1508,8 @@ def get_child_nodes(elem: TagElement, ignore_newlines: bool = False) -> list[Bas
     return children
 
 
-def get_phrasing_nodes(elem: TagElement) -> list[PhrasingNode]:
-    children: list[PhrasingNode] = []
-
-    for c in elem.children:
-        child_node = PhrasingNode.maybe_get_from_element(c)
-        if child_node is None:
-            raise IllegalMessage("expected phrasing node")
-        children.append(child_node)
-
-    return children
-
-
 @verify_round_trip
 def get_node(elem: TagElement) -> BaseNode:
-    elem_class = maybe_get_string(elem, "class")
-
     node = PhrasingNode.maybe_get_from_element(elem)
     if node is not None:
         return node
@@ -1527,22 +1525,22 @@ def get_node(elem: TagElement) -> BaseNode:
         return DivNode.from_tag_element(elem)
 
     if elem.tag == "h1":
-        return HeadingNode(depth=1, children=get_phrasing_nodes(elem))
+        return HeadingNode(depth=1, children=PhrasingNode.get_child_nodes(elem))
 
     if elem.tag == "h2":
-        return HeadingNode(depth=2, children=get_phrasing_nodes(elem))
+        return HeadingNode(depth=2, children=PhrasingNode.get_child_nodes(elem))
 
     if elem.tag == "h3":
-        return HeadingNode(depth=3, children=get_phrasing_nodes(elem))
+        return HeadingNode(depth=3, children=PhrasingNode.get_child_nodes(elem))
 
     if elem.tag == "h4":
-        return HeadingNode(depth=4, children=get_phrasing_nodes(elem))
+        return HeadingNode(depth=4, children=PhrasingNode.get_child_nodes(elem))
 
     if elem.tag == "h5":
-        return HeadingNode(depth=5, children=get_phrasing_nodes(elem))
+        return HeadingNode(depth=5, children=PhrasingNode.get_child_nodes(elem))
 
     if elem.tag == "h6":
-        return HeadingNode(depth=6, children=get_phrasing_nodes(elem))
+        return HeadingNode(depth=6, children=PhrasingNode.get_child_nodes(elem))
 
     if elem.tag == "hr":
         restrict_attributes(elem)
