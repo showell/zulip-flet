@@ -76,6 +76,26 @@ class PhrasingNode(BaseNode, ABC):
         return None
 
 
+class DivNode(BaseNode, ABC):
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "DivNode":
+        elem_class = maybe_get_string(elem, "class")
+
+        if elem.tag == "div":
+            if elem_class == "codehilite":
+                return PygmentsCodeBlockNode.from_tag_element(elem)
+            if elem_class == "spoiler-block":
+                return SpoilerNode.from_tag_element(elem)
+            if elem_class == "message_inline_image":
+                return InlineImageNode.from_tag_element(elem)
+            if elem_class == "message_inline_image message_inline_video":
+                return InlineVideoNode.from_tag_element(elem)
+
+            raise IllegalMessage(f"unexpected class for div tag: {elem_class}")
+
+        raise IllegalMessage(f"unexpected tag: {elem.tag}")
+
+
 class SpanNode(PhrasingNode, ABC):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "SpanNode":
@@ -810,7 +830,7 @@ class EmojiSpanNode(SpanNode):
         return EmojiSpanNode(title=title, unicode_points=unicode_points)
 
 
-class InlineImageNode(BaseNode):
+class InlineImageNode(DivNode):
     img: InlineImageChildImgNode
     href: str
     title: str | None
@@ -852,7 +872,7 @@ class InlineImageNode(BaseNode):
         )
 
 
-class InlineVideoNode(BaseNode):
+class InlineVideoNode(DivNode):
     href: str
     src: str
     title: str | None
@@ -969,7 +989,7 @@ class SpoilerHeaderNode(ContainerNode):
         return SpoilerHeaderNode(children=get_child_nodes(elem, ignore_newlines=True))
 
 
-class SpoilerNode(BaseNode):
+class SpoilerNode(DivNode):
     header: SpoilerHeaderNode
     content: SpoilerContentNode
 
@@ -1414,7 +1434,7 @@ class KatexNode(SpanNode):
         return KatexNode(html=SafeHtml.trust(html), tag_class=tag_class)
 
 
-class PygmentsCodeBlockNode(BaseNode):
+class PygmentsCodeBlockNode(DivNode):
     html: SafeHtml
     lang: str | None
     content: str
@@ -1504,16 +1524,7 @@ def get_node(elem: TagElement) -> BaseNode:
         return BodyNode(children=get_child_nodes(elem))
 
     if elem.tag == "div":
-        if elem_class == "codehilite":
-            return PygmentsCodeBlockNode.from_tag_element(elem)
-        if elem_class == "spoiler-block":
-            return SpoilerNode.from_tag_element(elem)
-        if elem_class == "message_inline_image":
-            return InlineImageNode.from_tag_element(elem)
-        if elem_class == "message_inline_image message_inline_video":
-            return InlineVideoNode.from_tag_element(elem)
-
-        raise IllegalMessage("unexpected div tag")
+        return DivNode.from_tag_element(elem)
 
     if elem.tag == "h1":
         return HeadingNode(depth=1, children=get_phrasing_nodes(elem))
