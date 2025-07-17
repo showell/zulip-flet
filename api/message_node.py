@@ -48,11 +48,31 @@ class BaseNode(BaseModel, ABC):
         pass
 
 
+"""
+PhrasingNode:
+
+I steal the concept of a "phrasing" node from the mdast project.
+
+Basically, phrasing nodes are things that can be contained within
+almost any other type of node.
+
+To give a counterexample, it doesn't make any sense to use a
+<blockquote> tag within a <del> tag in the Zulip universe,
+because there is no way to produce this in markdown.
+
+I can't claim yet that my implementation of PhrasingNode will
+prevent every impossible construct nor allow every exotic-but-legal
+construct.  It definitely prevents some strangeness currently.
+Hopefully the overall structure can be easy to evolve as I start
+testing this more exhaustively.
+"""
+
+
 class PhrasingNode(BaseNode, ABC):
     @staticmethod
     def maybe_get_from_element(elem: Element) -> Optional["PhrasingNode"]:
         if isinstance(elem, TextElement):
-            return TextNode(value=elem.text)
+            return TextNode.from_text_element(elem)
 
         if isinstance(elem, TagElement):
             if elem.tag in ["del", "em", "strong"]:
@@ -86,6 +106,14 @@ class PhrasingNode(BaseNode, ABC):
             children.append(child_node)
 
         return children
+
+
+"""
+I create ABCs for <div> and <span> tags to be created from
+Zulip HTML input (via TagElement).
+
+These are just purely intended for code organization.
+"""
 
 
 class DivNode(BaseNode, ABC):
@@ -136,21 +164,10 @@ class SpanNode(PhrasingNode, ABC):
 
 
 """
-Even though HTML doesn't require you to surround
-text with a text node, we model it that way in our
-AST.
+TEXT:
 
-At the HTML level, think of it like we would have
-preferred
- 
-    <p><text>hello</text><b><text>world</text></b></p>
-
-over
-
-    <p>hello<b>world</b></p>
-
-from a parsing/manipulation perspective, even though
-the latter is clearly better for humans.
+We model text as a TextNode, similar to how most
+markdown processors work.
 """
 
 
@@ -162,6 +179,10 @@ class TextNode(PhrasingNode):
 
     def as_html(self) -> SafeHtml:
         return escape_text(self.value)
+
+    @staticmethod
+    def from_text_element(elem: TextElement) -> "TextNode":
+        return TextNode(value=elem.text)
 
 
 """
@@ -1582,7 +1603,7 @@ def get_child_nodes(elem: TagElement, ignore_newlines: bool = False) -> list[Bas
             if ignore_newlines:
                 ensure_newline(c)
             else:
-                children.append(TextNode(value=c.text))
+                children.append(TextNode.from_text_element(c))
         elif isinstance(c, TagElement):
             children.append(get_node(c))
     return children
