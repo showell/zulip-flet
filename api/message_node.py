@@ -146,7 +146,7 @@ have arbitrary children.
 
 Note that there are some classes in our AST that do have
 children but don't inherit from ContainerNode.  This means
-that they are something like tables or lists, in which their
+that they are something like tables, in which their
 child nodes are way more constrained.
 
 We eventually want more refinement here.
