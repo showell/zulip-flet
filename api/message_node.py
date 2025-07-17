@@ -53,7 +53,30 @@ class PhrasingNode(BaseNode, ABC):
 
 
 class SpanNode(PhrasingNode, ABC):
-    pass
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "SpanNode":
+        if elem.tag == "span":
+            elem_class = maybe_get_string(elem, "class")
+
+            if elem_class is None:
+                raise IllegalMessage("span tags need a class")
+
+            if elem_class.startswith("emoji "):
+                return EmojiSpanNode.from_tag_element(elem)
+            if elem_class in ["katex", "katex-display"]:
+                return KatexNode.from_tag_element(elem)
+            if elem_class == "tex-error":
+                return TexErrorNode.from_tag_element(elem)
+            if elem_class == "timestamp-error":
+                return TimeStampErrorNode.from_tag_element(elem)
+
+            maybe_mention_node = MentionNode.maybe_from_tag_element(elem)
+            if maybe_mention_node is not None:
+                return maybe_mention_node
+
+            raise IllegalMessage("unexpected span tag")
+
+        raise IllegalMessage(f"bad tag {elem.tag} for span")
 
 
 """
@@ -299,6 +322,12 @@ class AnchorNode(LinkNode, ContainerNode):
 
     def as_html(self) -> SafeHtml:
         return self.tag("a", href=self.href)
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "AnchorNode":
+        restrict(elem, "a", "href")
+        href = get_string(elem, "href", allow_empty=True)
+        return AnchorNode(href=href, children=get_phrasing_nodes(elem))
 
 
 class BlockQuoteNode(ContainerNode):
@@ -1373,9 +1402,7 @@ def get_link_node(elem: TagElement) -> LinkNode:
         if elem_class == "stream-topic":
             return StreamTopicLinkNode.from_tag_element(elem)
 
-        restrict_attributes(elem, "href")
-        href = get_string(elem, "href", allow_empty=True)
-        return AnchorNode(href=href, children=get_phrasing_nodes(elem))
+        return AnchorNode.from_tag_element(elem)
 
     if elem.tag == "img":
         if elem_class == "emoji":
@@ -1383,28 +1410,6 @@ def get_link_node(elem: TagElement) -> LinkNode:
         raise IllegalMessage("unexpected img tag")
 
     raise IllegalMessage("not a link node")
-
-
-def get_span_node(elem: TagElement) -> SpanNode:
-    elem_class = maybe_get_string(elem, "class")
-
-    if elem_class is None:
-        raise IllegalMessage("span tags need a class")
-
-    if elem_class.startswith("emoji "):
-        return EmojiSpanNode.from_tag_element(elem)
-    if elem_class in ["katex", "katex-display"]:
-        return KatexNode.from_tag_element(elem)
-    if elem_class == "tex-error":
-        return TexErrorNode.from_tag_element(elem)
-    if elem_class == "timestamp-error":
-        return TimeStampErrorNode.from_tag_element(elem)
-
-    maybe_mention_node = MentionNode.maybe_from_tag_element(elem)
-    if maybe_mention_node is not None:
-        return maybe_mention_node
-
-    raise IllegalMessage("unexpected span tag")
 
 
 def maybe_get_phrasing_node(elem: Element) -> PhrasingNode | None:
@@ -1428,7 +1433,7 @@ def maybe_get_phrasing_node(elem: Element) -> PhrasingNode | None:
             return CodeNode(children=get_child_nodes(elem))
 
         if elem.tag == "span":
-            return get_span_node(elem)
+            return SpanNode.from_tag_element(elem)
 
         if elem.tag == "time":
             return TimeWidgetNode.from_tag_element(elem)
