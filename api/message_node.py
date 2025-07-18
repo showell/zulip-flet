@@ -143,9 +143,6 @@ class PhrasingNode(ContentNode, ABC):
             if elem.tag in ["a", "img"]:
                 return LinkNode.from_tag_element(elem)
 
-            if elem.tag == "br":
-                return BreakNode.from_tag_element(elem)
-
             if elem.tag == "code":
                 return CodeNode.from_tag_element(elem)
 
@@ -194,6 +191,9 @@ class BlockContentNode(ContentNode, ABC):
     def from_tag_element(elem: TagElement) -> "BlockContentNode":
         if elem.tag == "blockquote":
             return BlockQuoteNode.from_tag_element(elem)
+
+        if elem.tag == "br":
+            return BreakNode.from_tag_element(elem)
 
         if elem.tag == "div":
             return DivNode.from_tag_element(elem)
@@ -324,11 +324,7 @@ The <br> and <hr> tags are handled super generically by us.
 """
 
 
-class BreakNode(PhrasingNode):
-    # Unlike the flutter app, I don't currently mark
-    # BreakNode as a subclass of BlockContentNode, but
-    # I understand why they did it, and I plan future
-    # tweaks to handling Zulip <br> tags.
+class BreakNode(BlockContentNode):
     def as_text(self) -> str:
         return "\n"
 
@@ -522,6 +518,8 @@ And then some more basic classes follow.
 
 
 class BlockQuoteNode(BlockContentNode, ContainerNode):
+    children: Sequence[BlockContentNode]
+
     def as_text(self) -> str:
         content = self.children_text()
         return f"\n-----\n{content}\n-----\n"
@@ -532,7 +530,8 @@ class BlockQuoteNode(BlockContentNode, ContainerNode):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "BlockQuoteNode":
         restrict(elem, "blockquote")
-        return BlockQuoteNode(children=get_child_nodes(elem))
+        children = [BlockContentNode.from_element(c) for c in elem.children]
+        return BlockQuoteNode(children=children)
 
 
 class BodyNode(ContentNode):
@@ -549,9 +548,7 @@ class BodyNode(ContentNode):
     @verify_round_trip
     def from_tag_element(elem: TagElement) -> "BodyNode":
         restrict(elem, "body")
-        children: list[BlockContentNode] = []
-        for c in elem.children:
-            children.append(BlockContentNode.from_element(c))
+        children = [BlockContentNode.from_element(c) for c in elem.children]
         return BodyNode(children=children)
 
 
