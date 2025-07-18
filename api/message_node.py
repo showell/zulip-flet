@@ -190,7 +190,7 @@ class BlockContentNode(ContentNode, ABC):
     @verify_round_trip
     def from_tag_element(elem: TagElement) -> "BlockContentNode":
         if elem.tag == "blockquote":
-            return BlockQuoteNode.from_tag_element(elem)
+            return QuotationNode.from_tag_element(elem)
 
         if elem.tag == "br":
             return LineBreakNode.from_tag_element(elem)
@@ -537,11 +537,15 @@ class StrongNode(TextFormattingNode):
 
 
 """
-And then some more basic classes follow.
+QuotationNode for <blockquote> tags
+
+I borrow the terminology here from zulip-flutter.  The idea in
+calling it a "quotation" is that Zulip often uses <blockquote>
+tags for the "Quote message" feature (I'm guessing).
 """
 
 
-class BlockQuoteNode(BlockContentNode, ContainerNode):
+class QuotationNode(BlockContentNode, ContainerNode):
     children: Sequence[BlockContentNode]
 
     def as_text(self) -> str:
@@ -552,10 +556,15 @@ class BlockQuoteNode(BlockContentNode, ContainerNode):
         return self.tag("blockquote")
 
     @staticmethod
-    def from_tag_element(elem: TagElement) -> "BlockQuoteNode":
+    def from_tag_element(elem: TagElement) -> "QuotationNode":
         restrict(elem, "blockquote")
         children = [BlockContentNode.from_element(c) for c in elem.children]
-        return BlockQuoteNode(children=children)
+        return QuotationNode(children=children)
+
+
+"""
+And then some more basic classes follow.
+"""
 
 
 class CodeNode(PhrasingNode, ContainerNode):
