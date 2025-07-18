@@ -1,9 +1,9 @@
 from html_element import TagElement, get_only_child, restrict
 from lxml import etree
-from message_node import BodyNode
+from message_node import ZulipContent
 
 
-def get_message_node(html: str) -> BodyNode:
+def get_message_node(html: str) -> ZulipContent:
     # We try to be strict, but lxml doesn't like math/video/time and doesn't
     # recover from certain <br> tags in paragraphs.
     if (
@@ -21,6 +21,5 @@ def get_message_node(html: str) -> BodyNode:
     root = TagElement.from_lxml(lxml_root)
     restrict(root, "html")
     body = get_only_child(root, "body")
-    restrict(body, "body")
-    message_node = BodyNode.from_tag_element(body)
+    message_node = ZulipContent.from_tag_element(body)
     return message_node

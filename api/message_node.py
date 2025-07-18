@@ -217,6 +217,35 @@ class BlockContentNode(ContentNode, ABC):
 
 
 """
+TOP LEVEL STUFF!!!
+
+With some of the preliminaries out of the way, we define ZulipContent.
+
+Typically this is content you would find within a <body> tag, but
+Zulip omits the body tag.  See the caller in message_parser.py to see
+how we work around that.
+"""
+
+
+class ZulipContent(ContentNode):
+    children: Sequence[BlockContentNode]
+
+    def as_text(self) -> str:
+        return " ".join(c.as_text() for c in self.children)
+
+    def as_html(self) -> SafeHtml:
+        inner = SafeHtml.combine([c.as_html() for c in self.children])
+        return build_tag(tag="body", inner=inner)
+
+    @staticmethod
+    @verify_round_trip
+    def from_tag_element(elem: TagElement) -> "ZulipContent":
+        restrict(elem, "body")
+        children = [BlockContentNode.from_element(c) for c in elem.children]
+        return ZulipContent(children=children)
+
+
+"""
 I create ABCs for <div> and <span> tags to be created from
 Zulip HTML input (via TagElement).
 
@@ -532,24 +561,6 @@ class BlockQuoteNode(BlockContentNode, ContainerNode):
         restrict(elem, "blockquote")
         children = [BlockContentNode.from_element(c) for c in elem.children]
         return BlockQuoteNode(children=children)
-
-
-class BodyNode(ContentNode):
-    children: Sequence[BlockContentNode]
-
-    def as_text(self) -> str:
-        return " ".join(c.as_text() for c in self.children)
-
-    def as_html(self) -> SafeHtml:
-        inner = SafeHtml.combine([c.as_html() for c in self.children])
-        return build_tag(tag="body", inner=inner)
-
-    @staticmethod
-    @verify_round_trip
-    def from_tag_element(elem: TagElement) -> "BodyNode":
-        restrict(elem, "body")
-        children = [BlockContentNode.from_element(c) for c in elem.children]
-        return BodyNode(children=children)
 
 
 class CodeNode(PhrasingNode, ContainerNode):
@@ -1002,7 +1013,7 @@ class TrNode(InternalNode):
         return TrNode(tds=tds)
 
 
-class TBodyNode(InternalNode):
+class TZulipContent(InternalNode):
     trs: Sequence[TrNode]
 
     def as_text(self) -> str:
@@ -1014,10 +1025,10 @@ class TBodyNode(InternalNode):
         return build_tag(tag="tbody", inner=inner)
 
     @staticmethod
-    def from_tag_element(tbody: TagElement) -> "TBodyNode":
+    def from_tag_element(tbody: TagElement) -> "TZulipContent":
         restrict(tbody, "tbody")
         trs = [TrNode.from_tag_element(tr) for tr in get_tag_children(tbody)]
-        return TBodyNode(trs=trs)
+        return TZulipContent(trs=trs)
 
 
 class THeadNode(InternalNode):
@@ -1042,7 +1053,7 @@ class THeadNode(InternalNode):
 
 class TableNode(BlockContentNode):
     thead: THeadNode
-    tbody: TBodyNode
+    tbody: TZulipContent
 
     def as_text(self) -> str:
         return self.thead.as_text() + "\n" + self.tbody.as_text()
@@ -1057,7 +1068,7 @@ class TableNode(BlockContentNode):
     def from_tag_element(elem: TagElement) -> "TableNode":
         thead_elem, tbody_elem = get_two_block_children(elem)
         thead = THeadNode.from_tag_element(thead_elem)
-        tbody = TBodyNode.from_tag_element(tbody_elem)
+        tbody = TZulipContent.from_tag_element(tbody_elem)
         return TableNode(thead=thead, tbody=tbody)
 
 
