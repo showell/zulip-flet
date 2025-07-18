@@ -203,16 +203,6 @@ class BlockContentNode(ContentNode, ABC):
 
         raise IllegalMessage(f"Unsupported tag {elem.tag}")
 
-    @staticmethod
-    def get_child_nodes(elem: TagElement) -> list["BlockContentNode"]:
-        children: list[BlockContentNode] = []
-        for c in elem.children:
-            if isinstance(c, TagElement):
-                children.append(BlockContentNode.from_tag_element(c))
-            elif isinstance(c, TextElement) and c.text != "\n":
-                raise IllegalMessage(f"expected TagElement, got {c}")
-        return children
-
 
 """
 I create ABCs for <div> and <span> tags to be created from
@@ -512,20 +502,27 @@ class BlockQuoteNode(BlockContentNode, ContainerNode):
         return BlockQuoteNode(children=get_child_nodes(elem))
 
 
-class BodyNode(BaseModel):
-    children: Sequence["BlockContentNode"]
+class BodyNode(ContentNode):
+    children: Sequence[BlockContentNode | TextNode]
 
     def as_text(self) -> str:
         return " ".join(c.as_text() for c in self.children)
 
     def as_html(self) -> SafeHtml:
-        inner = SafeHtml.block_join([c.as_html() for c in self.children])
+        inner = SafeHtml.combine([c.as_html() for c in self.children])
         return build_tag(tag="body", inner=inner)
 
     @staticmethod
+    @verify_round_trip
     def from_tag_element(elem: TagElement) -> "BodyNode":
         restrict(elem, "body")
-        return BodyNode(children=BlockContentNode.get_child_nodes(elem))
+        children: list[BlockContentNode | TextNode] = []
+        for c in elem.children:
+            if isinstance(c, TagElement):
+                children.append(BlockContentNode.from_tag_element(c))
+            elif isinstance(c, TextElement):
+                children.append(TextNode.from_text_element(c))
+        return BodyNode(children=children)
 
 
 class CodeNode(PhrasingNode, ContainerNode):
