@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Literal, Optional, Sequence
+from typing import Callable, Literal, Optional, Sequence, TypeVar
 
 from html_element import (
     Element,
@@ -41,11 +41,13 @@ for immediate testing purposes, but it's also with the long term goal of
 some day integrating this into a new markdown parser architecture.
 """
 
+TContentNode = TypeVar("TContentNode", bound="ContentNode")
+
 
 def verify_round_trip(
-    f: Callable[[TagElement], "ContentNode"],
-) -> Callable[[TagElement], "ContentNode"]:
-    def new_f(elem: TagElement) -> "ContentNode":
+    f: Callable[[TagElement], TContentNode],
+) -> Callable[[TagElement], TContentNode]:
+    def new_f(elem: TagElement) -> TContentNode:
         node = f(elem)
 
         expected_html = get_html(elem)
@@ -200,6 +202,16 @@ class BlockContentNode(ContentNode, ABC):
             return TableNode.from_tag_element(elem)
 
         raise IllegalMessage(f"Unsupported tag {elem.tag}")
+
+    @staticmethod
+    def get_child_nodes(elem: TagElement) -> list["BlockContentNode"]:
+        children: list[BlockContentNode] = []
+        for c in elem.children:
+            if isinstance(c, TagElement):
+                children.append(BlockContentNode.from_tag_element(c))
+            elif isinstance(c, TextElement) and c.text != "\n":
+                raise IllegalMessage(f"expected TagElement, got {c}")
+        return children
 
 
 """
@@ -507,7 +519,7 @@ class BodyNode(BlockContentNode, ContainerNode):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "BodyNode":
         restrict(elem, "body")
-        return BodyNode(children=get_child_nodes(elem))
+        return BodyNode(children=BlockContentNode.get_child_nodes(elem))
 
 
 class CodeNode(PhrasingNode, ContainerNode):

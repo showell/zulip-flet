@@ -14,7 +14,8 @@ def test_valid_messages(messages):
             node = get_message_node(html)
             node.as_text()
             node.as_html()
-        except IllegalMessage as e:
+        except Exception as e:
+            print("---")
             print(f"\nOUTER HMTL:\n{repr(html)}")
             print(f"\nERROR:\n{e}\n")
             raise
@@ -26,14 +27,14 @@ def test_valid_messages(messages):
 
 def test_custom_test_cases():
     messages = [
-        '<span class="user-mention channel-wildcard-mention" data-user-id="*">@all</span>',
-        '<span class="user-mention channel-wildcard-mention" data-user-id="*">@everyone</span>',
-        '<span class="user-mention channel-wildcard-mention" data-user-id="*">@channel</span>',
-        '<span class="topic-mention">@topic</span>',
-        '<span class="user-mention channel-wildcard-mention silent" data-user-id="*">all</span>',
-        '<span class="user-mention channel-wildcard-mention silent" data-user-id="*">everyone</span>',
-        '<span class="user-mention channel-wildcard-mention silent" data-user-id="*">channel</span>',
-        '<span class="topic-mention silent">topic</span>',
+        '<p><span class="user-mention channel-wildcard-mention" data-user-id="*">@all</span></p>',
+        '<p><span class="user-mention channel-wildcard-mention" data-user-id="*">@everyone</span></p>',
+        '<p><span class="user-mention channel-wildcard-mention" data-user-id="*">@channel</span></p>',
+        '<p><span class="topic-mention">@topic</span></p>',
+        '<p><span class="user-mention channel-wildcard-mention silent" data-user-id="*">all</span></p>',
+        '<p><span class="user-mention channel-wildcard-mention silent" data-user-id="*">everyone</span></p>',
+        '<p><span class="user-mention channel-wildcard-mention silent" data-user-id="*">channel</span></p>',
+        '<p><span class="topic-mention silent">topic</span></p>',
     ]
     test_valid_messages(messages)
 
