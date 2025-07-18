@@ -49,6 +49,36 @@ class ContentNode(BaseModel, ABC):
 
 
 """
+One of the key ways that the Python implementation of a Zulip content AST
+differs from the Dart/Flutter implementation is that part of our mission is
+to ensure round-tripping back to the original Zulip HTML.  This is partly
+for immediate testing purposes, but it's also with the long term goal of
+some day integrating this into a new markdown parser architecture.
+"""
+
+
+def verify_round_trip(
+    f: Callable[[TagElement], ContentNode],
+) -> Callable[[TagElement], ContentNode]:
+    def new_f(elem: TagElement) -> ContentNode:
+        node = f(elem)
+
+        expected_html = get_html(elem)
+
+        if str(node.as_html()) != expected_html:
+            print("\n------- as_html MISMATCH\n")
+            print(repr(expected_html))
+            print()
+            print(repr(str(node.as_html())))
+            print()
+            raise IllegalMessage("as_html does not round trip")
+
+        return node
+
+    return new_f
+
+
+"""
 InternalNode ABC:
 
 I use certain ABCs just for classifying types of nodes.
@@ -136,7 +166,35 @@ Similar to what the flutter app does.
 
 
 class BlockContentNode(ContentNode, ABC):
-    pass
+    @staticmethod
+    @verify_round_trip
+    def from_tag_element(elem: TagElement) -> "BlockContentNode":
+        if elem.tag == "blockquote":
+            return BlockQuoteNode.from_tag_element(elem)
+
+        if elem.tag == "body":
+            restrict_attributes(elem)
+            return BodyNode(children=get_child_nodes(elem))
+
+        if elem.tag == "div":
+            return DivNode.from_tag_element(elem)
+
+        if elem.tag in ["h1", "h2", "h3", "h4", "h5", "h6"]:
+            return HeadingNode.from_tag_element(elem)
+
+        if elem.tag == "hr":
+            return ThematicBreakNode.from_tag_element(elem)
+
+        if elem.tag in ["ol", "ul"]:
+            return ListNode.from_tag_element(elem)
+
+        if elem.tag == "p":
+            return ParagraphNode.from_tag_element(elem)
+
+        if elem.tag == "table":
+            return TableNode.from_tag_element(elem)
+
+        raise IllegalMessage(f"Unsupported tag {elem.tag}")
 
 
 """
@@ -1607,27 +1665,6 @@ Now glue it all together.
 """
 
 
-def verify_round_trip(
-    f: Callable[[TagElement], ContentNode],
-) -> Callable[[TagElement], ContentNode]:
-    def new_f(elem: TagElement) -> ContentNode:
-        node = f(elem)
-
-        expected_html = get_html(elem)
-
-        if str(node.as_html()) != expected_html:
-            print("\n------- as_html MISMATCH\n")
-            print(repr(expected_html))
-            print()
-            print(repr(str(node.as_html())))
-            print()
-            raise IllegalMessage("as_html does not round trip")
-
-        return node
-
-    return new_f
-
-
 def get_child_nodes(
     elem: TagElement, ignore_newlines: bool = False
 ) -> list[ContentNode]:
@@ -1650,34 +1687,4 @@ def get_node(elem: TagElement) -> ContentNode:
     if node is not None:
         return node
 
-    return get_block_content_node(elem)
-
-
-@verify_round_trip
-def get_block_content_node(elem: TagElement) -> BlockContentNode:
-    if elem.tag == "blockquote":
-        return BlockQuoteNode.from_tag_element(elem)
-
-    if elem.tag == "body":
-        restrict_attributes(elem)
-        return BodyNode(children=get_child_nodes(elem))
-
-    if elem.tag == "div":
-        return DivNode.from_tag_element(elem)
-
-    if elem.tag in ["h1", "h2", "h3", "h4", "h5", "h6"]:
-        return HeadingNode.from_tag_element(elem)
-
-    if elem.tag == "hr":
-        return ThematicBreakNode.from_tag_element(elem)
-
-    if elem.tag in ["ol", "ul"]:
-        return ListNode.from_tag_element(elem)
-
-    if elem.tag == "p":
-        return ParagraphNode.from_tag_element(elem)
-
-    if elem.tag == "table":
-        return TableNode.from_tag_element(elem)
-
-    raise IllegalMessage(f"Unsupported tag {elem.tag}")
+    return BlockContentNode.from_tag_element(elem)
