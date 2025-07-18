@@ -181,10 +181,6 @@ class BlockContentNode(ContentNode, ABC):
         if elem.tag == "blockquote":
             return BlockQuoteNode.from_tag_element(elem)
 
-        if elem.tag == "body":
-            restrict_attributes(elem)
-            return BodyNode(children=get_child_nodes(elem))
-
         if elem.tag == "div":
             return DivNode.from_tag_element(elem)
 
@@ -507,6 +503,11 @@ class BlockQuoteNode(BlockContentNode, ContainerNode):
 class BodyNode(BlockContentNode, ContainerNode):
     def as_html(self) -> SafeHtml:
         return self.tag("body")
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "BodyNode":
+        restrict(elem, "body")
+        return BodyNode(children=get_child_nodes(elem))
 
 
 class CodeNode(PhrasingNode, ContainerNode):
