@@ -17,12 +17,12 @@ from html_element import (
     get_bool,
     get_class,
     get_database_id,
-    get_html,
     get_only_block_child,
     get_only_child,
     get_optional_int,
     get_string,
     get_tag_children,
+    get_trusted_html,
     get_two_block_children,
     get_two_children,
     maybe_get_string,
@@ -41,20 +41,21 @@ for immediate testing purposes, but it's also with the long term goal of
 some day integrating this into a new markdown parser architecture.
 """
 
-TContentNode = TypeVar("TContentNode", bound="ContentNode")
+T_Element = TypeVar("T_Element", bound=Element)
+T_ContentNode = TypeVar("T_ContentNode", bound="ContentNode")
 
 
 def verify_round_trip(
-    f: Callable[[TagElement], TContentNode],
-) -> Callable[[TagElement], TContentNode]:
-    def new_f(elem: TagElement) -> TContentNode:
+    f: Callable[[T_Element], T_ContentNode],
+) -> Callable[[T_Element], T_ContentNode]:
+    def new_f(elem: T_Element) -> T_ContentNode:
         node = f(elem)
 
-        expected_html = get_html(elem)
+        expected_html = get_trusted_html(elem)
 
-        if str(node.as_html()) != expected_html:
+        if str(node.as_html()) != str(expected_html):
             print("\n------- as_html MISMATCH\n")
-            print(repr(expected_html))
+            print(repr(str(expected_html)))
             print()
             print(repr(str(node.as_html())))
             print()
@@ -179,6 +180,17 @@ Similar to what the flutter app does.
 class BlockContentNode(ContentNode, ABC):
     @staticmethod
     @verify_round_trip
+    def from_element(elem: Element) -> "BlockContentNode":
+        if isinstance(elem, TextElement):
+            return BlockWhiteSpaceNode.from_text_element(elem)
+
+        if isinstance(elem, TagElement):
+            return BlockContentNode.from_tag_element(elem)
+
+        raise IllegalMessage("unexpected element type")
+
+    @staticmethod
+    @verify_round_trip
     def from_tag_element(elem: TagElement) -> "BlockContentNode":
         if elem.tag == "blockquote":
             return BlockQuoteNode.from_tag_element(elem)
@@ -279,6 +291,27 @@ class TextNode(PhrasingNode):
     @staticmethod
     def from_text_element(elem: TextElement) -> "TextNode":
         return TextNode(value=elem.text)
+
+
+"""
+Handle annoying whitespace for round-trip testing.
+"""
+
+
+class BlockWhiteSpaceNode(BlockContentNode):
+    value: str
+
+    def as_text(self) -> str:
+        return self.value
+
+    def as_html(self) -> SafeHtml:
+        return escape_text(self.value)
+
+    @staticmethod
+    def from_text_element(elem: TextElement) -> "BlockWhiteSpaceNode":
+        if not elem.text.isspace():
+            raise IllegalMessage(f"{elem.text!r} should be whitespace")
+        return BlockWhiteSpaceNode(value=elem.text)
 
 
 """
@@ -503,7 +536,7 @@ class BlockQuoteNode(BlockContentNode, ContainerNode):
 
 
 class BodyNode(ContentNode):
-    children: Sequence[BlockContentNode | TextNode]
+    children: Sequence[BlockContentNode]
 
     def as_text(self) -> str:
         return " ".join(c.as_text() for c in self.children)
@@ -516,12 +549,9 @@ class BodyNode(ContentNode):
     @verify_round_trip
     def from_tag_element(elem: TagElement) -> "BodyNode":
         restrict(elem, "body")
-        children: list[BlockContentNode | TextNode] = []
+        children: list[BlockContentNode] = []
         for c in elem.children:
-            if isinstance(c, TagElement):
-                children.append(BlockContentNode.from_tag_element(c))
-            elif isinstance(c, TextElement):
-                children.append(TextNode.from_text_element(c))
+            children.append(BlockContentNode.from_element(c))
         return BodyNode(children=children)
 
 
@@ -1604,8 +1634,8 @@ class KatexNode(SpanNode):
     def from_tag_element(elem: TagElement) -> "KatexNode":
         restrict(elem, "span", "class")
         tag_class = get_class(elem, "katex", "katex-display")
-        html = get_html(elem)
-        return KatexNode(html=SafeHtml.trust(html), tag_class=tag_class)
+        html = get_trusted_html(elem)
+        return KatexNode(html=html, tag_class=tag_class)
 
 
 class PygmentsCodeBlockNode(DivNode):
@@ -1623,12 +1653,10 @@ class PygmentsCodeBlockNode(DivNode):
     def from_tag_element(elem: TagElement) -> "PygmentsCodeBlockNode":
         restrict(elem, "div", "class", "data-code-language")
         ensure_class(elem, "codehilite")
-        html = get_html(elem)
+        html = get_trusted_html(elem)
         lang = maybe_get_string(elem, "data-code-language")
         content = text_content(elem)
-        return PygmentsCodeBlockNode(
-            html=SafeHtml.trust(html), lang=lang, content=content
-        )
+        return PygmentsCodeBlockNode(html=html, lang=lang, content=content)
 
 
 """

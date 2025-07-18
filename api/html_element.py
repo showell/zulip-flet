@@ -1,20 +1,24 @@
-from dataclasses import dataclass
-
+from html_helpers import SafeHtml, escape_text
 from lxml import etree
+from pydantic import BaseModel
 
 
-class Element:
-    pass
+class Element(BaseModel):
+    html: SafeHtml
 
 
-@dataclass
 class TextElement(Element):
     text: str
 
+    @staticmethod
+    def from_text(text: str) -> "TextElement":
+        return TextElement(
+            html=escape_text(text),
+            text=text,
+        )
 
-@dataclass
+
 class TagElement(Element):
-    html: str
     tag: str
     attrib: dict[str, str]
     children: list["Element"]
@@ -27,16 +31,16 @@ class TagElement(Element):
         children: list["Element"] = []
 
         if elem.text is not None:
-            children.append(TextElement(text=elem.text))
+            children.append(TextElement.from_text(elem.text))
 
         for c in elem.iterchildren():
             children.append(TagElement.from_lxml(c))
 
             if c.tail is not None:
-                children.append(TextElement(text=c.tail))
+                children.append(TextElement.from_text(c.tail))
 
         return TagElement(
-            html=etree.tostring(elem, with_tail=False).decode("utf-8"),
+            html=SafeHtml.trust(etree.tostring(elem, with_tail=False).decode("utf-8")),
             tag=elem.tag,
             attrib={str(k): str(v) for k, v in elem.attrib.items()},
             children=children,
@@ -126,7 +130,7 @@ def get_class(elem: TagElement, *expected: str) -> str:
     return tag_class
 
 
-def get_html(elem: TagElement) -> str:
+def get_trusted_html(elem: Element) -> SafeHtml:
     return elem.html
 
 
