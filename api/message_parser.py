@@ -1,6 +1,6 @@
 from html_element import TagElement, get_only_child, restrict
 from lxml import etree
-from message_node import ContentNode, get_node
+from message_node import ContentNode
 
 
 def get_message_node(html: str) -> ContentNode:
@@ -22,5 +22,5 @@ def get_message_node(html: str) -> ContentNode:
     restrict(root, "html")
     body = get_only_child(root, "body")
     restrict(body, "body")
-    message_node = get_node(body)
+    message_node = ContentNode.from_tag_element(body)
     return message_node

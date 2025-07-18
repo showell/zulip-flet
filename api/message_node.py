@@ -77,6 +77,15 @@ class ContentNode(BaseModel, ABC):
     def as_html(self) -> SafeHtml:
         pass
 
+    @staticmethod
+    @verify_round_trip
+    def from_tag_element(elem: TagElement) -> "ContentNode":
+        node = PhrasingNode.maybe_get_from_element(elem)
+        if node is not None:
+            return node
+
+        return BlockContentNode.from_tag_element(elem)
+
 
 """
 InternalNode ABC:
@@ -1677,14 +1686,5 @@ def get_child_nodes(
             else:
                 children.append(TextNode.from_text_element(c))
         elif isinstance(c, TagElement):
-            children.append(get_node(c))
+            children.append(ContentNode.from_tag_element(c))
     return children
-
-
-@verify_round_trip
-def get_node(elem: TagElement) -> ContentNode:
-    node = PhrasingNode.maybe_get_from_element(elem)
-    if node is not None:
-        return node
-
-    return BlockContentNode.from_tag_element(elem)
