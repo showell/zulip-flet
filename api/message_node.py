@@ -193,7 +193,7 @@ class BlockContentNode(ContentNode, ABC):
             return BlockQuoteNode.from_tag_element(elem)
 
         if elem.tag == "br":
-            return BreakNode.from_tag_element(elem)
+            return LineBreakNode.from_tag_element(elem)
 
         if elem.tag == "div":
             return DivNode.from_tag_element(elem)
@@ -344,16 +344,11 @@ class BlockWhiteSpaceNode(BlockContentNode):
 
 
 """
-We generally conform to mdast conventions for naming.
-
-The <br> and <hr> tags are handled super generically by us.
-
-    * BreakNode == <br>
-    * ThematicBreakNode == <hr>
+BREAK TAGS: <br> and <hr>
 """
 
 
-class BreakNode(BlockContentNode):
+class LineBreakNode(BlockContentNode):
     def as_text(self) -> str:
         return "\n"
 
@@ -361,10 +356,10 @@ class BreakNode(BlockContentNode):
         return SafeHtml.trust("<br/>")
 
     @staticmethod
-    def from_tag_element(elem: TagElement) -> "BreakNode":
+    def from_tag_element(elem: TagElement) -> "LineBreakNode":
         restrict(elem, "br")
         forbid_children(elem)
-        return BreakNode()
+        return LineBreakNode()
 
 
 class ThematicBreakNode(BlockContentNode):
