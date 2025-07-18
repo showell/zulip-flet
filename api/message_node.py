@@ -34,21 +34,6 @@ from html_helpers import SafeHtml, build_tag, escape_text
 from pydantic import BaseModel, Field
 
 """
-Our ContentNode class is abstract.
-"""
-
-
-class ContentNode(BaseModel, ABC):
-    @abstractmethod
-    def as_text(self) -> str:
-        pass
-
-    @abstractmethod
-    def as_html(self) -> SafeHtml:
-        pass
-
-
-"""
 One of the key ways that the Python implementation of a Zulip content AST
 differs from the Dart/Flutter implementation is that part of our mission is
 to ensure round-tripping back to the original Zulip HTML.  This is partly
@@ -58,9 +43,9 @@ some day integrating this into a new markdown parser architecture.
 
 
 def verify_round_trip(
-    f: Callable[[TagElement], ContentNode],
-) -> Callable[[TagElement], ContentNode]:
-    def new_f(elem: TagElement) -> ContentNode:
+    f: Callable[[TagElement], "ContentNode"],
+) -> Callable[[TagElement], "ContentNode"]:
+    def new_f(elem: TagElement) -> "ContentNode":
         node = f(elem)
 
         expected_html = get_html(elem)
@@ -76,6 +61,21 @@ def verify_round_trip(
         return node
 
     return new_f
+
+
+"""
+Our ContentNode class is abstract.
+"""
+
+
+class ContentNode(BaseModel, ABC):
+    @abstractmethod
+    def as_text(self) -> str:
+        pass
+
+    @abstractmethod
+    def as_html(self) -> SafeHtml:
+        pass
 
 
 """
