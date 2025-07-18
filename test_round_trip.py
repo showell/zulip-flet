@@ -3,7 +3,6 @@ import sys
 
 sys.path.append("api")
 from api.database import Database
-from api.html_element import IllegalMessage
 from api.message_parser import get_message_node
 
 

@@ -512,9 +512,15 @@ class BlockQuoteNode(BlockContentNode, ContainerNode):
         return BlockQuoteNode(children=get_child_nodes(elem))
 
 
-class BodyNode(BlockContentNode, ContainerNode):
+class BodyNode(BaseModel):
+    children: Sequence["BlockContentNode"]
+
+    def as_text(self) -> str:
+        return " ".join(c.as_text() for c in self.children)
+
     def as_html(self) -> SafeHtml:
-        return self.tag("body")
+        inner = SafeHtml.block_join([c.as_html() for c in self.children])
+        return build_tag(tag="body", inner=inner)
 
     @staticmethod
     def from_tag_element(elem: TagElement) -> "BodyNode":
