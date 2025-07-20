@@ -1017,7 +1017,7 @@ class TrNode(InternalNode):
         return TrNode(tds=tds)
 
 
-class TZulipContent(InternalNode):
+class TBodyNode(InternalNode):
     trs: Sequence[TrNode]
 
     def as_text(self) -> str:
@@ -1029,10 +1029,10 @@ class TZulipContent(InternalNode):
         return build_tag(tag="tbody", inner=inner)
 
     @staticmethod
-    def from_tag_element(tbody: TagElement) -> "TZulipContent":
+    def from_tag_element(tbody: TagElement) -> "TBodyNode":
         restrict(tbody, "tbody")
         trs = [TrNode.from_tag_element(tr) for tr in get_tag_children(tbody)]
-        return TZulipContent(trs=trs)
+        return TBodyNode(trs=trs)
 
 
 class THeadNode(InternalNode):
@@ -1057,7 +1057,7 @@ class THeadNode(InternalNode):
 
 class TableNode(BlockContentNode):
     thead: THeadNode
-    tbody: TZulipContent
+    tbody: TBodyNode
 
     def as_text(self) -> str:
         return self.thead.as_text() + "\n" + self.tbody.as_text()
@@ -1072,7 +1072,7 @@ class TableNode(BlockContentNode):
     def from_tag_element(elem: TagElement) -> "TableNode":
         thead_elem, tbody_elem = get_two_block_children(elem)
         thead = THeadNode.from_tag_element(thead_elem)
-        tbody = TZulipContent.from_tag_element(tbody_elem)
+        tbody = TBodyNode.from_tag_element(tbody_elem)
         return TableNode(thead=thead, tbody=tbody)
 
 
