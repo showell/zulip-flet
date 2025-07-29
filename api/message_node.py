@@ -91,6 +91,17 @@ class ContentNode(BaseModel, ABC):
 
         return BlockContentNode.from_tag_element(elem)
 
+    @staticmethod
+    def get_child_nodes(elem: TagElement) -> list["ContentNode"]:
+        children: list[ContentNode] = []
+
+        for c in elem.children:
+            if isinstance(c, TextElement):
+                children.append(TextNode.from_text_element(c))
+            elif isinstance(c, TagElement):
+                children.append(ContentNode.from_tag_element(c))
+        return children
+
 
 """
 InternalNode ABC:
@@ -160,7 +171,7 @@ class PhrasingNode(ContentNode, ABC):
         return None
 
     @staticmethod
-    def get_child_nodes(elem: TagElement) -> list["PhrasingNode"]:
+    def get_phrasing_nodes(elem: TagElement) -> list["PhrasingNode"]:
         children: list[PhrasingNode] = []
 
         for c in elem.children:
@@ -449,22 +460,22 @@ class HeadingNode(BlockContentNode, ContainerNode):
         restrict_attributes(elem)
 
         if elem.tag == "h1":
-            return HeadingNode(depth=1, children=PhrasingNode.get_child_nodes(elem))
+            return HeadingNode(depth=1, children=PhrasingNode.get_phrasing_nodes(elem))
 
         if elem.tag == "h2":
-            return HeadingNode(depth=2, children=PhrasingNode.get_child_nodes(elem))
+            return HeadingNode(depth=2, children=PhrasingNode.get_phrasing_nodes(elem))
 
         if elem.tag == "h3":
-            return HeadingNode(depth=3, children=PhrasingNode.get_child_nodes(elem))
+            return HeadingNode(depth=3, children=PhrasingNode.get_phrasing_nodes(elem))
 
         if elem.tag == "h4":
-            return HeadingNode(depth=4, children=PhrasingNode.get_child_nodes(elem))
+            return HeadingNode(depth=4, children=PhrasingNode.get_phrasing_nodes(elem))
 
         if elem.tag == "h5":
-            return HeadingNode(depth=5, children=PhrasingNode.get_child_nodes(elem))
+            return HeadingNode(depth=5, children=PhrasingNode.get_phrasing_nodes(elem))
 
         if elem.tag == "h6":
-            return HeadingNode(depth=6, children=PhrasingNode.get_child_nodes(elem))
+            return HeadingNode(depth=6, children=PhrasingNode.get_phrasing_nodes(elem))
 
         raise IllegalMessage(f"Unexpected heading tag {elem.tag}")
 
@@ -514,7 +525,7 @@ class DeleteNode(TextFormattingNode):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "DeleteNode":
         restrict(elem, "del")
-        return DeleteNode(children=PhrasingNode.get_child_nodes(elem))
+        return DeleteNode(children=PhrasingNode.get_phrasing_nodes(elem))
 
 
 class EmphasisNode(TextFormattingNode):
@@ -527,7 +538,7 @@ class EmphasisNode(TextFormattingNode):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "EmphasisNode":
         restrict(elem, "em")
-        return EmphasisNode(children=PhrasingNode.get_child_nodes(elem))
+        return EmphasisNode(children=PhrasingNode.get_phrasing_nodes(elem))
 
 
 class StrongNode(TextFormattingNode):
@@ -540,7 +551,7 @@ class StrongNode(TextFormattingNode):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "StrongNode":
         restrict(elem, "strong")
-        return StrongNode(children=PhrasingNode.get_child_nodes(elem))
+        return StrongNode(children=PhrasingNode.get_phrasing_nodes(elem))
 
 
 """
@@ -584,7 +595,7 @@ class CodeNode(PhrasingNode, ContainerNode):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "CodeNode":
         restrict(elem, "code")
-        return CodeNode(children=get_child_nodes(elem))
+        return CodeNode(children=ContentNode.get_child_nodes(elem))
 
 
 class ParagraphNode(BlockContentNode, ContainerNode):
@@ -597,7 +608,7 @@ class ParagraphNode(BlockContentNode, ContainerNode):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "ParagraphNode":
         restrict(elem, "p")
-        return ParagraphNode(children=get_child_nodes(elem))
+        return ParagraphNode(children=ContentNode.get_child_nodes(elem))
 
 
 """
@@ -661,7 +672,7 @@ class AnchorNode(LinkNode, ContainerNode):
     def from_tag_element(elem: TagElement) -> "AnchorNode":
         restrict(elem, "a", "href")
         href = get_string(elem, "href", allow_empty=True)
-        return AnchorNode(href=href, children=PhrasingNode.get_child_nodes(elem))
+        return AnchorNode(href=href, children=PhrasingNode.get_phrasing_nodes(elem))
 
 
 class MessageLinkNode(LinkNode, ContainerNode):
@@ -684,7 +695,7 @@ class MessageLinkNode(LinkNode, ContainerNode):
         restrict(elem, "a", "class", "href")
         ensure_class(elem, "message-link")
         href = get_string(elem, "href")
-        children = PhrasingNode.get_child_nodes(elem)
+        children = PhrasingNode.get_phrasing_nodes(elem)
         return MessageLinkNode(
             href=href,
             children=children,
@@ -717,7 +728,7 @@ class StreamLinkNode(LinkNode, ContainerNode):
         ensure_class(elem, "stream")
         stream_id = get_database_id(elem, "data-stream-id")
         href = get_string(elem, "href")
-        children = PhrasingNode.get_child_nodes(elem)
+        children = PhrasingNode.get_phrasing_nodes(elem)
         return StreamLinkNode(href=href, stream_id=stream_id, children=children)
 
 
@@ -747,7 +758,7 @@ class StreamTopicLinkNode(LinkNode, ContainerNode):
         ensure_class(elem, "stream-topic")
         stream_id = get_database_id(elem, "data-stream-id")
         href = get_string(elem, "href")
-        children = PhrasingNode.get_child_nodes(elem)
+        children = PhrasingNode.get_phrasing_nodes(elem)
         return StreamTopicLinkNode(href=href, stream_id=stream_id, children=children)
 
 
@@ -860,7 +871,7 @@ class ListItemNode(InternalNode, ContainerNode):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "ListItemNode":
         restrict(elem, "li")
-        return ListItemNode(children=get_child_nodes(elem))
+        return ListItemNode(children=ContentNode.get_child_nodes(elem))
 
 
 class ListNode(BlockContentNode, ABC):
@@ -981,7 +992,7 @@ class ThNode(ContainerNode):
     def from_tag_element(th: TagElement) -> "ThNode":
         restrict(th, "th", "style")
         text_align = TextAlignment.from_tag_element(th)
-        children = get_child_nodes(th)
+        children = ContentNode.get_child_nodes(th)
         return ThNode(text_align=text_align, children=children)
 
 
@@ -999,7 +1010,7 @@ class TdNode(ContainerNode):
     def from_tag_element(td: TagElement) -> "TdNode":
         restrict(td, "td", "style")
         text_align = TextAlignment.from_tag_element(td)
-        children = get_child_nodes(td)
+        children = ContentNode.get_child_nodes(td)
         return TdNode(text_align=text_align, children=children)
 
 
@@ -1116,7 +1127,7 @@ class SpoilerContentNode(ContainerNode):
         ensure_attribute(elem, "aria-hidden", "true")
         aria_attribute_comes_first = list(elem.attrib.keys())[0] == "aria-hidden"
         return SpoilerContentNode(
-            children=get_child_nodes(elem),
+            children=ContentNode.get_child_nodes(elem),
             aria_attribute_comes_first=aria_attribute_comes_first,
         )
 
@@ -1134,7 +1145,7 @@ class SpoilerHeaderNode(ContainerNode):
         restrict(elem, "div", "class")
         ensure_class(elem, "spoiler-header")
 
-        return SpoilerHeaderNode(children=get_child_nodes(elem))
+        return SpoilerHeaderNode(children=ContentNode.get_child_nodes(elem))
 
 
 class SpoilerNode(DivNode):
@@ -1867,19 +1878,3 @@ class WebsitePreviewNode(DivNode):
             title=title,
             description=description,
         )
-
-
-"""
-Now glue it all together.
-"""
-
-
-def get_child_nodes(elem: TagElement) -> list[ContentNode]:
-    children: list[ContentNode] = []
-
-    for c in elem.children:
-        if isinstance(c, TextElement):
-            children.append(TextNode.from_text_element(c))
-        elif isinstance(c, TagElement):
-            children.append(ContentNode.from_tag_element(c))
-    return children
