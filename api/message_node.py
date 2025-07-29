@@ -1127,13 +1127,14 @@ class SpoilerHeaderNode(ContainerNode):
         return "spoiler-header"
 
     def as_html(self) -> SafeHtml:
-        return self.block_tag("div", class_=self.zulip_class())
+        return self.tag("div", class_=self.zulip_class())
 
     @staticmethod
     def from_tag_element(elem: TagElement) -> "SpoilerHeaderNode":
         restrict(elem, "div", "class")
         ensure_class(elem, "spoiler-header")
-        return SpoilerHeaderNode(children=get_child_nodes(elem, ignore_newlines=True))
+
+        return SpoilerHeaderNode(children=get_child_nodes(elem))
 
 
 class SpoilerNode(DivNode):
@@ -1873,17 +1874,12 @@ Now glue it all together.
 """
 
 
-def get_child_nodes(
-    elem: TagElement, ignore_newlines: bool = False
-) -> list[ContentNode]:
+def get_child_nodes(elem: TagElement) -> list[ContentNode]:
     children: list[ContentNode] = []
 
     for c in elem.children:
         if isinstance(c, TextElement):
-            if ignore_newlines:
-                ensure_newline(c)
-            else:
-                children.append(TextNode.from_text_element(c))
+            children.append(TextNode.from_text_element(c))
         elif isinstance(c, TagElement):
             children.append(ContentNode.from_tag_element(c))
     return children
