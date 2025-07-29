@@ -34,6 +34,7 @@ def test_custom_test_cases():
         '<p><span class="user-mention channel-wildcard-mention silent" data-user-id="*">everyone</span></p>',
         '<p><span class="user-mention channel-wildcard-mention silent" data-user-id="*">channel</span></p>',
         '<p><span class="topic-mention silent">topic</span></p>',
+        '<p><a href="https://chat.zulip.org/user_uploads/2/ba/JW9YL_kxk6GjYn2CwTzUoz6k/한국어-파일.txt">한국어 파일.txt</a></p>',
     ]
     test_valid_messages(messages)
 

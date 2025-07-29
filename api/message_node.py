@@ -30,7 +30,7 @@ from html_element import (
     restrict_attributes,
     text_content,
 )
-from html_helpers import SafeHtml, build_tag, escape_text
+from html_helpers import SafeHtml, build_tag, canonicalize_escape_text, escape_text
 from pydantic import BaseModel, Field
 
 """
@@ -51,13 +51,14 @@ def verify_round_trip(
     def new_f(elem: T_Element) -> T_ContentNode:
         node = f(elem)
 
-        expected_html = get_trusted_html(elem)
+        expected_html = canonicalize_escape_text(str(get_trusted_html(elem)))
+        actual_html = str(node.as_html())
 
-        if str(node.as_html()) != str(expected_html):
+        if actual_html != expected_html:
             print("\n------- as_html MISMATCH\n")
-            print(repr(str(expected_html)))
+            print(repr(expected_html))
             print()
-            print(repr(str(node.as_html())))
+            print(repr(actual_html))
             print()
             raise IllegalMessage("as_html does not round trip")
 
@@ -1079,10 +1080,10 @@ class TableNode(BlockContentNode):
 """
 SPOILERS:
 
-Zulip implemented spoiler tags before the <details> and <summary>
-tags were widely supported.
+Zulip implemented spoiler syntax before the <details> and <summary>
+tags were widely supported by browsers.
 
-So instead Zulip represents spoiler constructs with <div> tags.
+So instead Zulip represents spoilers with <div> tags.
 """
 
 

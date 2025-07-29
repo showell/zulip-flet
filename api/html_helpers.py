@@ -1,3 +1,5 @@
+import re
+
 from pydantic import BaseModel
 
 
@@ -45,6 +47,14 @@ def build_tag(*, tag: str, inner: SafeHtml, **attrs: str | None) -> SafeHtml:
     if str(inner) == "":
         return SafeHtml.trust(f"<{tag}{attr_suffix}/>")
     return SafeHtml.trust(f"<{tag}{attr_suffix}>{inner}</{tag}>")
+
+
+def canonicalize_escape_text(text: str) -> str:
+    def replace(m: re.Match[str]) -> str:
+        n = int(m.group(1), 16)
+        return f"&#{n};"
+
+    return re.sub(r"&#x(.*?);", replace, text)
 
 
 def escape_text(text: str, replace_quotes: bool = False) -> SafeHtml:
