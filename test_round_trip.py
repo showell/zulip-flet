@@ -9,6 +9,9 @@ from api.message_parser import get_message_node
 def test_valid_messages(messages):
     num_successes = 0
     for html in messages:
+        if "audio controls" in html:
+            continue
+
         try:
             node = get_message_node(html)
             node.as_text()

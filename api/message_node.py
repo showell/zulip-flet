@@ -138,6 +138,9 @@ class PhrasingNode(ContentNode, ABC):
             return TextNode.from_text_element(elem)
 
         if isinstance(elem, TagElement):
+            if elem.tag == "audio":
+                return AudioNode.from_tag_element(elem)
+
             if elem.tag in ["del", "em", "strong"]:
                 return TextFormattingNode.from_tag_element(elem)
 
@@ -1296,6 +1299,40 @@ class InlineVideoNode(DivNode):
         ensure_empty(video)
 
         return InlineVideoNode(href=href, src=src, title=title)
+
+
+"""
+AUDIO
+"""
+
+class AudioNode(PhrasingNode):
+    original_url: str
+    src: str
+
+    def as_text(self) -> str:
+        return f"AUDIO: {self.src}"
+
+    def as_html(self) -> SafeHtml:
+        return build_tag(
+            tag="audio controls",
+            inner=SafeHtml.trust(""),
+            preload="metadata",
+            src=self.src,
+            data_original_url=self.original_url,
+        )
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "AudioNode":
+        restrict(elem, "audio", "controls", "data-original-url", "preload", "src", "title")
+
+        ensure_attribute(elem, "preload", "metadata")
+        ensure_attribute(elem, "title", "Audio link")
+        src = get_string(elem, "src")
+        original_url = get_string(elem, "data-original-url")
+
+        ensure_empty(elem)
+
+        return AudioNode(src=src, original_url=original_url)
 
 
 """
