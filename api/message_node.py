@@ -10,6 +10,7 @@ from html_element import (
     ensure_class,
     ensure_contains_text,
     ensure_empty,
+    ensure_empty_bool,
     ensure_equal,
     ensure_newline,
     ensure_only_text,
@@ -1305,34 +1306,41 @@ class InlineVideoNode(DivNode):
 AUDIO
 """
 
+
 class AudioNode(PhrasingNode):
-    original_url: str
+    original_url: str | None
     src: str
+    title: str
 
     def as_text(self) -> str:
         return f"AUDIO: {self.src}"
 
     def as_html(self) -> SafeHtml:
         return build_tag(
-            tag="audio controls",
+            tag="audio",
             inner=SafeHtml.trust(""),
+            controls="",
+            data_original_url=self.original_url,
             preload="metadata",
             src=self.src,
-            data_original_url=self.original_url,
+            title=self.title,
         )
 
     @staticmethod
     def from_tag_element(elem: TagElement) -> "AudioNode":
-        restrict(elem, "audio", "controls", "data-original-url", "preload", "src", "title")
+        restrict(
+            elem, "audio", "controls", "data-original-url", "preload", "src", "title"
+        )
 
         ensure_attribute(elem, "preload", "metadata")
-        ensure_attribute(elem, "title", "Audio link")
+        ensure_empty_bool(elem, "controls")
         src = get_string(elem, "src")
-        original_url = get_string(elem, "data-original-url")
+        title = get_string(elem, "title")
+        original_url = maybe_get_string(elem, "data-original-url")
 
         ensure_empty(elem)
 
-        return AudioNode(src=src, original_url=original_url)
+        return AudioNode(src=src, original_url=original_url, title=title)
 
 
 """

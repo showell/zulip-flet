@@ -73,6 +73,13 @@ def ensure_empty(elem: TagElement) -> None:
         raise IllegalMessage(f"{elem} is not empty")
 
 
+def ensure_empty_bool(elem: TagElement, field: str) -> None:
+    if elem.get(field) != "":
+        raise IllegalMessage(
+            f"{elem.tag} does not have empty bool attribute for {field}"
+        )
+
+
 def ensure_equal(s1: str, s2: str) -> None:
     if s1 != s2:
         print(repr(s1))

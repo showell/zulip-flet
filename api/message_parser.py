@@ -9,6 +9,7 @@ def get_message_node(html: str) -> ZulipContent:
     if (
         "<math" in html
         or "<video" in html
+        or "<audio" in html
         or "<time" in html
         or "<br" in html
         or "</a></a>" in html
