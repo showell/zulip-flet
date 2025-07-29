@@ -1795,22 +1795,27 @@ class WebsitePreviewNode(DivNode):
         return f"WEB PREVIEW {self.href} {self.title}"
 
     def as_html(self) -> SafeHtml:
-        a = build_tag(
+        image_a = build_tag(
             tag="a",
             inner=SafeHtml.trust(""),
             class_="message_embed_image",
             href=self.href,
-            style=f'background-image: url("{self.background_url}");',
+            style=f"background-image: {self.background_url}",
         )
-        embed_title = build_tag(
-            tag="div",
-            inner=SafeHtml.trust(""),
-            class_="message_embed_title",
+        title_a = build_tag(
+            tag="a",
+            inner=escape_text(self.title),
             href=self.title_href,
             title=self.title,
         )
+        embed_title = build_tag(
+            tag="div",
+            inner=title_a,
+            class_="message_embed_title",
+        )
         embed_description = build_tag(
             tag="div",
+            class_="message_embed_description",
             inner=escape_text(self.description),
         )
 
@@ -1821,7 +1826,7 @@ class WebsitePreviewNode(DivNode):
         )
         return build_tag(
             tag="div",
-            inner=SafeHtml.combine([a, data_container]),
+            inner=SafeHtml.combine([image_a, data_container]),
             class_="message_embed",
         )
 
@@ -1834,7 +1839,11 @@ class WebsitePreviewNode(DivNode):
         restrict(a, "a", "class", "href", "style")
         ensure_class(a, "message_embed_image")
         href = get_string(a, "href")
-        background_url = "TODO"
+        style = maybe_get_string(a, "style")
+        if style is None:
+            raise IllegalMessage("missing style on anchor in message_embed_image")
+        label, background_url = style.strip(";").split(": ")
+        ensure_equal(label, "background-image")
 
         title_div, title_description = get_two_children(data_container)
 
