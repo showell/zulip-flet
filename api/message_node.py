@@ -268,6 +268,8 @@ class DivNode(BlockContentNode, ABC):
                 return PygmentsCodeBlockNode.from_tag_element(elem)
             if elem_class == "spoiler-block":
                 return SpoilerNode.from_tag_element(elem)
+            if elem_class == "message_embed":
+                return WebsitePreviewNode.from_tag_element(elem)
             if elem_class == "message_inline_image":
                 return InlineImageNode.from_tag_element(elem)
             if elem_class == "message_inline_image message_inline_video":
@@ -1722,7 +1724,7 @@ We have error nodes that subclass from the ParseErrorNode ABC.
 """
 
 
-class ParseErrorNode(PhrasingNode, ABC):
+class ParseErrorNode(SpanNode, ABC):
     text: str
 
     @abstractmethod
@@ -1737,7 +1739,7 @@ class ParseErrorNode(PhrasingNode, ABC):
         )
 
 
-class TexErrorNode(SpanNode, ParseErrorNode):
+class TexErrorNode(ParseErrorNode):
     text: str
 
     def as_text(self) -> str:
@@ -1754,7 +1756,7 @@ class TexErrorNode(SpanNode, ParseErrorNode):
         return TexErrorNode(text=text)
 
 
-class TimeStampErrorNode(SpanNode, ParseErrorNode):
+class TimeStampErrorNode(ParseErrorNode):
     text: str
 
     def as_text(self) -> str:
@@ -1769,6 +1771,92 @@ class TimeStampErrorNode(SpanNode, ParseErrorNode):
         ensure_class(elem, "timestamp-error")
         text = ensure_only_text(elem)
         return TimeStampErrorNode(text=text)
+
+
+"""
+MESSAGE PREVIEW
+
+        '<div class="message_embed>' +
+        '<a class="message_embed_image" href="https://pub-14f7b5e1308d42b69c4a46608442a50c.r2.dev/image+title+description.html" style="background-image: url(&quot;https://uploads.zulipusercontent.net/98fe2fe&quot;)"></a>' +
+        '<div class="data-container">' +
+        '<div class="message_embed_title"><a href="https://pub-14f7b5e1308d42b69c4a46608442a50c.r2.dev/image+title+description.html" title="Zulip — organized team chat">Zulip — organized team chat</a></div>' +
+        '<div class="message_embed_description">Zulip is an organized team chat app for distributed teams of all sizes.</div></div></div>'
+"""
+
+
+class WebsitePreviewNode(DivNode):
+    href: str
+    background_url: str
+    title_href: str
+    title: str
+    description: str
+
+    def as_text(self) -> str:
+        return f"WEB PREVIEW {self.href} {self.title}"
+
+    def as_html(self) -> SafeHtml:
+        a = build_tag(
+            tag="a",
+            inner=SafeHtml.trust(""),
+            class_="message_embed_image",
+            href=self.href,
+            style=f'background-image: url("{self.background_url}");',
+        )
+        embed_title = build_tag(
+            tag="div",
+            inner=SafeHtml.trust(""),
+            class_="message_embed_title",
+            href=self.title_href,
+            title=self.title,
+        )
+        embed_description = build_tag(
+            tag="div",
+            inner=escape_text(self.description),
+        )
+
+        data_container = build_tag(
+            tag="div",
+            inner=SafeHtml.combine([embed_title, embed_description]),
+            class_="data-container",
+        )
+        return build_tag(
+            tag="div",
+            inner=SafeHtml.combine([a, data_container]),
+            class_="message_embed",
+        )
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "WebsitePreviewNode":
+        restrict(elem, "div", "class")
+        ensure_class(elem, "message_embed")
+        a, data_container = get_two_children(elem)
+
+        restrict(a, "a", "class", "href", "style")
+        ensure_class(a, "message_embed_image")
+        href = get_string(a, "href")
+        background_url = "TODO"
+
+        title_div, title_description = get_two_children(data_container)
+
+        restrict(title_div, "div", "class")
+        ensure_class(title_div, "message_embed_title")
+        title_a = get_only_child(title_div, "a")
+
+        restrict(title_a, "a", "href", "title")
+        title_href = get_string(title_a, "href")
+        title = get_string(title_a, "title")
+
+        restrict(title_description, "div", "class")
+        ensure_class(title_description, "message_embed_description")
+        description = ensure_only_text(title_description)
+
+        return WebsitePreviewNode(
+            href=href,
+            background_url=background_url,
+            title_href=title_href,
+            title=title,
+            description=description,
+        )
 
 
 """

@@ -35,6 +35,11 @@ def test_custom_test_cases():
         '<p><span class="user-mention channel-wildcard-mention silent" data-user-id="*">channel</span></p>',
         '<p><span class="topic-mention silent">topic</span></p>',
         '<p><a href="https://chat.zulip.org/user_uploads/2/ba/JW9YL_kxk6GjYn2CwTzUoz6k/한국어-파일.txt">한국어 파일.txt</a></p>',
+        '<div class="message_embed">'
+        + '<a class="message_embed_image" href="https://pub-14f7b5e1308d42b69c4a46608442a50c.r2.dev/image+title+description.html" style="background-image: url(&quot;https://uploads.zulipusercontent.net/98fe2fe&quot;)"></a>'
+        + '<div class="data-container">'
+        + '<div class="message_embed_title"><a href="https://pub-14f7b5e1308d42b69c4a46608442a50c.r2.dev/image+title+description.html" title="Zulip — organized team chat">Zulip — organized team chat</a></div>'
+        + '<div class="message_embed_description">Zulip is an organized team chat app for distributed teams of all sizes.</div></div></div>',
     ]
     test_valid_messages(messages)
 
