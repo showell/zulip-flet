@@ -426,6 +426,20 @@ class ContainerNode(ContentNode, ABC):
         return build_tag(tag=tag, inner=inner, **attrs)
 
 
+class BlockInlineContainerNode(BlockContentNode, ABC):
+    children: Sequence[InlineContentNode]
+
+    def children_text(self) -> str:
+        return " ".join(c.as_text() for c in self.children)
+
+    def as_text(self) -> str:
+        return self.children_text()
+
+    def tag(self, tag: str, **attrs: str | None) -> SafeHtml:
+        inner = SafeHtml.combine([c.as_html() for c in self.children])
+        return build_tag(tag=tag, inner=inner, **attrs)
+
+
 """
 HEADINGS:
 
@@ -444,8 +458,7 @@ an ABC.)
 """
 
 
-class HeadingNode(BlockContentNode, ContainerNode):
-    children: Sequence[InlineContentNode]
+class HeadingNode(BlockInlineContainerNode):
     depth: int = Field(ge=1, le=6)
 
     def as_text(self) -> str:
@@ -575,8 +588,6 @@ tags for the "Quote message" feature (I'm guessing).
 
 
 class QuotationNode(BlockContentNode, ContainerNode):
-    children: Sequence[BlockContentNode]
-
     def as_text(self) -> str:
         content = self.children_text()
         return f"\n-----\n{content}\n-----\n"
