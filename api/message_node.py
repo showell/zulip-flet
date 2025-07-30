@@ -965,11 +965,9 @@ class TextAlignment(BaseModel):
 
     @staticmethod
     def from_tag_element(elem: TagElement) -> "TextAlignment":
-        style = maybe_get_string(elem, "style")
-        if style is None:
+        value = maybe_get_one_style(elem, "text-align")
+        if value is None:
             return TextAlignment(value=None)
-        label, value = style.strip(";").split(": ")
-        ensure_equal(label, "text-align")
         if value == "center":
             return TextAlignment(value="center")
         if value == "left":
