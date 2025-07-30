@@ -1000,7 +1000,7 @@ class TextAlignment(BaseModel):
         raise IllegalMessage("bad alignment value")
 
 
-class ThNode(ContainerNode):
+class ThNode(BlockInlineContainerNode):
     text_align: TextAlignment
 
     def as_text(self) -> str:
@@ -1014,11 +1014,11 @@ class ThNode(ContainerNode):
     def from_tag_element(th: TagElement) -> "ThNode":
         restrict(th, "th", "style")
         text_align = TextAlignment.from_tag_element(th)
-        children = ContentNode.get_child_nodes(th)
+        children = InlineContentNode.get_inline_content_nodes(th)
         return ThNode(text_align=text_align, children=children)
 
 
-class TdNode(ContainerNode):
+class TdNode(BlockInlineContainerNode):
     text_align: TextAlignment
 
     def as_text(self) -> str:
@@ -1032,7 +1032,7 @@ class TdNode(ContainerNode):
     def from_tag_element(td: TagElement) -> "TdNode":
         restrict(td, "td", "style")
         text_align = TextAlignment.from_tag_element(td)
-        children = ContentNode.get_child_nodes(td)
+        children = InlineContentNode.get_inline_content_nodes(td)
         return TdNode(text_align=text_align, children=children)
 
 
