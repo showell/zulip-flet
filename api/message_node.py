@@ -86,7 +86,7 @@ class ContentNode(BaseModel, ABC):
     @staticmethod
     @verify_round_trip
     def from_tag_element(elem: TagElement) -> "ContentNode":
-        node = PhrasingNode.maybe_get_from_element(elem)
+        node = InlineContentNode.maybe_get_from_element(elem)
         if node is not None:
             return node
 
@@ -125,18 +125,16 @@ class InternalNode(ContentNode, ABC):
 
 
 """
-PhrasingNode:
+InlineContentNode:
 
-I steal the concept of a "phrasing" node from the mdast project.
-
-Basically, phrasing nodes are things that can be contained within
+Basically, InlineContentNode nodes are things that can be contained within
 almost any other type of node.
 
 To give a counterexample, it doesn't make any sense to use a
 <blockquote> tag within a <del> tag in the Zulip universe,
 because there is no way to produce this in markdown.
 
-I can't claim yet that my implementation of PhrasingNode will
+I can't claim yet that my implementation of InlineContentNode will
 prevent every impossible construct nor allow every exotic-but-legal
 construct.  It definitely prevents some strangeness currently.
 Hopefully the overall structure can be easy to evolve as I start
@@ -144,9 +142,9 @@ testing this more exhaustively.
 """
 
 
-class PhrasingNode(ContentNode, ABC):
+class InlineContentNode(ContentNode, ABC):
     @staticmethod
-    def maybe_get_from_element(elem: Element) -> Optional["PhrasingNode"]:
+    def maybe_get_from_element(elem: Element) -> Optional["InlineContentNode"]:
         if isinstance(elem, TextElement):
             return TextNode.from_text_element(elem)
 
@@ -172,13 +170,13 @@ class PhrasingNode(ContentNode, ABC):
         return None
 
     @staticmethod
-    def get_phrasing_nodes(elem: TagElement) -> list["PhrasingNode"]:
-        children: list[PhrasingNode] = []
+    def get_inline_content_nodes(elem: TagElement) -> list["InlineContentNode"]:
+        children: list[InlineContentNode] = []
 
         for c in elem.children:
-            child_node = PhrasingNode.maybe_get_from_element(c)
+            child_node = InlineContentNode.maybe_get_from_element(c)
             if child_node is None:
-                raise IllegalMessage("expected phrasing node")
+                raise IllegalMessage("expected inline content node")
             children.append(child_node)
 
         return children
@@ -292,7 +290,7 @@ class DivNode(BlockContentNode, ABC):
         raise IllegalMessage(f"unexpected tag: {elem.tag}")
 
 
-class SpanNode(PhrasingNode, ABC):
+class SpanNode(InlineContentNode, ABC):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "SpanNode":
         if elem.tag == "span":
@@ -327,7 +325,7 @@ markdown processors work.
 """
 
 
-class TextNode(PhrasingNode):
+class TextNode(InlineContentNode):
     value: str
 
     def as_text(self) -> str:
@@ -447,7 +445,7 @@ an ABC.)
 
 
 class HeadingNode(BlockContentNode, ContainerNode):
-    children: Sequence[PhrasingNode]
+    children: Sequence[InlineContentNode]
     depth: int = Field(ge=1, le=6)
 
     def as_text(self) -> str:
@@ -461,22 +459,34 @@ class HeadingNode(BlockContentNode, ContainerNode):
         restrict_attributes(elem)
 
         if elem.tag == "h1":
-            return HeadingNode(depth=1, children=PhrasingNode.get_phrasing_nodes(elem))
+            return HeadingNode(
+                depth=1, children=InlineContentNode.get_inline_content_nodes(elem)
+            )
 
         if elem.tag == "h2":
-            return HeadingNode(depth=2, children=PhrasingNode.get_phrasing_nodes(elem))
+            return HeadingNode(
+                depth=2, children=InlineContentNode.get_inline_content_nodes(elem)
+            )
 
         if elem.tag == "h3":
-            return HeadingNode(depth=3, children=PhrasingNode.get_phrasing_nodes(elem))
+            return HeadingNode(
+                depth=3, children=InlineContentNode.get_inline_content_nodes(elem)
+            )
 
         if elem.tag == "h4":
-            return HeadingNode(depth=4, children=PhrasingNode.get_phrasing_nodes(elem))
+            return HeadingNode(
+                depth=4, children=InlineContentNode.get_inline_content_nodes(elem)
+            )
 
         if elem.tag == "h5":
-            return HeadingNode(depth=5, children=PhrasingNode.get_phrasing_nodes(elem))
+            return HeadingNode(
+                depth=5, children=InlineContentNode.get_inline_content_nodes(elem)
+            )
 
         if elem.tag == "h6":
-            return HeadingNode(depth=6, children=PhrasingNode.get_phrasing_nodes(elem))
+            return HeadingNode(
+                depth=6, children=InlineContentNode.get_inline_content_nodes(elem)
+            )
 
         raise IllegalMessage(f"Unexpected heading tag {elem.tag}")
 
@@ -501,7 +511,7 @@ We'll start with simple markup:
 """
 
 
-class TextFormattingNode(ContainerNode, PhrasingNode, ABC):
+class TextFormattingNode(ContainerNode, InlineContentNode, ABC):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "TextFormattingNode":
         if elem.tag == "del":
@@ -526,7 +536,7 @@ class DeleteNode(TextFormattingNode):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "DeleteNode":
         restrict(elem, "del")
-        return DeleteNode(children=PhrasingNode.get_phrasing_nodes(elem))
+        return DeleteNode(children=InlineContentNode.get_inline_content_nodes(elem))
 
 
 class EmphasisNode(TextFormattingNode):
@@ -539,7 +549,7 @@ class EmphasisNode(TextFormattingNode):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "EmphasisNode":
         restrict(elem, "em")
-        return EmphasisNode(children=PhrasingNode.get_phrasing_nodes(elem))
+        return EmphasisNode(children=InlineContentNode.get_inline_content_nodes(elem))
 
 
 class StrongNode(TextFormattingNode):
@@ -552,7 +562,7 @@ class StrongNode(TextFormattingNode):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "StrongNode":
         restrict(elem, "strong")
-        return StrongNode(children=PhrasingNode.get_phrasing_nodes(elem))
+        return StrongNode(children=InlineContentNode.get_inline_content_nodes(elem))
 
 
 """
@@ -586,7 +596,7 @@ And then some more basic classes follow.
 """
 
 
-class CodeNode(PhrasingNode, ContainerNode):
+class CodeNode(InlineContentNode, ContainerNode):
     def as_text(self) -> str:
         return f"`{self.children_text()}`"
 
@@ -627,7 +637,7 @@ terms like "href" and "src".
 """
 
 
-class LinkNode(PhrasingNode, ABC):
+class LinkNode(InlineContentNode, ABC):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "LinkNode":
         elem_class = maybe_get_string(elem, "class")
@@ -673,7 +683,9 @@ class AnchorNode(LinkNode, ContainerNode):
     def from_tag_element(elem: TagElement) -> "AnchorNode":
         restrict(elem, "a", "href")
         href = get_string(elem, "href", allow_empty=True)
-        return AnchorNode(href=href, children=PhrasingNode.get_phrasing_nodes(elem))
+        return AnchorNode(
+            href=href, children=InlineContentNode.get_inline_content_nodes(elem)
+        )
 
 
 class MessageLinkNode(LinkNode, ContainerNode):
@@ -696,7 +708,7 @@ class MessageLinkNode(LinkNode, ContainerNode):
         restrict(elem, "a", "class", "href")
         ensure_class(elem, "message-link")
         href = get_string(elem, "href")
-        children = PhrasingNode.get_phrasing_nodes(elem)
+        children = InlineContentNode.get_inline_content_nodes(elem)
         return MessageLinkNode(
             href=href,
             children=children,
@@ -729,7 +741,7 @@ class StreamLinkNode(LinkNode, ContainerNode):
         ensure_class(elem, "stream")
         stream_id = get_database_id(elem, "data-stream-id")
         href = get_string(elem, "href")
-        children = PhrasingNode.get_phrasing_nodes(elem)
+        children = InlineContentNode.get_inline_content_nodes(elem)
         return StreamLinkNode(href=href, stream_id=stream_id, children=children)
 
 
@@ -759,7 +771,7 @@ class StreamTopicLinkNode(LinkNode, ContainerNode):
         ensure_class(elem, "stream-topic")
         stream_id = get_database_id(elem, "data-stream-id")
         href = get_string(elem, "href")
-        children = PhrasingNode.get_phrasing_nodes(elem)
+        children = InlineContentNode.get_inline_content_nodes(elem)
         return StreamTopicLinkNode(href=href, stream_id=stream_id, children=children)
 
 
@@ -1320,7 +1332,7 @@ AUDIO
 """
 
 
-class AudioNode(PhrasingNode):
+class AudioNode(InlineContentNode):
     original_url: str | None
     src: str
     title: str
@@ -1662,7 +1674,7 @@ Typical markdown is <time:2025-07-16T20:00:00-04:00>
 """
 
 
-class TimeWidgetNode(PhrasingNode):
+class TimeWidgetNode(InlineContentNode):
     datetime: str
     text: str
 
