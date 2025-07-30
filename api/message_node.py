@@ -152,6 +152,9 @@ class InlineContentNode(ContentNode, ABC):
             if elem.tag == "audio":
                 return AudioNode.from_tag_element(elem)
 
+            if elem.tag == "br":
+                return LineBreakInlineNode.from_tag_element(elem)
+
             if elem.tag in ["del", "em", "strong"]:
                 return TextFormattingNode.from_tag_element(elem)
 
@@ -176,7 +179,7 @@ class InlineContentNode(ContentNode, ABC):
         for c in elem.children:
             child_node = InlineContentNode.maybe_get_from_element(c)
             if child_node is None:
-                raise IllegalMessage("expected inline content node")
+                raise IllegalMessage(f"expected inline content node but got {c}")
             children.append(child_node)
 
         return children
@@ -208,7 +211,7 @@ class BlockContentNode(ContentNode, ABC):
             return QuotationNode.from_tag_element(elem)
 
         if elem.tag == "br":
-            return LineBreakNode.from_tag_element(elem)
+            return LineBreakBlockNode.from_tag_element(elem)
 
         if elem.tag == "div":
             return DivNode.from_tag_element(elem)
@@ -365,7 +368,7 @@ BREAK TAGS: <br> and <hr>
 """
 
 
-class LineBreakNode(BlockContentNode):
+class LineBreakInlineNode(InlineContentNode):
     def as_text(self) -> str:
         return "\n"
 
@@ -373,10 +376,24 @@ class LineBreakNode(BlockContentNode):
         return SafeHtml.trust("<br/>")
 
     @staticmethod
-    def from_tag_element(elem: TagElement) -> "LineBreakNode":
+    def from_tag_element(elem: TagElement) -> "LineBreakInlineNode":
         restrict(elem, "br")
         forbid_children(elem)
-        return LineBreakNode()
+        return LineBreakInlineNode()
+
+
+class LineBreakBlockNode(BlockContentNode):
+    def as_text(self) -> str:
+        return "\n"
+
+    def as_html(self) -> SafeHtml:
+        return SafeHtml.trust("<br/>")
+
+    @staticmethod
+    def from_tag_element(elem: TagElement) -> "LineBreakBlockNode":
+        restrict(elem, "br")
+        forbid_children(elem)
+        return LineBreakBlockNode()
 
 
 class ThematicBreakNode(BlockContentNode):
@@ -620,7 +637,7 @@ class CodeNode(InlineContentNode, ContainerNode):
         return CodeNode(children=ContentNode.get_child_nodes(elem))
 
 
-class ParagraphNode(BlockContentNode, ContainerNode):
+class ParagraphNode(BlockInlineContainerNode):
     def as_text(self) -> str:
         return self.children_text() + "\n\n"
 
@@ -630,7 +647,7 @@ class ParagraphNode(BlockContentNode, ContainerNode):
     @staticmethod
     def from_tag_element(elem: TagElement) -> "ParagraphNode":
         restrict(elem, "p")
-        return ParagraphNode(children=ContentNode.get_child_nodes(elem))
+        return ParagraphNode(children=InlineContentNode.get_inline_content_nodes(elem))
 
 
 """
