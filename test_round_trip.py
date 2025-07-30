@@ -3,14 +3,14 @@ import sys
 
 sys.path.append("api")
 from api.database import Database
-from api.message_parser import get_message_node
+from api.message_parser import get_zulip_content
 
 
 def test_valid_messages(messages):
     num_successes = 0
     for html in messages:
         try:
-            node = get_message_node(html)
+            node = get_zulip_content(html)
             node.as_text()
             node.as_html()
         except Exception as e:

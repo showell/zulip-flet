@@ -1,7 +1,7 @@
 import flet as ft
 from address_link import AddressLink
 
-from api.message_parser import get_message_node
+from api.message_parser import get_zulip_content
 
 
 class MessageRow:
@@ -18,7 +18,7 @@ class MessageRow:
         else:
             info = address_link.control
 
-        content = get_message_node(hydrated_message.content).as_text()
+        content = get_zulip_content(hydrated_message.content).as_text()
 
         item = ft.Row(
             controls=[

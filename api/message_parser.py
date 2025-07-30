@@ -1,9 +1,9 @@
+from content import ZulipContent
 from html_element import TagElement, get_only_child, restrict
 from lxml import etree
-from message_node import ZulipContent
 
 
-def get_message_node(html: str) -> ZulipContent:
+def get_zulip_content(html: str) -> ZulipContent:
     # We try to be strict, but lxml doesn't like math/video/time and doesn't
     # recover from certain <br> tags in paragraphs.
     if (
