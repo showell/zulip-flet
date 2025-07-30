@@ -70,7 +70,9 @@ def verify_round_trip(
 
 
 """
-Our ContentNode class is abstract.
+Our ContentNode class is abstract, but we have some helper
+static methods.  I hope to eventually push down
+ContentNode.get_child_nddes to subclasses.
 """
 
 
