@@ -107,26 +107,6 @@ class ContentNode(BaseModel, ABC):
 
 
 """
-InternalNode ABC:
-
-I use certain ABCs just for classifying types of nodes.
-
-The InternalNode signifies nodes that a class should only be
-instantiated as children of other nodes.
-
-In the context of TableNode (not internal), think of
-things like <tbody>, <thead>, etc.
-
-It's not an entirely rigorous concept, but it's kinda
-helpful when auditing the code.
-"""
-
-
-class InternalNode(ContentNode, ABC):
-    pass
-
-
-"""
 InlineContentNode:
 
 Basically, InlineContentNode nodes are things that can be contained within
@@ -907,7 +887,19 @@ Lists
 """
 
 
-class ListItemNode(InternalNode, ContainerNode):
+class ListItemNode(ContentNode):
+    children: Sequence[ContentNode]
+
+    def children_text(self) -> str:
+        return " ".join(c.as_text() for c in self.children)
+
+    def as_text(self) -> str:
+        return self.children_text()
+
+    def tag(self, tag: str, **attrs: str | None) -> SafeHtml:
+        inner = SafeHtml.combine([c.as_html() for c in self.children])
+        return build_tag(tag=tag, inner=inner, **attrs)
+
     def as_html(self) -> SafeHtml:
         return self.tag("li")
 
@@ -1055,7 +1047,7 @@ class TdNode(BlockInlineContainerNode):
         return TdNode(text_align=text_align, children=children)
 
 
-class TrNode(InternalNode):
+class TrNode(ContentNode):
     tds: Sequence[TdNode]
 
     def as_text(self) -> str:
@@ -1076,7 +1068,7 @@ class TrNode(InternalNode):
         return TrNode(tds=tds)
 
 
-class TBodyNode(InternalNode):
+class TBodyNode(ContentNode):
     trs: Sequence[TrNode]
 
     def as_text(self) -> str:
@@ -1094,7 +1086,7 @@ class TBodyNode(InternalNode):
         return TBodyNode(trs=trs)
 
 
-class THeadNode(InternalNode):
+class THeadNode(ContentNode):
     ths: Sequence[ThNode]
 
     def as_text(self) -> str:
@@ -1226,7 +1218,7 @@ MEDIA WIDGETS follow.
 """
 
 
-class InlineImageChildImgNode(InternalNode):
+class InlineImageChildImgNode(ContentNode):
     animated: bool
     src: str
     original_dimensions: str | None
