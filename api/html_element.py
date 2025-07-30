@@ -211,6 +211,18 @@ def get_two_block_children(elem: TagElement) -> tuple[TagElement, TagElement]:
     return c1, c2
 
 
+def maybe_get_one_style(elem: TagElement, field: str) -> str | None:
+    style = maybe_get_string(elem, "style")
+    if style is None:
+        return None
+    frags = style.strip(";").split(": ")
+    if len(frags) != 2:
+        raise IllegalMessage("bad style syntax")
+    label, style = frags
+    ensure_equal(label, field)
+    return style
+
+
 def maybe_get_string(elem: TagElement, field: str) -> str | None:
     return elem.get(field)
 

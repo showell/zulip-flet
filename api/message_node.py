@@ -26,6 +26,7 @@ from html_element import (
     get_trusted_html,
     get_two_block_children,
     get_two_children,
+    maybe_get_one_style,
     maybe_get_string,
     restrict,
     restrict_attributes,
@@ -1851,11 +1852,9 @@ class WebsitePreviewNode(DivNode):
         restrict(a, "a", "class", "href", "style")
         ensure_class(a, "message_embed_image")
         href = get_string(a, "href")
-        style = maybe_get_string(a, "style")
-        if style is None:
+        background_url = maybe_get_one_style(a, "background-image")
+        if background_url is None:
             raise IllegalMessage("missing style on anchor in message_embed_image")
-        label, background_url = style.strip(";").split(": ")
-        ensure_equal(label, "background-image")
 
         title_div, title_description = get_two_children(data_container)
 
