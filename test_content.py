@@ -6,7 +6,7 @@ from api.database import Database
 from api.message_parser import get_zulip_content
 
 
-def test_valid_messages(messages):
+def test_valid_messages(messages, label):
     num_successes = 0
     for html in messages:
         try:
@@ -21,7 +21,7 @@ def test_valid_messages(messages):
 
         num_successes += 1
     print()
-    print(f"{num_successes=}")
+    print(f"{num_successes=} from {label}")
 
 
 def test_custom_test_cases():
@@ -41,7 +41,7 @@ def test_custom_test_cases():
         + '<div class="message_embed_title"><a href="https://pub-14f7b5e1308d42b69c4a46608442a50c.r2.dev/image+title+description.html" title="Zulip — organized team chat">Zulip — organized team chat</a></div>'
         + '<div class="message_embed_description">Zulip is an organized team chat app for distributed teams of all sizes.</div></div></div>',
     ]
-    test_valid_messages(messages)
+    test_valid_messages(messages, "custom")
 
 
 def test_real_world():
@@ -60,7 +60,7 @@ def test_real_world():
     database = Database.model_validate_json(db_json)
 
     messages = [m.content for m in database.message_table.get_rows()]
-    test_valid_messages(messages)
+    test_valid_messages(messages, "real world")
 
 
 def test_markdown_test_cases():
@@ -68,7 +68,7 @@ def test_markdown_test_cases():
     with open(fn, encoding="utf8") as fp:
         fixtures = json.load(fp)
     messages = [fixture["expected_output"] for fixture in fixtures["regular_tests"]]
-    test_valid_messages(messages)
+    test_valid_messages(messages, "markdown_test_cases.json (from Zulip)")
 
 
 test_custom_test_cases()
