@@ -13,6 +13,7 @@ def test_valid_messages(messages, label):
             node = get_zulip_content(html)
             node.as_text()
             node.as_html()
+            node.as_dict()
         except Exception as e:
             print("---")
             print(f"\nOUTER HMTL:\n{repr(html)}")
@@ -22,6 +23,9 @@ def test_valid_messages(messages, label):
         num_successes += 1
     print()
     print(f"{num_successes=} from {label}")
+    print("last message")
+    node = get_zulip_content(messages[-1])
+    print(json.dumps(node.as_dict(), indent=4))
 
 
 def test_custom_test_cases():
