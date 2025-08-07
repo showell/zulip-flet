@@ -71,7 +71,7 @@ def verify_round_trip(
 
 """
 Our ContentNode class is abstract, but we have some helper
-static methods and a serialize method.  I hope to eventually push down
+static methods and an as_dict method.  I hope to eventually push down
 ContentNode.get_child_nodes to subclasses.
 """
 
@@ -110,12 +110,12 @@ class ContentNode(BaseModel, ABC):
         for field_name, value in self.model_dump().items():
             if field_name == "children":
                 # play nice with mypy
-                if hasattr(self, "children"):
-                    arr: list[dict[str, object]] = []
-                    for c in self.children:
-                        assert isinstance(c, ContentNode)
-                        arr.append(c.as_dict())
-                    dct["children"] = arr
+                assert hasattr(self, "children")
+                arr: list[dict[str, object]] = []
+                for c in self.children:
+                    assert isinstance(c, ContentNode)
+                    arr.append(c.as_dict())
+                dct["children"] = arr
             else:
                 dct[field_name] = value
         return dct
